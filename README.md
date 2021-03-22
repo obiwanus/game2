@@ -1,1 +1,1 @@
-# lego-game
+# game2
