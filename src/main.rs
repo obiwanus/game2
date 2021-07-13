@@ -1,6 +1,8 @@
 extern crate gl as opengl;
 
 mod camera;
+mod shader;
+mod terrain;
 mod utils;
 
 use std::error::Error;
@@ -16,6 +18,8 @@ use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
+use shader::Program;
+use terrain::Terrain;
 
 // ==================================== Main loop =================================================
 
@@ -50,17 +54,30 @@ struct Game {
     camera: Camera,
     in_focus: bool,
     frame_start: Instant,
+
+    // shader: Program,
+    terrain: Terrain,
 }
 
 impl Game {
     /// Creates a window and inits a new game
     fn new(event_loop: &EventLoop<()>) -> Result<Self, Box<dyn Error>> {
         // Create window
+        let monitor = event_loop.primary_monitor().unwrap_or_else(|| {
+            event_loop
+                .available_monitors()
+                .next()
+                .expect("Couldn't find monitor")
+        });
+        let inner_size =
+            glutin::dpi::LogicalSize::new(monitor.size().width - 100, monitor.size().height - 100);
         let window_builder = WindowBuilder::new()
             .with_title("Game 2")
             .with_resizable(false)
-            .with_fullscreen(Some(Fullscreen::Borderless(event_loop.primary_monitor())));
-        // .with_inner_size(glutin::dpi::LogicalSize::new(1366.0, 768.0));
+            .with_position(glutin::dpi::LogicalPosition::new(70, 10))
+            .with_inner_size(inner_size);
+        // .with_fullscreen(Some(Fullscreen::Borderless(event_loop.primary_monitor())));
+        // .with_inner_size(glutin::dpi::LogicalSize::new(1800, 900));
 
         let gl_request = GlRequest::Specific(Api::OpenGl, (3, 3));
         let gl_profile = GlProfile::Core;
@@ -85,6 +102,12 @@ impl Game {
             gl::Enable(gl::DEPTH_TEST);
         }
 
+        // let shader = Program::new()
+        //     .vertex_shader("shaders/basic/basic.vert")?
+        //     .fragment_shader("shaders/basic/basic.frag")?
+        //     .link()?;
+        // shader.set_used();
+
         // Set up camera
         let camera = Camera::new(
             Vec3::new(0.0, 10.0, 30.0),
@@ -92,12 +115,17 @@ impl Game {
             window_size.width as f32 / window_size.height as f32,
         );
 
+        let terrain = Terrain::new(40.0, 40);
+
         Ok(Game {
             windowed_context,
             input: Input::default(),
             camera,
             in_focus: true,
             frame_start: Instant::now(),
+
+            // shader,
+            terrain,
         })
     }
 
