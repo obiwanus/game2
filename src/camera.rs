@@ -23,7 +23,7 @@ pub enum Movement {
     Right,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Camera {
     pub position: Vec3,
     direction: Vec3,
@@ -34,6 +34,7 @@ pub struct Camera {
     pitch: f32,
 
     movement_speed: f32,
+    pub speed_boost: f32, // TODO
     sensitivity: f32,
     zoom: f32,
     pub aspect_ratio: f32,
@@ -45,19 +46,14 @@ impl Camera {
     pub fn new(position: Vec3, up: Vec3, look_at: Vec3, aspect_ratio: f32) -> Self {
         let mut camera = Camera {
             position,
-            direction: position + look_at,
             up,
-            right: Vec3::new(1.0, 0.0, 0.0),
-
-            yaw: 0.0,
-            pitch: 0.0,
-
-            movement_speed: 15.0,
+            movement_speed: 5.0,
             sensitivity: 0.0015,
             zoom: ZOOM_DEFAULT,
             aspect_ratio,
             locked: false,
             moved: true,
+            ..Default::default()
         };
         camera.look_at(look_at);
         camera
@@ -67,10 +63,23 @@ impl Camera {
     /// Sets direction, right and Euler angles accordingly
     pub fn look_at(&mut self, target: Vec3) {
         self.direction = (target - self.position).normalize();
+
+        // @hacky: maybe could be done simpler without special cases
         let (x, y, z) = (self.direction.x, self.direction.y, self.direction.z);
         self.pitch = y.asin();
         self.pitch = clamp(self.pitch, PITCH_MIN, PITCH_MAX);
-        self.yaw = (z / x).atan();
+        self.yaw = if z < 0.0 {
+            (-x / z).atan()
+        } else if z > 0.0 {
+            (-x / z).atan() + std::f32::consts::PI
+        } else {
+            // z == 0
+            if x > 0.0 {
+                std::f32::consts::PI / 2.0
+            } else {
+                -std::f32::consts::PI / 2.0
+            }
+        };
         self.right = self.recalculate_right();
     }
 
@@ -108,9 +117,9 @@ impl Camera {
 
         // Recalculate direction
         self.direction = Vec3::new(
-            self.pitch.cos() * self.yaw.cos(),
-            self.pitch.sin(),
             self.pitch.cos() * self.yaw.sin(),
+            self.pitch.sin(),
+            self.pitch.cos() * (-self.yaw.cos()),
         )
         .normalize();
         self.right = self.recalculate_right();
@@ -132,9 +141,15 @@ impl Camera {
         Mat4::look_at_rh(self.position, self.position + self.direction, self.up)
     }
 
+    // // For Vulkan:
+    // pub fn get_projection_matrix(&self) -> Mat4 {
+    //     let mut proj = Mat4::perspective_rh(self.fov(), self.aspect_ratio, 0.1, 100.0);
+    //     proj.y_axis.y *= -1.0; // account for the Vulkan coordinate system
+    //     proj
+    // }
+
+    // For OpenGL:
     pub fn get_projection_matrix(&self) -> Mat4 {
-        let mut proj = Mat4::perspective_rh(self.fov(), self.aspect_ratio, 0.1, 100.0);
-        proj.y_axis.y *= -1.0; // account for the Vulkan coordinate system
-        proj
+        Mat4::perspective_rh(self.fov(), self.aspect_ratio, 0.1, 100.0)
     }
 }
