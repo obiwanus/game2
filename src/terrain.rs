@@ -1,7 +1,14 @@
+use gl::types::GLvoid;
 use glam::Vec3;
 
+use crate::buffers::{Buffer, VertexArray};
+
 pub struct Terrain {
-    vertices: Vec<Vertex>,
+    pub vertices: Vec<Vertex>,
+
+    // tmp
+    pub vao: VertexArray,
+    vbo: Buffer,
 }
 
 impl Terrain {
@@ -22,11 +29,23 @@ impl Terrain {
             }
         }
 
-        Terrain { vertices }
+        let vao = VertexArray::new();
+        vao.bind();
+
+        let vbo = Buffer::new();
+        vbo.bind_as(gl::ARRAY_BUFFER);
+        vbo.send_data(&vertices);
+
+        unsafe {
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+            gl::EnableVertexAttribArray(0);
+        }
+
+        Terrain { vertices, vao, vbo }
     }
 }
 
 #[repr(C)]
-struct Vertex {
+pub struct Vertex {
     pos: Vec3,
 }

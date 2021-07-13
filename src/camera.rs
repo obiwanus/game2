@@ -42,11 +42,11 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(position: Vec3, look_at: Vec3, aspect_ratio: f32) -> Self {
+    pub fn new(position: Vec3, up: Vec3, look_at: Vec3, aspect_ratio: f32) -> Self {
         let mut camera = Camera {
             position,
             direction: position + look_at,
-            up: Vec3::new(0.0, 1.0, 0.0),
+            up,
             right: Vec3::new(1.0, 0.0, 0.0),
 
             yaw: 0.0,

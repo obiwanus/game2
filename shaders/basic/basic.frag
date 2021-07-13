@@ -2,7 +2,7 @@
 
 in VS_OUTPUT {
 //   vec3 normal;
-  vec3 frag_pos;
+//   vec3 frag_pos;
   vec3 color;
 }
 IN;

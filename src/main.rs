@@ -1,5 +1,6 @@
 extern crate gl as opengl;
 
+mod buffers;
 mod camera;
 mod shader;
 mod terrain;
@@ -13,7 +14,7 @@ use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent,
 };
 use glutin::event_loop::{ControlFlow, EventLoop};
-use glutin::window::{Fullscreen, WindowBuilder};
+use glutin::window::WindowBuilder;
 use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
@@ -55,7 +56,7 @@ struct Game {
     in_focus: bool,
     frame_start: Instant,
 
-    // shader: Program,
+    shader: Program,
     terrain: Terrain,
 }
 
@@ -76,7 +77,7 @@ impl Game {
             .with_resizable(false)
             .with_position(glutin::dpi::LogicalPosition::new(70, 10))
             .with_inner_size(inner_size);
-        // .with_fullscreen(Some(Fullscreen::Borderless(event_loop.primary_monitor())));
+        // .with_fullscreen(Some(glutin::window::Fullscreen::Borderless(event_loop.primary_monitor())));
         // .with_inner_size(glutin::dpi::LogicalSize::new(1800, 900));
 
         let gl_request = GlRequest::Specific(Api::OpenGl, (3, 3));
@@ -102,15 +103,16 @@ impl Game {
             gl::Enable(gl::DEPTH_TEST);
         }
 
-        // let shader = Program::new()
-        //     .vertex_shader("shaders/basic/basic.vert")?
-        //     .fragment_shader("shaders/basic/basic.frag")?
-        //     .link()?;
-        // shader.set_used();
+        let shader = Program::new()
+            .vertex_shader("shaders/basic/basic.vert")?
+            .fragment_shader("shaders/basic/basic.frag")?
+            .link()?;
+        shader.set_used();
 
         // Set up camera
         let camera = Camera::new(
-            Vec3::new(0.0, 10.0, 30.0),
+            Vec3::new(0.0, 5.0, 30.0),
+            Vec3::new(0.0, 1.0, 0.0),
             Vec3::new(0.0, 0.0, 0.0),
             window_size.width as f32 / window_size.height as f32,
         );
@@ -124,7 +126,7 @@ impl Game {
             in_focus: true,
             frame_start: Instant::now(),
 
-            // shader,
+            shader,
             terrain,
         })
     }
@@ -207,9 +209,17 @@ impl Game {
         let proj = self.camera.get_projection_matrix();
         let view = self.camera.get_view_matrix();
 
+        self.shader.set_mat4("proj", &proj)?;
+        self.shader.set_mat4("view", &view)?;
+
         // Draw
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+        }
+
+        self.terrain.vao.bind();
+        unsafe {
+            gl::DrawArrays(gl::POINTS, 0, self.terrain.vertices.len() as i32);
         }
 
         self.windowed_context.swap_buffers()?;
