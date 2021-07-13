@@ -1,5 +1,5 @@
 [package]
-name = "lego-game"
+name = "game2"
 version = "0.1.0"
 authors = ["Ivan Ivanov <ivan@ivanovs.info>"]
 edition = "2018"
