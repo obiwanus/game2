@@ -21,5 +21,5 @@ void main() {
 //   OUT.normal = mat3(transpose(inverse(view * model))) * Normal;  // @performance: don't inverse
 //   OUT.frag_pos = (view * model * vec4(Position, 1.0)).xyz;
 //   OUT.color = Color.xyz * vec3(0.8, 0.8, 0.8);
-  OUT.color = vec3(0.4, 0.8, 0.2);
+  OUT.color = vec3(0.4, 0.5, 0.2);
 }

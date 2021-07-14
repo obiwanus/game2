@@ -2,7 +2,9 @@ extern crate gl as opengl_lib;
 
 mod camera;
 mod opengl;
+mod skybox;
 mod terrain;
+mod texture;
 mod utils;
 
 use std::error::Error;
@@ -19,6 +21,7 @@ use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
 use opengl::shader::Program;
+use skybox::Skybox;
 use terrain::Terrain;
 
 // ==================================== Main loop =================================================
@@ -57,6 +60,7 @@ struct Game {
 
     shader: Program,
     terrain: Terrain,
+    skybox: Skybox,
 }
 
 impl Game {
@@ -118,6 +122,15 @@ impl Game {
 
         let terrain = Terrain::new(40.0, 40);
 
+        let skybox = Skybox::from([
+            "textures/skybox/right.jpg",
+            "textures/skybox/left.jpg",
+            "textures/skybox/top.jpg",
+            "textures/skybox/bottom.jpg",
+            "textures/skybox/front.jpg",
+            "textures/skybox/back.jpg",
+        ])?;
+
         Ok(Game {
             windowed_context,
             input: Input::default(),
@@ -127,6 +140,7 @@ impl Game {
 
             shader,
             terrain,
+            skybox,
         })
     }
 
@@ -208,6 +222,7 @@ impl Game {
         let proj = self.camera.get_projection_matrix();
         let view = self.camera.get_view_matrix();
 
+        self.shader.set_used();
         self.shader.set_mat4("proj", &proj)?;
         self.shader.set_mat4("view", &view)?;
 
@@ -217,10 +232,11 @@ impl Game {
         }
 
         self.terrain.draw();
+        self.skybox.draw(&proj, &view)?; // draw skybox last
 
         self.windowed_context.swap_buffers()?;
 
-        // #[cfg(feature = "debug")]
+        #[cfg(feature = "debug")]
         {
             // Display frame time
             let frame_ms =
