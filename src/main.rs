@@ -10,7 +10,7 @@ mod utils;
 use std::error::Error;
 use std::time::Instant;
 
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent,
 };
@@ -49,6 +49,9 @@ struct Input {
     back: bool,
     left: bool,
     right: bool,
+
+    cursor: Vec2,
+    cursor_moved: bool,
 }
 
 struct Game {
@@ -111,8 +114,8 @@ impl Game {
         let windowed_context = unsafe { windowed_context.make_current().unwrap() };
         gl::load_with(|s| windowed_context.get_proc_address(s) as *const _);
         let window = windowed_context.window();
-        window.set_cursor_grab(true)?;
-        window.set_cursor_visible(false);
+        // window.set_cursor_grab(true)?;
+        // window.set_cursor_visible(false);
         let window_size = window.inner_size();
         unsafe {
             gl::Viewport(0, 0, window_size.width as i32, window_size.height as i32);
@@ -172,8 +175,6 @@ impl Game {
                     ..
                 } => {
                     // Mouse button click
-
-                    println!("camera: {:?}", self.camera);
                 }
                 WindowEvent::Focused(focused) => {
                     self.in_focus = focused;
@@ -197,13 +198,17 @@ impl Game {
                         _ => {}
                     }
                 }
+                WindowEvent::CursorMoved { position, .. } => {
+                    self.input.cursor = Vec2::new(position.x as f32, position.y as f32);
+                    self.input.cursor_moved = true;
+                }
                 _ => {}
             },
             Event::DeviceEvent { event, .. } => match event {
-                DeviceEvent::MouseMotion { delta } if self.in_focus => {
-                    let (yaw_delta, pitch_delta) = delta;
-                    self.camera.rotate(yaw_delta, pitch_delta);
-                }
+                // DeviceEvent::MouseMotion { delta } if self.in_focus => {
+                //     let (yaw_delta, pitch_delta) = delta;
+                //     self.camera.rotate(yaw_delta, pitch_delta);
+                // }
                 _ => {}
             },
             Event::MainEventsCleared => self.update_and_render()?,
