@@ -238,6 +238,13 @@ impl Game {
             self.camera.go(Right, delta_time);
         }
 
+        if self.input.cursor_moved {
+            use bvh::ray::Ray;
+            // TODO: !!!!!!!!!!!!!!!!!!!! Cast ray
+            // let ray = Ray::new(origin, direction);
+            self.input.cursor_moved = false;
+        }
+
         let proj = self.camera.get_projection_matrix();
         let view = self.camera.get_view_matrix();
 
