@@ -1,7 +1,6 @@
-use gl::types::GLvoid;
 use glam::Vec3;
 
-use crate::buffers::{Buffer, VertexArray};
+use crate::opengl::buffers::{Buffer, VertexArray};
 
 pub struct Terrain {
     pub vertices: Vec<Vertex>,

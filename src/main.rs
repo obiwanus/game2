@@ -1,8 +1,7 @@
-extern crate gl as opengl;
+extern crate gl as opengl_lib;
 
-mod buffers;
 mod camera;
-mod shader;
+mod opengl;
 mod terrain;
 mod utils;
 
@@ -19,7 +18,7 @@ use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
-use shader::Program;
+use opengl::shader::Program;
 use terrain::Terrain;
 
 // ==================================== Main loop =================================================
