@@ -216,14 +216,11 @@ impl Game {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        self.terrain.vao.bind();
-        unsafe {
-            gl::DrawArrays(gl::POINTS, 0, self.terrain.vertices.len() as i32);
-        }
+        self.terrain.draw();
 
         self.windowed_context.swap_buffers()?;
 
-        #[cfg(feature = "debug")]
+        // #[cfg(feature = "debug")]
         {
             // Display frame time
             let frame_ms =
