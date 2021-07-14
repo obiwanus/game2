@@ -67,21 +67,35 @@ impl Game {
     /// Creates a window and inits a new game
     fn new(event_loop: &EventLoop<()>) -> Result<Self, Box<dyn Error>> {
         // Create window
-        let monitor = event_loop.primary_monitor().unwrap_or_else(|| {
-            event_loop
-                .available_monitors()
-                .next()
-                .expect("Couldn't find monitor")
-        });
-        let inner_size =
-            glutin::dpi::LogicalSize::new(monitor.size().width - 100, monitor.size().height - 100);
+
+        #[cfg(all(windows))]
+        let window_builder = {
+            let monitor = event_loop.primary_monitor().unwrap_or_else(|| {
+                event_loop
+                    .available_monitors()
+                    .next()
+                    .expect("Couldn't find monitor")
+            });
+            let inner_size = glutin::dpi::LogicalSize::new(
+                monitor.size().width - 100,
+                monitor.size().height - 100,
+            );
+
+            let window_builder = WindowBuilder::new()
+                .with_title("Game 2")
+                .with_resizable(false)
+                .with_position(glutin::dpi::LogicalPosition::new(70, 10))
+                .with_inner_size(inner_size);
+        };
+
+        #[cfg(not(windows))]
         let window_builder = WindowBuilder::new()
             .with_title("Game 2")
             .with_resizable(false)
             .with_position(glutin::dpi::LogicalPosition::new(70, 10))
-            .with_inner_size(inner_size);
-        // .with_fullscreen(Some(glutin::window::Fullscreen::Borderless(event_loop.primary_monitor())));
-        // .with_inner_size(glutin::dpi::LogicalSize::new(1800, 900));
+            .with_fullscreen(Some(glutin::window::Fullscreen::Borderless(
+                event_loop.primary_monitor(),
+            )));
 
         let gl_request = GlRequest::Specific(Api::OpenGl, (3, 3));
         let gl_profile = GlProfile::Core;
