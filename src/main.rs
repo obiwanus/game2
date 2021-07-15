@@ -84,11 +84,11 @@ impl Game {
                 monitor.size().height - 100,
             );
 
-            let window_builder = WindowBuilder::new()
+            WindowBuilder::new()
                 .with_title("Game 2")
                 .with_resizable(false)
                 .with_position(glutin::dpi::LogicalPosition::new(70, 10))
-                .with_inner_size(inner_size);
+                .with_inner_size(inner_size)
         };
 
         #[cfg(not(windows))]
@@ -240,8 +240,6 @@ impl Game {
         }
 
         if self.input.cursor_moved {
-            use bvh::ray::Ray;
-            // let ray = Ray::new(origin, direction);
             println!("{:?}", self.input.cursor);
             self.input.cursor_moved = false;
         }

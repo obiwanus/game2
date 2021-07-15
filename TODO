@@ -1,10 +1,12 @@
 TODO:
 
-- Cast a ray through the screen
 - Highlight the triangle under cursor
 - Use a brush to shape it
 
 DONE:
+
+15 Jul 2021
+- Cast a ray through pixel
 
 14 Jul 2021
 - Make a green flat terrain

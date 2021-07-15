@@ -12,7 +12,6 @@ gl = "^0.14.0"
 glam = "^0.17.1"
 stb_image = "^0.2.3"
 gltf = { version = "0.16.0", features = ["names"], default-features = false }
-bvh = "0.5"
 thiserror = "1.0"
 
 [profile.dev.package."*"]

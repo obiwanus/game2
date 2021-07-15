@@ -2,7 +2,6 @@
 
 use std::f32::consts::PI;
 
-use bvh::ray::Ray;
 use glam::{Mat4, Vec2, Vec3};
 
 use super::utils::clamp;
@@ -26,72 +25,78 @@ pub enum Movement {
 
 #[derive(Debug, Default)]
 pub struct Camera {
-    pub position: Vec3,
+    position: Vec3,
     direction: Vec3,
     up: Vec3,
     right: Vec3,
-    screen_dimensions: Vec2,
 
     yaw: f32,
     pitch: f32,
 
     movement_speed: f32,
-    pub speed_boost: f32, // TODO
     sensitivity: f32,
     zoom: f32,
-    pub aspect_ratio: f32,
+    screen_dimensions: Vec2,
+    aspect_ratio: f32,
+    v_fov: f32,
     locked: bool, // whether to allow flying
+
     pub moved: bool,
+    pub speed_boost: f32, // TODO
 }
 
 impl Camera {
     pub fn new(
         position: Vec3,
         up: Vec3,
-        look_at: Vec3,
+        target: Vec3,
         screen_width: u32,
         screen_height: u32,
     ) -> Self {
         let screen_dimensions = Vec2::new(screen_width as f32, screen_height as f32);
+        let aspect_ratio = screen_dimensions.x / screen_dimensions.y;
+        let zoom = ZOOM_DEFAULT;
+        let v_fov = Camera::calculate_vert_fov(zoom);
 
-        let mut camera = Camera {
+        // Camera basis
+        let direction = (target - position).normalize();
+        let right = direction.cross(up).normalize();
+        let up = right.cross(direction).normalize(); // recalculate up
+
+        // Euler angles
+        let (pitch, yaw) = {
+            // @hacky: maybe could be done simpler without special cases
+            let (x, y, z) = (direction.x, direction.y, direction.z);
+            let pitch = y.asin();
+            let pitch = clamp(pitch, PITCH_MIN, PITCH_MAX);
+            let yaw = if z < 0.0 {
+                (-x / z).atan()
+            } else if z > 0.0 {
+                (-x / z).atan() + std::f32::consts::PI
+            } else {
+                // z == 0
+                if x > 0.0 {
+                    std::f32::consts::PI / 2.0
+                } else {
+                    -std::f32::consts::PI / 2.0
+                }
+            };
+            (pitch, yaw)
+        };
+
+        Camera {
             position,
             up,
             movement_speed: 5.0,
             sensitivity: 0.0015,
-            zoom: ZOOM_DEFAULT,
+            zoom,
+            v_fov,
             screen_dimensions,
-            aspect_ratio: screen_dimensions.x / screen_dimensions.y,
+            aspect_ratio,
             locked: false,
             moved: true,
             ..Default::default()
-        };
-        camera.look_at(look_at);
-        camera
-    }
-
-    /// Point the camera at the target.
-    /// Sets direction, right and Euler angles accordingly
-    pub fn look_at(&mut self, target: Vec3) {
-        self.direction = (target - self.position).normalize();
-
-        // @hacky: maybe could be done simpler without special cases
-        let (x, y, z) = (self.direction.x, self.direction.y, self.direction.z);
-        self.pitch = y.asin();
-        self.pitch = clamp(self.pitch, PITCH_MIN, PITCH_MAX);
-        self.yaw = if z < 0.0 {
-            (-x / z).atan()
-        } else if z > 0.0 {
-            (-x / z).atan() + std::f32::consts::PI
-        } else {
-            // z == 0
-            if x > 0.0 {
-                std::f32::consts::PI / 2.0
-            } else {
-                -std::f32::consts::PI / 2.0
-            }
-        };
-        self.right = self.recalculate_right();
+        }
     }
 
     /// Move the camera
@@ -142,14 +147,25 @@ impl Camera {
         self.direction.cross(self.up).normalize()
     }
 
-    /// Calculate vertical FOV based on zoom level
-    pub fn fov(&self) -> f32 {
-        let t = (self.zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN);
+    pub fn calculate_vert_fov(zoom: f32) -> f32 {
+        let t = (zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN);
         (1.0 - t) * FOV_MAX + t * FOV_MIN
     }
 
+    /// pixel has coordinates relative to the top left corner
     pub fn get_ray_through_pixel(&self, pixel: Vec2) -> Ray {
-        // TODO:
+        let half_height = (self.v_fov / 2.0).tan();
+        let half_width = half_height * self.aspect_ratio;
+        let top_left_corner =
+            self.position + self.direction - half_width * self.right + half_height * self.up;
+        let pixel_width = 2.0 * half_width / self.screen_dimensions.x;
+        let pixel_height = 2.0 * half_height / self.screen_dimensions.y;
+
+        let pixel =
+            top_left_corner + self.right * pixel_width * pixel.x - self.up * pixel_height * pixel.y;
+        let direction = pixel - self.position;
+
+        // TODO
         // Ray::new(self.position, direction)
     }
 
@@ -166,6 +182,6 @@ impl Camera {
 
     // For OpenGL:
     pub fn get_projection_matrix(&self) -> Mat4 {
-        Mat4::perspective_rh(self.fov(), self.aspect_ratio, 0.1, 100.0)
+        Mat4::perspective_rh(self.v_fov, self.aspect_ratio, 0.1, 100.0)
     }
 }
