@@ -134,7 +134,8 @@ impl Game {
             Vec3::new(0.0, 5.0, 30.0),
             Vec3::new(0.0, 1.0, 0.0),
             Vec3::new(0.0, 0.0, 0.0),
-            window_size.width as f32 / window_size.height as f32,
+            window_size.width,
+            window_size.height,
         );
 
         let terrain = Terrain::new(40.0, 40);
@@ -240,8 +241,8 @@ impl Game {
 
         if self.input.cursor_moved {
             use bvh::ray::Ray;
-            // TODO: !!!!!!!!!!!!!!!!!!!! Cast ray
             // let ray = Ray::new(origin, direction);
+            println!("{:?}", self.input.cursor);
             self.input.cursor_moved = false;
         }
 

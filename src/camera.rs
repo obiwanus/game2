@@ -2,7 +2,8 @@
 
 use std::f32::consts::PI;
 
-use glam::{Mat4, Vec3};
+use bvh::ray::Ray;
+use glam::{Mat4, Vec2, Vec3};
 
 use super::utils::clamp;
 
@@ -29,6 +30,7 @@ pub struct Camera {
     direction: Vec3,
     up: Vec3,
     right: Vec3,
+    screen_dimensions: Vec2,
 
     yaw: f32,
     pitch: f32,
@@ -43,14 +45,23 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(position: Vec3, up: Vec3, look_at: Vec3, aspect_ratio: f32) -> Self {
+    pub fn new(
+        position: Vec3,
+        up: Vec3,
+        look_at: Vec3,
+        screen_width: u32,
+        screen_height: u32,
+    ) -> Self {
+        let screen_dimensions = Vec2::new(screen_width as f32, screen_height as f32);
+
         let mut camera = Camera {
             position,
             up,
             movement_speed: 5.0,
             sensitivity: 0.0015,
             zoom: ZOOM_DEFAULT,
-            aspect_ratio,
+            screen_dimensions,
+            aspect_ratio: screen_dimensions.x / screen_dimensions.y,
             locked: false,
             moved: true,
             ..Default::default()
@@ -135,6 +146,11 @@ impl Camera {
     pub fn fov(&self) -> f32 {
         let t = (self.zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN);
         (1.0 - t) * FOV_MAX + t * FOV_MIN
+    }
+
+    pub fn get_ray_through_pixel(&self, pixel: Vec2) -> Ray {
+        // TODO:
+        // Ray::new(self.position, direction)
     }
 
     pub fn get_view_matrix(&self) -> Mat4 {
