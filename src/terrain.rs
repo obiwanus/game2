@@ -1,15 +1,14 @@
 use glam::Vec3;
+use opengl_lib::types::GLvoid;
 
-use crate::{
-    opengl::buffers::{Buffer, VertexArray},
-    utils,
-};
+use crate::opengl::buffers::{Buffer, VertexArray};
 
 pub struct Terrain {
     pub vertices: Vec<Vertex>,
+    pub indices: Vec<u16>,
     num_indices: i32,
 
-    pub vao: VertexArray,
+    vao: VertexArray,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
 }
@@ -70,8 +69,12 @@ impl Terrain {
         index_buffer.bind_as(gl::ELEMENT_ARRAY_BUFFER);
         Buffer::send_data(gl::ELEMENT_ARRAY_BUFFER, &indices, gl::STATIC_DRAW);
 
+        println!("Indices: {}", indices.len());
+        println!("TRiangles: {}", indices.len() / 3);
+
         Terrain {
             vertices,
+            indices,
             num_indices,
 
             vao,
@@ -93,6 +96,20 @@ impl Terrain {
                 self.num_indices,
                 gl::UNSIGNED_SHORT,
                 std::ptr::null(),
+            );
+        }
+    }
+
+    pub fn draw_highlighted_triangle(&self, index: usize) {
+        assert!(index <= (self.indices.len() / 3));
+        self.vao.bind();
+        unsafe {
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            gl::DrawElements(
+                gl::TRIANGLES,
+                3,
+                gl::UNSIGNED_SHORT,
+                (std::ptr::null() as *const u16).add((index * 3) as usize) as *const GLvoid,
             );
         }
     }

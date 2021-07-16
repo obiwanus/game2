@@ -137,7 +137,7 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(40.0, 40);
+        let terrain = Terrain::new(40.0, 2);
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
@@ -256,6 +256,7 @@ impl Game {
         }
 
         self.terrain.draw();
+        self.terrain.draw_highlighted_triangle(3);
         self.skybox.draw(&proj, &view)?; // draw skybox last
 
         self.windowed_context.swap_buffers()?;

@@ -1,6 +1,7 @@
 TODO:
 
 - Highlight the triangle under cursor
+- Use the shader to highlight a circle around the hit point
 - Use a brush to shape it
 - Figure out the next steps (splatmap etc)
 
