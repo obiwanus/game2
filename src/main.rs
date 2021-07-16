@@ -132,7 +132,6 @@ impl Game {
         // Set up camera
         let camera = Camera::new(
             Vec3::new(0.0, 5.0, 30.0),
-            Vec3::new(0.0, 1.0, 0.0),
             Vec3::new(0.0, 0.0, 0.0),
             window_size.width,
             window_size.height,
@@ -240,7 +239,7 @@ impl Game {
         }
 
         if self.input.cursor_moved {
-            println!("{:?}", self.input.cursor);
+            // println!("{:?}", self.input.cursor);
             self.input.cursor_moved = false;
         }
 

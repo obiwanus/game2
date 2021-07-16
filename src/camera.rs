@@ -2,7 +2,7 @@
 
 use std::f32::consts::PI;
 
-use glam::{Mat4, Vec2, Vec3};
+use glam::{const_vec3, Mat4, Vec2, Vec3};
 
 use super::utils::clamp;
 
@@ -15,6 +15,8 @@ const ZOOM_DEFAULT: f32 = 30.0;
 
 const PITCH_MIN: f32 = -0.49 * PI;
 const PITCH_MAX: f32 = 0.49 * PI;
+
+const TRUE_UP: Vec3 = const_vec3!([0.0, 1.0, 0.0]); // Y UP
 
 pub enum Movement {
     Forward,
@@ -46,22 +48,16 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(
-        position: Vec3,
-        up: Vec3,
-        target: Vec3,
-        screen_width: u32,
-        screen_height: u32,
-    ) -> Self {
+    pub fn new(position: Vec3, target: Vec3, screen_width: u32, screen_height: u32) -> Self {
         let screen_dimensions = Vec2::new(screen_width as f32, screen_height as f32);
         let aspect_ratio = screen_dimensions.x / screen_dimensions.y;
         let zoom = ZOOM_DEFAULT;
         let v_fov = Camera::calculate_vert_fov(zoom);
 
         // Camera basis
+        let up = TRUE_UP;
         let direction = (target - position).normalize();
         let right = direction.cross(up).normalize();
-        let up = right.cross(direction).normalize(); // recalculate up
 
         // Euler angles
         let (pitch, yaw) = {
@@ -142,13 +138,9 @@ impl Camera {
             self.pitch.cos() * (-self.yaw.cos()),
         )
         .normalize();
-        self.right = self.recalculate_right();
-
+        self.right = self.direction.cross(TRUE_UP).normalize();
+        self.up = self.right.cross(self.direction).normalize();
         self.moved = true;
-    }
-
-    fn recalculate_right(&self) -> Vec3 {
-        self.direction.cross(self.up).normalize()
     }
 
     pub fn calculate_vert_fov(zoom: f32) -> f32 {
@@ -174,7 +166,8 @@ impl Camera {
     // }
 
     pub fn get_view_matrix(&self) -> Mat4 {
-        Mat4::look_at_rh(self.position, self.position + self.direction, self.up)
+        // Camera never turns upside down so true up is fixed
+        Mat4::look_at_rh(self.position, self.position + self.direction, TRUE_UP)
     }
 
     // // For Vulkan:
