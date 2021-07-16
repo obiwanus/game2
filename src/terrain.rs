@@ -32,6 +32,7 @@ impl Terrain {
         }
 
         // TODO: triangle strip?
+        // TODO: optimise mesh?
         let num_indices = cells * cells * 6;
         let mut indices = Vec::with_capacity(num_indices as usize);
         let stride = (cells + 1) as u16;
@@ -83,7 +84,7 @@ impl Terrain {
         self.vao.bind();
 
         unsafe {
-            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             // use crate::opengl::gl_check_error;
             // gl_check_error!();
 

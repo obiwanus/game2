@@ -87,7 +87,9 @@ impl Camera {
         Camera {
             position,
             up,
+            right,
             movement_speed: 5.0,
+            speed_boost: 0.0,
             sensitivity: 0.0015,
             zoom,
             v_fov,
@@ -95,7 +97,9 @@ impl Camera {
             aspect_ratio,
             locked: false,
             moved: true,
-            ..Default::default()
+            pitch,
+            yaw,
+            direction,
         }
     }
 
@@ -152,22 +156,22 @@ impl Camera {
         (1.0 - t) * FOV_MAX + t * FOV_MIN
     }
 
-    /// pixel has coordinates relative to the top left corner
-    pub fn get_ray_through_pixel(&self, pixel: Vec2) -> Ray {
-        let half_height = (self.v_fov / 2.0).tan();
-        let half_width = half_height * self.aspect_ratio;
-        let top_left_corner =
-            self.position + self.direction - half_width * self.right + half_height * self.up;
-        let pixel_width = 2.0 * half_width / self.screen_dimensions.x;
-        let pixel_height = 2.0 * half_height / self.screen_dimensions.y;
+    // /// pixel has coordinates relative to the top left corner
+    // pub fn get_ray_through_pixel(&self, pixel: Vec2) -> Ray {
+    //     let half_height = (self.v_fov / 2.0).tan();
+    //     let half_width = half_height * self.aspect_ratio;
+    //     let top_left_corner =
+    //         self.position + self.direction - half_width * self.right + half_height * self.up;
+    //     let pixel_width = 2.0 * half_width / self.screen_dimensions.x;
+    //     let pixel_height = 2.0 * half_height / self.screen_dimensions.y;
 
-        let pixel =
-            top_left_corner + self.right * pixel_width * pixel.x - self.up * pixel_height * pixel.y;
-        let direction = pixel - self.position;
+    //     let pixel =
+    //         top_left_corner + self.right * pixel_width * pixel.x - self.up * pixel_height * pixel.y;
+    //     let direction = pixel - self.position;
 
-        // TODO
-        // Ray::new(self.position, direction)
-    }
+    //     // TODO
+    //     // Ray::new(self.position, direction)
+    // }
 
     pub fn get_view_matrix(&self) -> Mat4 {
         Mat4::look_at_rh(self.position, self.position + self.direction, self.up)

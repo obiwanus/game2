@@ -206,10 +206,10 @@ impl Game {
                 _ => {}
             },
             Event::DeviceEvent { event, .. } => match event {
-                // DeviceEvent::MouseMotion { delta } if self.in_focus => {
-                //     let (yaw_delta, pitch_delta) = delta;
-                //     self.camera.rotate(yaw_delta, pitch_delta);
-                // }
+                DeviceEvent::MouseMotion { delta } if self.in_focus => {
+                    let (yaw_delta, pitch_delta) = delta;
+                    self.camera.rotate(yaw_delta, pitch_delta);
+                }
                 _ => {}
             },
             Event::MainEventsCleared => self.update_and_render()?,
