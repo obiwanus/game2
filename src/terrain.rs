@@ -11,6 +11,7 @@ pub struct Terrain {
     vao: VertexArray,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
+    pub highlighted_triangle: Option<usize>,
 }
 
 impl Terrain {
@@ -69,9 +70,6 @@ impl Terrain {
         index_buffer.bind_as(gl::ELEMENT_ARRAY_BUFFER);
         Buffer::send_data(gl::ELEMENT_ARRAY_BUFFER, &indices, gl::STATIC_DRAW);
 
-        println!("Indices: {}", indices.len());
-        println!("TRiangles: {}", indices.len() / 3);
-
         Terrain {
             vertices,
             indices,
@@ -80,7 +78,12 @@ impl Terrain {
             vao,
             vertex_buffer,
             index_buffer,
+            highlighted_triangle: None,
         }
+    }
+
+    pub fn triangles(&self) -> TriangleIter {
+        TriangleIter::new(self)
     }
 
     pub fn draw(&self) {
@@ -97,21 +100,61 @@ impl Terrain {
                 gl::UNSIGNED_SHORT,
                 std::ptr::null(),
             );
+
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+
+            if let Some(index) = self.highlighted_triangle {
+                gl::DrawElements(
+                    gl::TRIANGLES,
+                    3,
+                    gl::UNSIGNED_SHORT,
+                    (std::ptr::null() as *const u16).add((index * 3) as usize) as *const GLvoid,
+                );
+            }
         }
     }
+}
 
-    pub fn draw_highlighted_triangle(&self, index: usize) {
-        assert!(index <= (self.indices.len() / 3));
-        self.vao.bind();
-        unsafe {
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-            gl::DrawElements(
-                gl::TRIANGLES,
-                3,
-                gl::UNSIGNED_SHORT,
-                (std::ptr::null() as *const u16).add((index * 3) as usize) as *const GLvoid,
-            );
+pub struct TriangleIter<'a> {
+    terrain: &'a Terrain,
+    num_triangles: usize,
+    index: usize,
+}
+
+impl<'a> TriangleIter<'a> {
+    fn new(terrain: &'a Terrain) -> Self {
+        TriangleIter {
+            terrain,
+            num_triangles: terrain.indices.len() / 3,
+            index: 0,
         }
+    }
+}
+
+impl<'a> Iterator for TriangleIter<'a> {
+    type Item = (usize, &'a Vec3, &'a Vec3, &'a Vec3);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.num_triangles {
+            return None;
+        }
+        let vertices = &self.terrain.vertices;
+
+        // Get triangle indices
+        let next_index = self.index * 3;
+        let a = self.terrain.indices[next_index] as usize;
+        let b = self.terrain.indices[next_index + 1] as usize;
+        let c = self.terrain.indices[next_index + 2] as usize;
+
+        let triangle = (
+            self.index,
+            &vertices[a].pos,
+            &vertices[b].pos,
+            &vertices[c].pos,
+        );
+        self.index += 1;
+
+        Some(triangle)
     }
 }
 

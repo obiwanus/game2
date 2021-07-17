@@ -2,6 +2,7 @@ extern crate gl as opengl_lib;
 
 mod camera;
 mod opengl;
+mod ray;
 mod skybox;
 mod terrain;
 mod texture;
@@ -137,7 +138,7 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(40.0, 2);
+        let terrain = Terrain::new(40.0, 40);
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
@@ -206,8 +207,8 @@ impl Game {
             },
             Event::DeviceEvent { event, .. } => match event {
                 DeviceEvent::MouseMotion { delta } if self.in_focus => {
-                    let (yaw_delta, pitch_delta) = delta;
-                    self.camera.rotate(yaw_delta, pitch_delta);
+                    // let (yaw_delta, pitch_delta) = delta;
+                    // self.camera.rotate(yaw_delta, pitch_delta);
                 }
                 _ => {}
             },
@@ -239,8 +240,23 @@ impl Game {
         }
 
         if self.input.cursor_moved {
-            // println!("{:?}", self.input.cursor);
             self.input.cursor_moved = false;
+
+            let highlighted_triangle = {
+                let ray = self.camera.get_ray_through_pixel(self.input.cursor);
+                let mut previous_hit = f32::INFINITY;
+                let mut triangle_index = None;
+                for (index, a, b, c) in self.terrain.triangles() {
+                    let hit = ray.hits_triangle(a, b, c);
+                    if hit.t < previous_hit {
+                        previous_hit = hit.t;
+                        triangle_index = Some(index);
+                    }
+                }
+                triangle_index
+            };
+
+            self.terrain.highlighted_triangle = highlighted_triangle;
         }
 
         let proj = self.camera.get_projection_matrix();
@@ -256,7 +272,7 @@ impl Game {
         }
 
         self.terrain.draw();
-        self.terrain.draw_highlighted_triangle(3);
+
         self.skybox.draw(&proj, &view)?; // draw skybox last
 
         self.windowed_context.swap_buffers()?;

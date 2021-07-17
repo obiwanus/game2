@@ -4,7 +4,8 @@ use std::f32::consts::PI;
 
 use glam::{const_vec3, Mat4, Vec2, Vec3};
 
-use super::utils::clamp;
+use crate::ray::Ray;
+use crate::utils::clamp;
 
 const FOV_MIN: f32 = 0.01 * PI;
 const FOV_MAX: f32 = 0.5 * PI;
@@ -148,22 +149,22 @@ impl Camera {
         (1.0 - t) * FOV_MAX + t * FOV_MIN
     }
 
-    // /// pixel has coordinates relative to the top left corner
-    // pub fn get_ray_through_pixel(&self, pixel: Vec2) -> Ray {
-    //     let half_height = (self.v_fov / 2.0).tan();
-    //     let half_width = half_height * self.aspect_ratio;
-    //     let top_left_corner =
-    //         self.position + self.direction - half_width * self.right + half_height * self.up;
-    //     let pixel_width = 2.0 * half_width / self.screen_dimensions.x;
-    //     let pixel_height = 2.0 * half_height / self.screen_dimensions.y;
+    /// pixel has coordinates relative to the top left corner
+    pub fn get_ray_through_pixel(&self, pixel: Vec2) -> Ray {
+        let half_height = (self.v_fov / 2.0).tan();
+        let half_width = half_height * self.aspect_ratio;
+        let top_left_corner =
+            self.position + self.direction - half_width * self.right + half_height * self.up;
+        let pixel_width = 2.0 * half_width / self.screen_dimensions.x;
+        let pixel_height = 2.0 * half_height / self.screen_dimensions.y;
 
-    //     let pixel =
-    //         top_left_corner + self.right * pixel_width * pixel.x - self.up * pixel_height * pixel.y;
-    //     let direction = pixel - self.position;
+        let pixel =
+            top_left_corner + self.right * pixel_width * pixel.x - self.up * pixel_height * pixel.y;
+        let direction = pixel - self.position;
 
-    //     // TODO
-    //     // Ray::new(self.position, direction)
-    // }
+        // TODO
+        Ray::new(self.position, direction)
+    }
 
     pub fn get_view_matrix(&self) -> Mat4 {
         // Camera never turns upside down so true up is fixed
