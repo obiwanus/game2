@@ -1,6 +1,5 @@
 TODO:
 
-- Use the right button to WASD around in editor mode
 - Investigate the inaccuracies
 - Use the shader to highlight a circle around the hit point
 - Use a brush to shape it
@@ -10,6 +9,7 @@ DONE:
 
 17 Jul 2021
 - Highlight the triangle under cursor
+- Use the right button to WASD around in editor mode
 
 15 Jul 2021
 - Cast a ray through pixel

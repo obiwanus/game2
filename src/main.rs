@@ -53,6 +53,8 @@ struct Input {
 
     cursor: Vec2,
     cursor_moved: bool,
+
+    wasd_mode: bool,
 }
 
 struct Game {
@@ -177,6 +179,11 @@ impl Game {
                 } => {
                     // Mouse button click
                 }
+                WindowEvent::MouseInput {
+                    button: MouseButton::Right,
+                    state,
+                    ..
+                } => self.input.wasd_mode = state == ElementState::Pressed,
                 WindowEvent::Focused(focused) => {
                     self.in_focus = focused;
                 }
@@ -206,9 +213,9 @@ impl Game {
                 _ => {}
             },
             Event::DeviceEvent { event, .. } => match event {
-                DeviceEvent::MouseMotion { delta } if self.in_focus => {
-                    // let (yaw_delta, pitch_delta) = delta;
-                    // self.camera.rotate(yaw_delta, pitch_delta);
+                DeviceEvent::MouseMotion { delta } if self.in_focus && self.input.wasd_mode => {
+                    let (yaw_delta, pitch_delta) = delta;
+                    self.camera.rotate(yaw_delta, pitch_delta);
                 }
                 _ => {}
             },
@@ -225,21 +232,23 @@ impl Game {
         self.frame_start = now;
 
         // Move camera
-        use camera::Movement::*;
-        if self.input.forward {
-            self.camera.go(Forward, delta_time);
-        }
-        if self.input.left {
-            self.camera.go(Left, delta_time);
-        }
-        if self.input.back {
-            self.camera.go(Backward, delta_time);
-        }
-        if self.input.right {
-            self.camera.go(Right, delta_time);
+        if self.input.wasd_mode {
+            use camera::Movement::*;
+            if self.input.forward {
+                self.camera.go(Forward, delta_time);
+            }
+            if self.input.left {
+                self.camera.go(Left, delta_time);
+            }
+            if self.input.back {
+                self.camera.go(Backward, delta_time);
+            }
+            if self.input.right {
+                self.camera.go(Right, delta_time);
+            }
         }
 
-        if self.input.cursor_moved {
+        if self.input.cursor_moved || self.camera.moved {
             self.input.cursor_moved = false;
 
             let highlighted_triangle = {
