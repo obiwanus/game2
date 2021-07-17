@@ -135,7 +135,7 @@ impl Game {
 
         // Set up camera
         let camera = Camera::new(
-            Vec3::new(0.0, 5.0, 30.0),
+            Vec3::new(0.0, 10.0, 30.0),
             Vec3::new(0.0, 0.0, 0.0),
             window_size.width,
             window_size.height,
@@ -274,6 +274,9 @@ impl Game {
                         hit = new_hit.t;
                     }
                 }
+                self.windowed_context
+                    .window()
+                    .set_cursor_visible(hit == f32::INFINITY);
                 ray.get_point_at(hit)
             };
 

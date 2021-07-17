@@ -14,10 +14,11 @@ out vec4 Color;
 void main() {
     //   vec3 view_direction = normalize(-IN.frag_pos);
 
-    float distance_to_cursor = distance(IN.frag_pos.xz, cursor.xz);
-    if (distance_to_cursor < 3.0) {
-        Color = vec4(IN.color, 1.0);
-    } else {
-        Color = vec4(IN.color * 0.5, 1.0);
-    }
+    float distance_to_cursor =
+        clamp(distance(IN.frag_pos.xz, cursor.xz) / 3, 0.5, 1.0);
+    // if (distance_to_cursor < 3.0) {
+    Color = vec4(IN.color / distance_to_cursor, 1.0);
+    // } else {
+    //     Color = vec4(IN.color, 1.0);
+    // }
 }
