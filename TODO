@@ -1,6 +1,5 @@
 TODO:
 
-- Speed boost
 - Use the shader to highlight a circle around the hit point
 - Use a brush to shape it
 - Figure out the next steps (splatmap etc)
@@ -12,6 +11,7 @@ DONE:
 - Use the right button to WASD around in editor mode
 - Investigate the inconsistencies
 - Fix the inaccuracy when camera has not moved
+- Speed boost
 
 15 Jul 2021
 - Cast a ray through pixel

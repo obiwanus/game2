@@ -45,7 +45,7 @@ pub struct Camera {
     locked: bool, // whether to allow flying
 
     pub moved: bool,
-    pub speed_boost: f32, // TODO
+    pub speed_boost: bool,
 }
 
 impl Camera {
@@ -86,7 +86,7 @@ impl Camera {
             up,
             right,
             movement_speed: 5.0,
-            speed_boost: 0.0,
+            speed_boost: false,
             sensitivity: 0.0015,
             zoom,
             v_fov,
@@ -102,7 +102,13 @@ impl Camera {
 
     /// Move the camera
     pub fn go(&mut self, direction: Movement, delta_time: f32) {
-        let speed = self.movement_speed * delta_time;
+        let speed = if self.speed_boost {
+            self.movement_speed + 10.0
+        } else {
+            self.movement_speed
+        };
+        let speed = speed * delta_time;
+
         let projected_direction = if self.locked {
             Vec3::new(self.direction.x, 0.0, self.direction.z)
         } else {

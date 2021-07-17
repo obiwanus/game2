@@ -207,6 +207,9 @@ impl Game {
                         _ => {}
                     }
                 }
+                WindowEvent::ModifiersChanged(state) => {
+                    self.camera.speed_boost = state.shift();
+                }
                 WindowEvent::CursorMoved { position, .. } => {
                     self.input.cursor = Vec2::new(position.x as f32, position.y as f32);
                     self.input.cursor_moved = true;
