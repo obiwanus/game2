@@ -252,32 +252,34 @@ impl Game {
             }
         }
 
-        if self.input.cursor_moved || self.camera.moved {
-            self.input.cursor_moved = false;
-
-            let highlighted_triangle = {
-                let ray = self.camera.get_ray_through_pixel(self.input.cursor);
-                let mut previous_hit = f32::INFINITY;
-                let mut triangle_index = None;
-                for (index, a, b, c) in self.terrain.triangles() {
-                    let hit = ray.hits_triangle(a, b, c);
-                    if hit.t < previous_hit {
-                        previous_hit = hit.t;
-                        triangle_index = Some(index);
-                    }
-                }
-                triangle_index
-            };
-
-            self.terrain.highlighted_triangle = highlighted_triangle;
-        }
-
         let proj = self.camera.get_projection_matrix();
         let view = self.camera.get_view_matrix();
 
         self.shader.set_used();
-        self.shader.set_mat4("proj", &proj)?;
-        self.shader.set_mat4("view", &view)?;
+
+        if self.camera.moved {
+            self.shader.set_mat4("proj", &proj)?;
+            self.shader.set_mat4("view", &view)?;
+        }
+
+        if self.input.cursor_moved || self.camera.moved {
+            self.input.cursor_moved = false;
+
+            let hit_point = {
+                let ray = self.camera.get_ray_through_pixel(self.input.cursor);
+                let mut hit = f32::INFINITY;
+                for (a, b, c) in self.terrain.triangles() {
+                    let new_hit = ray.hits_triangle(a, b, c);
+                    if new_hit.t < hit {
+                        hit = new_hit.t;
+                    }
+                }
+                ray.get_point_at(hit)
+            };
+
+            // self.terrain.cursor = hit_point;
+            self.shader.set_vec3("cursor", &hit_point)?;
+        }
 
         // Draw
         unsafe {

@@ -11,7 +11,6 @@ pub struct Terrain {
     vao: VertexArray,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
-    pub highlighted_triangle: Option<usize>,
 }
 
 impl Terrain {
@@ -78,7 +77,6 @@ impl Terrain {
             vao,
             vertex_buffer,
             index_buffer,
-            highlighted_triangle: None,
         }
     }
 
@@ -90,7 +88,7 @@ impl Terrain {
         self.vao.bind();
 
         unsafe {
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             // use crate::opengl::gl_check_error;
             // gl_check_error!();
 
@@ -100,17 +98,6 @@ impl Terrain {
                 gl::UNSIGNED_SHORT,
                 std::ptr::null(),
             );
-
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-
-            if let Some(index) = self.highlighted_triangle {
-                gl::DrawElements(
-                    gl::TRIANGLES,
-                    3,
-                    gl::UNSIGNED_SHORT,
-                    (std::ptr::null() as *const u16).add((index * 3) as usize) as *const GLvoid,
-                );
-            }
         }
     }
 }
@@ -132,7 +119,7 @@ impl<'a> TriangleIter<'a> {
 }
 
 impl<'a> Iterator for TriangleIter<'a> {
-    type Item = (usize, &'a Vec3, &'a Vec3, &'a Vec3);
+    type Item = (&'a Vec3, &'a Vec3, &'a Vec3);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.num_triangles {
@@ -146,14 +133,9 @@ impl<'a> Iterator for TriangleIter<'a> {
         let b = self.terrain.indices[next_index + 1] as usize;
         let c = self.terrain.indices[next_index + 2] as usize;
 
-        let triangle = (
-            self.index,
-            &vertices[a].pos,
-            &vertices[b].pos,
-            &vertices[c].pos,
-        );
         self.index += 1;
 
+        let triangle = (&vertices[a].pos, &vertices[b].pos, &vertices[c].pos);
         Some(triangle)
     }
 }

@@ -1,10 +1,16 @@
 TODO:
 
-- Use the shader to highlight a circle around the hit point
-- Use a brush to shape it
+- Think about a monochromic brush (if too hard, move on for now)
+- Use a brush to shape terrain
+    - Think about normals
+- Add ambient lighting and a directional light
 - Figure out the next steps (splatmap etc)
+- impl drop for buffers/arrays
 
 DONE:
+
+18 Jul 2021
+- Use shader to highlight a circle around the cursor
 
 17 Jul 2021
 - Highlight the triangle under cursor
