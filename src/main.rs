@@ -21,6 +21,7 @@ use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
+use opengl::buffers::Buffer;
 use opengl::shader::Program;
 use skybox::Skybox;
 use terrain::Terrain;

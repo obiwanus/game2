@@ -42,6 +42,10 @@ impl Ray {
             Hit::new(f32::INFINITY, u, v)
         }
     }
+
+    pub fn get_point_at(&self, t: f32) -> Vec3 {
+        self.origin + self.direction * t
+    }
 }
 
 pub struct Hit {

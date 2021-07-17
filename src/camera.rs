@@ -56,9 +56,9 @@ impl Camera {
         let v_fov = Camera::calculate_vert_fov(zoom);
 
         // Camera basis
-        let up = TRUE_UP;
         let direction = (target - position).normalize();
-        let right = direction.cross(up).normalize();
+        let right = direction.cross(TRUE_UP).normalize();
+        let up = right.cross(direction).normalize();
 
         // Euler angles
         let (pitch, yaw) = {
