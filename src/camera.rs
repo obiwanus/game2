@@ -85,7 +85,7 @@ impl Camera {
             position,
             up,
             right,
-            movement_speed: 5.0,
+            movement_speed: 10.0,
             speed_boost: false,
             sensitivity: 0.0015,
             zoom,
@@ -103,7 +103,7 @@ impl Camera {
     /// Move the camera
     pub fn go(&mut self, direction: Movement, delta_time: f32) {
         let speed = if self.speed_boost {
-            self.movement_speed + 10.0
+            self.movement_speed * 2.0
         } else {
             self.movement_speed
         };

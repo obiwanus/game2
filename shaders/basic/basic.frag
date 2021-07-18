@@ -5,6 +5,7 @@ in VS_OUTPUT {
     vec3 frag_pos;
     vec3 frag_pos_view;
     vec3 color;
+    vec2 tex_coord;
 }
 IN;
 
@@ -25,6 +26,8 @@ out vec4 Color;
 
 uniform vec3 cursor;
 uniform float brush_size;
+uniform sampler2D terrain_texture;
+
 // uniform Material material;
 // uniform DirectionalLight directional_light;
 
@@ -53,15 +56,14 @@ void main() {
     // vec4 base_color = vec4(calc_directional_light(directional_light, normal,
     // view_direction), 1.0);
 
-    vec4 base_color;
+    vec4 base_color = vec4(1.0, 1.0, 0.4, 1.0);
 
     // Cursor
     float distance_to_cursor = clamp(distance(IN.frag_pos.xz, cursor.xz) / brush_size, 0.2, 1.0);
     if (0.87 < distance_to_cursor && distance_to_cursor < 0.9) {
         base_color = vec4(0.8, 1.0, 0.5, 1.0);
-    } else {
-        base_color = vec4(1.0, 0.8, 0.4, 1.0);
     }
 
-    Color = mix(base_color, vec4(IN.color, 1.0), distance_to_cursor);
+    Color =
+        mix(base_color, vec4(texture(terrain_texture, IN.tex_coord).xyz, 1.0), distance_to_cursor);
 }

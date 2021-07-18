@@ -1,8 +1,11 @@
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 use memoffset::offset_of;
 use opengl_lib::types::GLvoid;
 
-use crate::opengl::buffers::{Buffer, VertexArray};
+use crate::{
+    opengl::buffers::{Buffer, VertexArray},
+    texture::Texture,
+};
 
 pub struct Terrain {
     pub vertices: Vec<Vertex>,
@@ -12,6 +15,8 @@ pub struct Terrain {
     vao: VertexArray,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
+
+    texture: Texture,
 }
 
 impl Terrain {
@@ -28,7 +33,8 @@ impl Terrain {
                     start_z + z as f32 * cell_size,
                 );
                 let normal = Vec3::new(0.0, 1.0, 0.0);
-                vertices.push(Vertex { pos, normal });
+                let uv = Vec2::new(x as f32, z as f32);
+                vertices.push(Vertex { pos, normal, uv });
             }
         }
 
@@ -73,6 +79,7 @@ impl Terrain {
                 std::ptr::null(),
             );
             gl::EnableVertexAttribArray(0);
+
             // Normal
             gl::VertexAttribPointer(
                 1,
@@ -83,11 +90,27 @@ impl Terrain {
                 offset_of!(Vertex, normal) as *const GLvoid,
             );
             gl::EnableVertexAttribArray(1);
+
+            // Normal
+            gl::VertexAttribPointer(
+                2,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                std::mem::size_of::<Vertex>() as i32,
+                offset_of!(Vertex, uv) as *const GLvoid,
+            );
+            gl::EnableVertexAttribArray(2);
         }
 
         let index_buffer = Buffer::new();
         index_buffer.bind_as(gl::ELEMENT_ARRAY_BUFFER);
         Buffer::send_static_data(gl::ELEMENT_ARRAY_BUFFER, &indices);
+
+        let texture = Texture::new()
+            .set_default_parameters()
+            .set_image_2d("textures/checkerboard.png")
+            .expect("Coudn't load texture");
 
         Terrain {
             vertices,
@@ -97,6 +120,8 @@ impl Terrain {
             vao,
             vertex_buffer,
             index_buffer,
+
+            texture,
         }
     }
 
@@ -106,6 +131,7 @@ impl Terrain {
 
     pub fn draw(&self) {
         self.vao.bind();
+        self.texture.bind_2d(0);
 
         unsafe {
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
@@ -172,4 +198,5 @@ impl<'a> Iterator for TriangleIter<'a> {
 pub struct Vertex {
     pub pos: Vec3,
     pub normal: Vec3,
+    pub uv: Vec2,
 }

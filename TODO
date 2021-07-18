@@ -1,7 +1,5 @@
 TODO:
 
-- Add ambient lighting and a directional light
-- Apply a checkerboard texture
 - Use a proper brush
 - Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
@@ -9,22 +7,26 @@ TODO:
 
 DONE:
 
-18 Jul 2021
+19 Jul 2021, Mon
+- Apply a checkerboard texture
+
+18 Jul 2021, Sun
 - Use shader to highlight a circle around the cursor
 - Add a basic brush struct
 - Add some very basic shaping
 - Change brush size
+- Add ambient lighting and a directional light (didn't work well)
 
-17 Jul 2021
+17 Jul 2021, Sat
 - Highlight the triangle under cursor
 - Use the right button to WASD around in editor mode
 - Investigate the inconsistencies
 - Fix the inaccuracy when camera has not moved
 - Speed boost
 
-15 Jul 2021
+15 Jul 2021, Thu
 - Cast a ray through pixel
 
-14 Jul 2021
+14 Jul 2021, Wed
 - Make a green flat terrain
 - Add a skybox around it
