@@ -4,6 +4,8 @@ TODO:
 - Use a brush to shape terrain
     - Think about normals
 - Add ambient lighting and a directional light
+- Apply a checkerboard texture
+- Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
 - impl drop for buffers/arrays
 

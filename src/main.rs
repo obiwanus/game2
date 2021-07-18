@@ -1,6 +1,7 @@
 extern crate gl as opengl_lib;
 
 mod camera;
+mod editor;
 mod opengl;
 mod ray;
 mod skybox;
@@ -141,7 +142,10 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(40.0, 40);
+        let terrain = Terrain::new(50.0, 50);
+
+        use editor::Brush;
+        let brush = Brush::new("src/editor/brushes/brush1.png");
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
