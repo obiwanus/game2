@@ -1,7 +1,7 @@
 use stb_image::image::{Image, LoadResult};
 
 pub struct Brush {
-    size: f32,
+    pub size: f32,
     pixels: Vec<u8>, // @speed: swizzle?
     width: usize,
     height: usize,
@@ -17,6 +17,9 @@ impl Brush {
             height: image.height,
         }
     }
+
+    // TODO
+    pub fn sample_at(u: f32, v: f32) {}
 }
 
 // @duplication: merge with texture.rs/load_image?

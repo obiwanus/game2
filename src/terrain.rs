@@ -1,4 +1,5 @@
 use glam::Vec3;
+use memoffset::offset_of;
 use opengl_lib::types::GLvoid;
 
 use crate::opengl::buffers::{Buffer, VertexArray};
@@ -26,7 +27,8 @@ impl Terrain {
                     0.0,
                     start_z + z as f32 * cell_size,
                 );
-                vertices.push(Vertex { pos });
+                let normal = Vec3::new(0.0, 1.0, 0.0);
+                vertices.push(Vertex { pos, normal });
             }
         }
 
@@ -62,8 +64,25 @@ impl Terrain {
         vertex_buffer.send_dynamic_data(gl::ARRAY_BUFFER, 0, &vertices);
         unsafe {
             // Position
-            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+            gl::VertexAttribPointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                std::mem::size_of::<Vertex>() as i32,
+                std::ptr::null(),
+            );
             gl::EnableVertexAttribArray(0);
+            // Normal
+            gl::VertexAttribPointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                std::mem::size_of::<Vertex>() as i32,
+                offset_of!(Vertex, normal) as *const GLvoid,
+            );
+            gl::EnableVertexAttribArray(1);
         }
 
         let index_buffer = Buffer::new();
@@ -100,6 +119,13 @@ impl Terrain {
                 std::ptr::null(),
             );
         }
+    }
+
+    // @speed: slowwwww
+    pub fn send_vertex_buffer(&self) {
+        self.vertex_buffer.bind_as(gl::ARRAY_BUFFER);
+        self.vertex_buffer
+            .send_dynamic_data(gl::ARRAY_BUFFER, 0, &self.vertices);
     }
 }
 
@@ -144,5 +170,6 @@ impl<'a> Iterator for TriangleIter<'a> {
 #[repr(C)]
 #[derive(Debug)]
 pub struct Vertex {
-    pos: Vec3,
+    pub pos: Vec3,
+    pub normal: Vec3,
 }

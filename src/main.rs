@@ -12,9 +12,11 @@ mod utils;
 use std::error::Error;
 use std::time::Instant;
 
-use glam::{Vec2, Vec3};
+use editor::Brush;
+use glam::{Vec2, Vec3, Vec4};
 use glutin::event::{
-    DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent,
+    DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
+    WindowEvent,
 };
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
@@ -55,8 +57,15 @@ struct Input {
 
     cursor: Vec2,
     cursor_moved: bool,
+    left_mouse_button_pressed: bool,
+    brush_size_changed: bool,
 
     wasd_mode: bool,
+}
+
+struct DirectionalLight {
+    color: Vec3,
+    direction: Vec3,
 }
 
 struct Game {
@@ -69,6 +78,9 @@ struct Game {
     shader: Program,
     terrain: Terrain,
     skybox: Skybox,
+
+    // tmp
+    brush: Brush,
 }
 
 impl Game {
@@ -134,6 +146,16 @@ impl Game {
             .link()?;
         shader.set_used();
 
+        // // Directional light
+        // let light_color = Vec3::new(1.0, 0.7, 0.7);
+        // shader.set_vec3("directional_light.ambient", &(0.2f32 * light_color))?;
+        // shader.set_vec3("directional_light.diffuse", &(0.5f32 * light_color))?;
+        // shader.set_vec3("directional_light.specular", &(1.0f32 * light_color))?;
+
+        // // Default terrain material
+        // shader.set_vec3("material.specular", &Vec3::new(0.4, 0.4, 0.4))?;
+        // shader.set_float("material.shininess", 10.0)?;
+
         // Set up camera
         let camera = Camera::new(
             Vec3::new(0.0, 10.0, 30.0),
@@ -142,10 +164,10 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(50.0, 50);
+        let terrain = Terrain::new(60.0, 120);
 
-        use editor::Brush;
         let brush = Brush::new("src/editor/brushes/brush1.png");
+        shader.set_float("brush_size", brush.size)?;
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
@@ -166,6 +188,8 @@ impl Game {
             shader,
             terrain,
             skybox,
+
+            brush,
         })
     }
 
@@ -179,10 +203,10 @@ impl Game {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
                 WindowEvent::MouseInput {
                     button: MouseButton::Left,
-                    state: ElementState::Pressed,
+                    state,
                     ..
                 } => {
-                    // Mouse button click
+                    self.input.left_mouse_button_pressed = state == ElementState::Pressed;
                 }
                 WindowEvent::MouseInput {
                     button: MouseButton::Right,
@@ -225,6 +249,12 @@ impl Game {
                     let (yaw_delta, pitch_delta) = delta;
                     self.camera.rotate(yaw_delta, pitch_delta);
                 }
+                DeviceEvent::MouseWheel {
+                    delta: MouseScrollDelta::LineDelta(_x, y),
+                } => {
+                    self.brush.size -= y * 0.5;
+                    self.input.brush_size_changed = true;
+                }
                 _ => {}
             },
             Event::MainEventsCleared => self.update_and_render()?,
@@ -261,6 +291,16 @@ impl Game {
 
         self.shader.set_used();
 
+        // let light_dir = view * Vec4::new(0.37f32, -0.56, 0.75, 0.0);
+        // let light_dir: Vec3 = light_dir.into();
+
+        // self.shader
+        //     .set_vec3("directional_light.direction", &light_dir)?;
+
+        if self.input.brush_size_changed {
+            self.shader.set_float("brush_size", self.brush.size)?;
+        }
+
         if self.camera.moved {
             self.shader.set_mat4("proj", &proj)?;
             self.shader.set_mat4("view", &view)?;
@@ -269,7 +309,7 @@ impl Game {
         if self.input.cursor_moved || self.camera.moved {
             self.input.cursor_moved = false;
 
-            let hit_point = {
+            let cursor = {
                 let ray = self.camera.get_ray_through_pixel(self.input.cursor);
                 let mut hit = f32::INFINITY;
                 for (a, b, c) in self.terrain.triangles() {
@@ -284,8 +324,18 @@ impl Game {
                 ray.get_point_at(hit)
             };
 
-            // self.terrain.cursor = hit_point;
-            self.shader.set_vec3("cursor", &hit_point)?;
+            self.shader.set_vec3("cursor", &cursor)?;
+
+            if self.input.left_mouse_button_pressed {
+                let brush_size_squared = self.brush.size * self.brush.size;
+                for v in self.terrain.vertices.iter_mut() {
+                    let dist_sq = (v.pos - cursor).length_squared();
+                    if dist_sq < brush_size_squared {
+                        v.pos.y += 5.0 * delta_time;
+                    }
+                }
+                self.terrain.send_vertex_buffer();
+            }
         }
 
         // Draw

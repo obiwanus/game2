@@ -13,6 +13,7 @@ glam = "^0.17.1"
 stb_image = "^0.2.3"
 gltf = { version = "0.16.0", features = ["names"], default-features = false }
 thiserror = "1.0"
+memoffset = "0.6.4"
 
 [profile.dev.package."*"]
 opt-level = 3
