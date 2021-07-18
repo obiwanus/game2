@@ -132,7 +132,7 @@ impl Skybox {
         vao.bind();
         let vbo = Buffer::new();
         vbo.bind_as(gl::ARRAY_BUFFER);
-        Buffer::send_data(gl::ARRAY_BUFFER, &vertices, gl::STATIC_DRAW);
+        Buffer::send_static_data(gl::ARRAY_BUFFER, &vertices);
         unsafe {
             gl::VertexAttribPointer(
                 0,

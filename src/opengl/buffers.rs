@@ -5,6 +5,7 @@ use gl::types::*;
 #[derive(Debug)]
 pub struct Buffer {
     id: GLuint,
+    size: usize,
 }
 
 impl Buffer {
@@ -13,17 +14,47 @@ impl Buffer {
         unsafe {
             gl::GenBuffers(1, &mut id);
         }
-        Buffer { id }
+        Buffer { id, size: 0 }
     }
 
-    pub fn send_data<T>(target: GLenum, data: &[T], usage: GLenum) {
-        let length = std::mem::size_of::<T>() * data.len();
+    pub fn send_static_data<T>(target: GLenum, data: &[T]) {
+        let size = std::mem::size_of::<T>() * data.len();
         unsafe {
             gl::BufferData(
                 target,
-                length as isize,
+                size as isize,
                 data.as_ptr() as *const GLvoid,
-                usage,
+                gl::STATIC_DRAW,
+            );
+        }
+    }
+
+    pub fn allocate_dynamic_data<T>(&mut self, target: GLenum, data: &[T]) {
+        let size = std::mem::size_of::<T>() * data.len();
+        unsafe {
+            gl::BufferData(
+                target,
+                size as isize,
+                std::ptr::null() as *const GLvoid,
+                gl::DYNAMIC_DRAW,
+            );
+        }
+        self.size = size;
+    }
+
+    pub fn send_dynamic_data<T>(&self, target: GLenum, offset: usize, data: &[T]) {
+        let size = std::mem::size_of::<T>() * data.len();
+        assert!(
+            (size + offset) <= self.size,
+            "Attempting to update buffer past its end"
+        );
+
+        unsafe {
+            gl::BufferSubData(
+                target,
+                offset as isize,
+                size as isize,
+                data.as_ptr() as *const GLvoid,
             );
         }
     }

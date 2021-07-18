@@ -56,9 +56,10 @@ impl Terrain {
         let vao = VertexArray::new();
         vao.bind();
 
-        let vertex_buffer = Buffer::new();
+        let mut vertex_buffer = Buffer::new();
         vertex_buffer.bind_as(gl::ARRAY_BUFFER);
-        Buffer::send_data(gl::ARRAY_BUFFER, &vertices, gl::STATIC_DRAW);
+        vertex_buffer.allocate_dynamic_data(gl::ARRAY_BUFFER, &vertices);
+        vertex_buffer.send_dynamic_data(gl::ARRAY_BUFFER, 0, &vertices);
         unsafe {
             // Position
             gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
@@ -67,7 +68,7 @@ impl Terrain {
 
         let index_buffer = Buffer::new();
         index_buffer.bind_as(gl::ELEMENT_ARRAY_BUFFER);
-        Buffer::send_data(gl::ELEMENT_ARRAY_BUFFER, &indices, gl::STATIC_DRAW);
+        Buffer::send_static_data(gl::ELEMENT_ARRAY_BUFFER, &indices);
 
         Terrain {
             vertices,

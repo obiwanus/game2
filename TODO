@@ -1,8 +1,9 @@
 TODO:
 
-- Think about a monochromic brush (if too hard, move on for now)
 - Use a brush to shape terrain
-    - Think about normals
+    - Raise some vertices and send them to the GPU
+        - Create a dynamic buffer
+
 - Add ambient lighting and a directional light
 - Apply a checkerboard texture
 - Add an acceleration structure for faster picking
@@ -13,6 +14,7 @@ DONE:
 
 18 Jul 2021
 - Use shader to highlight a circle around the cursor
+- Add a basic brush struct
 
 17 Jul 2021
 - Highlight the triangle under cursor
