@@ -11,6 +11,7 @@ DONE:
 19 Jul 2021, Mon
 - Apply a checkerboard texture
 - Add our own gl bindings
+- Make sure the brush can't be set to 0 size
 
 18 Jul 2021, Sun
 - Use shader to highlight a circle around the cursor

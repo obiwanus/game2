@@ -252,7 +252,7 @@ impl Game {
                 DeviceEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(_x, y),
                 } => {
-                    self.brush.size -= y * 0.5;
+                    self.brush.size = (self.brush.size - y * 0.5).clamp(0.1, 20.0);
                     self.input.brush_size_changed = true;
                 }
                 _ => {}
