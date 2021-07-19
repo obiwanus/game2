@@ -325,22 +325,24 @@ impl Game {
             };
 
             self.shader.set_vec3("cursor", &cursor)?;
-
-            if self.input.left_mouse_button_pressed {
-                let brush_size_squared = self.brush.size * self.brush.size;
-                for v in self.terrain.vertices.iter_mut() {
-                    let dist_sq = (v.pos - cursor).length_squared();
-                    if dist_sq < brush_size_squared {
-                        v.pos.y += 5.0 * delta_time;
-                    }
-                }
-                self.terrain.send_vertex_buffer();
-            }
+            self.terrain.cursor = cursor;
         }
 
-        // if self.camera.moved {
-        //     self.camera.moved = false;
-        // }
+        // Shape the terrain
+        if self.input.left_mouse_button_pressed {
+            let brush_size_squared = self.brush.size * self.brush.size;
+            for v in self.terrain.vertices.iter_mut() {
+                let dist_sq = (v.pos - self.terrain.cursor).length_squared();
+                if dist_sq < brush_size_squared {
+                    v.pos.y += 5.0 * delta_time;
+                }
+            }
+            self.terrain.send_vertex_buffer();
+        }
+
+        if self.camera.moved {
+            self.camera.moved = false;
+        }
 
         // Draw
         unsafe {

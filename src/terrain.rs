@@ -17,6 +17,7 @@ pub struct Terrain {
     index_buffer: Buffer,
 
     texture: Texture,
+    pub cursor: Vec3,
 }
 
 impl Terrain {
@@ -112,6 +113,8 @@ impl Terrain {
             .set_image_2d("textures/checkerboard.png")
             .expect("Coudn't load texture");
 
+        let cursor = Vec3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
+
         Terrain {
             vertices,
             indices,
@@ -122,6 +125,7 @@ impl Terrain {
             index_buffer,
 
             texture,
+            cursor,
         }
     }
 

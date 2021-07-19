@@ -1,5 +1,6 @@
 TODO:
 
+- Try to integrate egui
 - Consider using a heightmap
     - Get an example heightmap
     - How to build vertices from it? Using a shader?
@@ -9,6 +10,9 @@ TODO:
 - impl drop for buffers/arrays
 
 DONE:
+
+20 Jul 2021, Tue
+- Fix the camera moved flag and still shape the terrain
 
 19 Jul 2021, Mon
 - Apply a checkerboard texture
