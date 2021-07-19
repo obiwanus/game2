@@ -5,7 +5,6 @@ use std::f32::consts::PI;
 use glam::{const_vec3, Mat4, Vec2, Vec3};
 
 use crate::ray::Ray;
-use crate::utils::clamp;
 
 const FOV_MIN: f32 = 0.01 * PI;
 const FOV_MAX: f32 = 0.5 * PI;
@@ -65,7 +64,7 @@ impl Camera {
             // @hacky: maybe could be done simpler without special cases
             let (x, y, z) = (direction.x, direction.y, direction.z);
             let pitch = y.asin();
-            let pitch = clamp(pitch, PITCH_MIN, PITCH_MAX);
+            let pitch = pitch.clamp(PITCH_MIN, PITCH_MAX);
             let yaw = if z < 0.0 {
                 (-x / z).atan()
             } else if z > 0.0 {
@@ -129,13 +128,13 @@ impl Camera {
     /// 100.0 corresponds to FOV_MIN.
     pub fn adjust_zoom(&mut self, delta: i32) {
         self.zoom += delta as f32;
-        self.zoom = clamp(self.zoom, ZOOM_MIN, ZOOM_MAX);
+        self.zoom = self.zoom.clamp(ZOOM_MIN, ZOOM_MAX);
     }
 
     pub fn rotate(&mut self, yaw_delta: f64, pitch_delta: f64) {
         // Adjust Euler angles
         self.pitch -= pitch_delta as f32 * self.sensitivity;
-        self.pitch = clamp(self.pitch, PITCH_MIN, PITCH_MAX);
+        self.pitch = self.pitch.clamp(PITCH_MIN, PITCH_MAX);
         self.yaw += yaw_delta as f32 * self.sensitivity;
 
         // Recalculate direction
