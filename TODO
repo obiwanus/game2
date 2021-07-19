@@ -15,6 +15,7 @@ DONE:
 - Add our own gl bindings
 - Make sure the brush can't be set to 0 size
 - Anisotropic filtering
+- Add some shading
 
 18 Jul 2021, Sun
 - Use shader to highlight a circle around the cursor
