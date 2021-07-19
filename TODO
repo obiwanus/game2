@@ -1,6 +1,5 @@
 TODO:
 
-- Anisotropic filtering
 - Use a proper brush
 - Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
@@ -12,6 +11,7 @@ DONE:
 - Apply a checkerboard texture
 - Add our own gl bindings
 - Make sure the brush can't be set to 0 size
+- Anisotropic filtering
 
 18 Jul 2021, Sun
 - Use shader to highlight a circle around the cursor

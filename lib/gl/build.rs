@@ -12,7 +12,7 @@ fn main() {
         (3, 3),
         Profile::Core,
         Fallbacks::All,
-        ["GL_NV_command_list"],
+        ["GL_NV_command_list", "GL_EXT_texture_filter_anisotropic"],
     )
     .write_bindings(GlobalGenerator, &mut file)
     .expect("Couldn't generate GL bindings");

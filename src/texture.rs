@@ -2,6 +2,8 @@ use gl::types::*;
 use stb_image::image::{self, Image, LoadResult};
 use thiserror::Error;
 
+const MAX_ANISOTROPY: f32 = 8.0;
+
 #[derive(Debug, Error)]
 pub enum TextureError {
     #[error("Image format F32 is not supported")]
@@ -59,6 +61,18 @@ impl Texture {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
+
+            let anisotropy = {
+                let mut value: f32 = 0.0;
+                gl::GetFloatv(gl::MAX_TEXTURE_MAX_ANISOTROPY_EXT, &mut value);
+                if value < MAX_ANISOTROPY {
+                    value
+                } else {
+                    MAX_ANISOTROPY
+                }
+            };
+            println!("Using anisotropic filtering: {:?}", anisotropy);
+            gl::TexParameterf(gl::TEXTURE_2D, gl::TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
         }
         self
     }
