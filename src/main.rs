@@ -158,7 +158,7 @@ impl Game {
 
         // Set up camera
         let camera = Camera::new(
-            Vec3::new(0.0, 10.0, 30.0),
+            Vec3::new(20.0, 20.0, 35.0),
             Vec3::new(0.0, 0.0, 0.0),
             window_size.width,
             window_size.height,
