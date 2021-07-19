@@ -331,16 +331,16 @@ impl Game {
                 for v in self.terrain.vertices.iter_mut() {
                     let dist_sq = (v.pos - cursor).length_squared();
                     if dist_sq < brush_size_squared {
-                        v.pos.y += 7.0 * delta_time;
+                        v.pos.y += 5.0 * delta_time;
                     }
                 }
                 self.terrain.send_vertex_buffer();
             }
         }
 
-        if self.camera.moved {
-            self.camera.moved = false;
-        }
+        // if self.camera.moved {
+        //     self.camera.moved = false;
+        // }
 
         // Draw
         unsafe {
