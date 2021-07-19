@@ -1,5 +1,8 @@
 TODO:
 
+- Consider using a heightmap
+    - Get an example heightmap
+    - How to build vertices from it? Using a shader?
 - Use a proper brush
 - Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
