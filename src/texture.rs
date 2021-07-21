@@ -13,7 +13,7 @@ pub enum TextureError {
 }
 
 pub struct Texture {
-    id: GLuint,
+    pub id: GLuint, // @tmp_public
 }
 
 impl Texture {

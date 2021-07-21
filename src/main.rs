@@ -12,7 +12,6 @@ mod utils;
 use std::error::Error;
 use std::time::Instant;
 
-use editor::Brush;
 use glam::{Vec2, Vec3, Vec4};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
@@ -24,6 +23,8 @@ use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
+use editor::gui::Gui;
+use editor::Brush;
 use opengl::buffers::Buffer;
 use opengl::shader::Program;
 use skybox::Skybox;
@@ -39,7 +40,7 @@ fn main() {
     });
 
     event_loop.run(move |event, _, control_flow| {
-        if let Err(error) = game.main_loop(event, control_flow) {
+        if let Err(error) = game.process_event(event, control_flow) {
             eprint!("{}", error);
             std::process::exit(1);
         };
@@ -74,6 +75,7 @@ struct Game {
     camera: Camera,
     in_focus: bool,
     frame_start: Instant,
+    gui: Gui,
 
     shader: Program,
     terrain: Terrain,
@@ -178,12 +180,15 @@ impl Game {
             "textures/skybox/back.jpg",
         ])?;
 
+        let gui = Gui::new(window_size.width as f32, window_size.height as f32);
+
         Ok(Game {
             windowed_context,
             input: Input::default(),
             camera,
             in_focus: true,
             frame_start: Instant::now(),
+            gui,
 
             shader,
             terrain,
@@ -193,7 +198,7 @@ impl Game {
         })
     }
 
-    fn main_loop(
+    fn process_event(
         &mut self,
         event: Event<()>,
         control_flow: &mut ControlFlow,
@@ -348,10 +353,10 @@ impl Game {
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
-
         self.terrain.draw();
-
         self.skybox.draw(&proj, &view)?; // draw skybox last
+
+        self.gui.draw();
 
         self.windowed_context.swap_buffers()?;
 
