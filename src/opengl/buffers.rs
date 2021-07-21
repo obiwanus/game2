@@ -8,6 +8,8 @@ pub struct Buffer {
     size: usize,
 }
 
+// @abstraction: need to think more about this
+
 impl Buffer {
     pub fn new() -> Self {
         let mut id: GLuint = 0;
@@ -59,9 +61,30 @@ impl Buffer {
         }
     }
 
+    pub fn send_stream_data<T>(target: GLenum, data: &[T]) {
+        let size = std::mem::size_of::<T>() * data.len();
+        unsafe {
+            gl::BufferData(
+                target,
+                size as isize,
+                data.as_ptr() as *const GLvoid,
+                gl::STREAM_DRAW,
+            );
+        }
+    }
+
     pub fn bind_as(&self, target: GLenum) {
         unsafe {
             gl::BindBuffer(target, self.id);
+        }
+    }
+}
+
+impl Drop for Buffer {
+    fn drop(&mut self) {
+        let ids = [self.id];
+        unsafe {
+            gl::DeleteBuffers(1, ids.as_ptr() as *const GLuint);
         }
     }
 }
@@ -91,6 +114,15 @@ impl VertexArray {
     pub fn unbind(&self) {
         unsafe {
             gl::BindVertexArray(0);
+        }
+    }
+}
+
+impl Drop for VertexArray {
+    fn drop(&mut self) {
+        let ids = [self.id];
+        unsafe {
+            gl::DeleteVertexArrays(1, ids.as_ptr() as *const GLuint);
         }
     }
 }
