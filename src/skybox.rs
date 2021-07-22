@@ -18,6 +18,7 @@ pub struct Skybox {
     id: GLuint,
     shader: Program,
     vao: VertexArray,
+    _vbo: Buffer,
 }
 
 impl Skybox {
@@ -146,7 +147,12 @@ impl Skybox {
         }
         vao.unbind();
 
-        Ok(Skybox { id, shader, vao })
+        Ok(Skybox {
+            id,
+            shader,
+            vao,
+            _vbo: vbo,
+        })
     }
 
     pub fn draw(&self, proj: &Mat4, view: &Mat4) -> Result<(), SkyboxError> {

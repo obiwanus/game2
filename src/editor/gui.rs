@@ -94,8 +94,6 @@ impl Gui {
             .vertex_shader("shaders/editor/gui.vert")?
             .fragment_shader("shaders/editor/gui.frag")?
             .link()?;
-        shader.set_used();
-        shader.set_vec2("u_screen_size", &screen_size)?;
 
         Ok(Gui {
             screen_size,
@@ -127,12 +125,18 @@ impl Gui {
         // TODO: handle output
 
         let pixels_per_point = self.ctx.pixels_per_point();
+        let screen_size_in_points = self.screen_size / pixels_per_point;
+
         self.upload_egui_texture();
 
         let clipped_meshes = self.ctx.tessellate(shapes);
 
         self.vao.bind();
         self.shader.set_used();
+        self.shader
+            .set_vec2("u_screen_size", &screen_size_in_points)
+            .unwrap();
+        self.shader.set_texture_unit("u_sampler", 0).unwrap();
         self.egui_texture.bind_2d(0);
 
         for ClippedMesh(clip_rect, mesh) in clipped_meshes {
@@ -153,16 +157,14 @@ impl Gui {
             self.ebo.bind_as(gl::ELEMENT_ARRAY_BUFFER);
             Buffer::send_stream_data(gl::ELEMENT_ARRAY_BUFFER, &mesh.indices);
 
-            // TODO: check vertices manually
-
-            // unsafe {
-            //     gl::DrawElements(
-            //         gl::TRIANGLES,
-            //         mesh.indices.len() as i32,
-            //         gl::UNSIGNED_INT,
-            //         std::ptr::null(),
-            //     );
-            // }
+            unsafe {
+                gl::DrawElements(
+                    gl::TRIANGLES,
+                    mesh.indices.len() as i32,
+                    gl::UNSIGNED_INT,
+                    std::ptr::null(),
+                );
+            }
         }
     }
 
@@ -201,6 +203,7 @@ impl Gui {
     }
 }
 
+#[derive(Debug)]
 struct Vertex {
     pos: [f32; 2],
     uv: [f32; 2],

@@ -1,10 +1,7 @@
 TODO:
 
-- Try to integrate egui
-    + Read the code of the integration egui/glium
-        + Understand "begin_frame"
-        + Who renders shapes and how?
-    - Display something using egui
+- Make sure egui texture is correct
+
 - Consider using a heightmap
     - Get an example heightmap
     - How to build vertices from it? Using a shader?
@@ -15,9 +12,13 @@ TODO:
 DONE:
 
 22 Jul 2021, Thu
+- Fix a problem with buffer deletion
 
 21 Jul 2021, Wed
 - impl drop for buffers/arrays
++ Read the code of the integration egui/glium
+    + Understand "begin_frame"
+    + Who renders shapes and how?
 
 20 Jul 2021, Tue
 - Fix the camera moved flag and still shape the terrain
