@@ -3,6 +3,7 @@ use std::fs;
 use std::io;
 
 use gl::types::*;
+use glam::Vec2;
 use glam::{Mat4, Vec3};
 use thiserror::Error;
 
@@ -98,6 +99,15 @@ impl Program {
         let location = self.get_uniform_location(name)?;
         unsafe {
             gl::Uniform1i(location, unit);
+        }
+        Ok(())
+    }
+
+    /// Sets a vec2 uniform
+    pub fn set_vec2(&self, name: &str, vec: &Vec2) -> Result<()> {
+        let location = self.get_uniform_location(name)?;
+        unsafe {
+            gl::Uniform2fv(location, 1, vec.to_array().as_ptr());
         }
         Ok(())
     }

@@ -180,7 +180,8 @@ impl Game {
             "textures/skybox/back.jpg",
         ])?;
 
-        let gui = Gui::new(window_size.width as f32, window_size.height as f32)?;
+        let screen_size = Vec2::new(window_size.width as f32, window_size.height as f32);
+        let gui = Gui::new(screen_size)?;
 
         Ok(Game {
             windowed_context,

@@ -2,6 +2,7 @@ use std::error::Error;
 
 use egui::{CentralPanel, ClippedMesh, CtxRef, RawInput};
 use epaint::Color32;
+use glam::Vec2;
 use memoffset::offset_of;
 
 use crate::{
@@ -13,8 +14,7 @@ use crate::{
 };
 
 pub struct Gui {
-    window_width: f32,
-    window_height: f32,
+    screen_size: Vec2,
 
     ctx: CtxRef,
     egui_texture: Texture,
@@ -28,7 +28,7 @@ pub struct Gui {
 
 impl Gui {
     // Note: assuming non-resizable window for now
-    pub fn new(window_width: f32, window_height: f32) -> Result<Gui, Box<dyn Error>> {
+    pub fn new(screen_size: Vec2) -> Result<Gui, Box<dyn Error>> {
         let vao = VertexArray::new();
         vao.bind();
         let vbo = Buffer::new();
@@ -95,11 +95,10 @@ impl Gui {
             .fragment_shader("shaders/editor/gui.frag")?
             .link()?;
         shader.set_used();
-        shader.se
+        shader.set_vec2("u_screen_size", &screen_size)?;
 
         Ok(Gui {
-            window_width,
-            window_height,
+            screen_size,
 
             ctx: CtxRef::default(),
             egui_texture,
@@ -128,12 +127,13 @@ impl Gui {
         // TODO: handle output
 
         let pixels_per_point = self.ctx.pixels_per_point();
-        let texture = &self.ctx.texture();
-        self.upload_egui_texture(texture);
+        self.upload_egui_texture();
 
         let clipped_meshes = self.ctx.tessellate(shapes);
 
-        // TODO: bind texture
+        self.vao.bind();
+        self.shader.set_used();
+        self.egui_texture.bind_2d(0);
 
         for ClippedMesh(clip_rect, mesh) in clipped_meshes {
             // Upload vertices
@@ -153,11 +153,21 @@ impl Gui {
             self.ebo.bind_as(gl::ELEMENT_ARRAY_BUFFER);
             Buffer::send_stream_data(gl::ELEMENT_ARRAY_BUFFER, &mesh.indices);
 
-            // TODO: draw (blend, shaders etc)
+            // TODO: check vertices manually
+
+            // unsafe {
+            //     gl::DrawElements(
+            //         gl::TRIANGLES,
+            //         mesh.indices.len() as i32,
+            //         gl::UNSIGNED_INT,
+            //         std::ptr::null(),
+            //     );
+            // }
         }
     }
 
-    fn upload_egui_texture(&mut self, texture: &egui::Texture) {
+    fn upload_egui_texture(&mut self) {
+        let texture = self.ctx.texture();
         if self.egui_texture_version == Some(texture.version) {
             return; // No change
         }
