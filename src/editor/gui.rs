@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use egui::{CentralPanel, ClippedMesh, CtxRef, RawInput};
+use egui::{ClippedMesh, CtxRef, RawInput};
 use epaint::Color32;
 use glam::Vec2;
 use memoffset::offset_of;
@@ -114,12 +114,25 @@ impl Gui {
         let gui_input = RawInput::default();
         self.ctx.begin_frame(gui_input);
 
-        CentralPanel::default().show(&self.ctx, |ui| {
-            ui.label("Hello world");
-            if ui.button("Click me").clicked() {
-                println!("hey!");
+        // ================== GUI starts ========================
+        egui::SidePanel::left("my_side_panel").show(&self.ctx, |ui| {
+            ui.heading("Водка водка!");
+            if ui.button("Quit").clicked() {
+                println!("Quit clicked");
             }
+
+            egui::ComboBox::from_label("Version")
+                .width(350.0)
+                .selected_text("foo")
+                .show_ui(ui, |ui| {
+                    egui::CollapsingHeader::new("Dev")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            ui.label("contents");
+                        });
+                });
         });
+        // ================== GUI ends ===========================
 
         let (output, shapes) = self.ctx.end_frame();
         // TODO: handle output
@@ -195,7 +208,7 @@ impl Gui {
                 texture.width as GLint,
                 texture.height as GLint,
                 0,
-                gl::SRGB8_ALPHA8,
+                gl::RGBA,
                 gl::UNSIGNED_BYTE,
                 pixels.as_ptr() as *const std::ffi::c_void,
             );

@@ -124,6 +124,7 @@ impl Game {
         let windowed_context = glutin::ContextBuilder::new()
             .with_gl(gl_request)
             .with_gl_profile(gl_profile)
+            .with_srgb(true)
             .with_double_buffer(Some(true))
             .with_depth_buffer(16)
             .with_vsync(true)

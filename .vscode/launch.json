@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'game2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=game2",
+                    "--package=game2"
+                ],
+                "filter": {
+                    "name": "game2",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

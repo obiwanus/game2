@@ -1,6 +1,9 @@
 TODO:
 
 - Make sure egui texture is correct
+    - Read the code of the example again
+- Add proper blending
+- Disable depth-stencil buffer for gui
 
 - Consider using a heightmap
     - Get an example heightmap
@@ -10,6 +13,8 @@ TODO:
 - Figure out the next steps (splatmap etc)
 
 DONE:
+
+23 Jul 2021, Fri
 
 22 Jul 2021, Thu
 - Fix a problem with buffer deletion
