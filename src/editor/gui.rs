@@ -188,14 +188,10 @@ impl Gui {
         }
         self.egui_texture_version = Some(texture.version);
 
-        let pixels: Vec<Vec<(u8, u8, u8, u8)>> = texture
+        let pixels: Vec<(u8, u8, u8, u8)> = texture
             .pixels
-            .chunks(texture.width)
-            .map(|row| {
-                row.iter()
-                    .map(|&a| Color32::from_white_alpha(a).to_tuple())
-                    .collect()
-            })
+            .iter()
+            .map(|&a| Color32::from_white_alpha(a).to_tuple())
             .collect();
 
         unsafe {
@@ -217,6 +213,7 @@ impl Gui {
 }
 
 #[derive(Debug)]
+#[repr(C)]
 struct Vertex {
     pos: [f32; 2],
     uv: [f32; 2],

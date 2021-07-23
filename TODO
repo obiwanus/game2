@@ -14,7 +14,12 @@ TODO:
 
 DONE:
 
+24 Jul 2021, Sat
+- Verified that the program crashes on glTexImage2D
+- Load the texture properly
+
 23 Jul 2021, Fri
+- Debugging gui
 
 22 Jul 2021, Thu
 - Fix a problem with buffer deletion

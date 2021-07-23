@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused)]
+
 extern crate gl as opengl_lib;
 
 mod camera;
