@@ -11,6 +11,7 @@ use crate::{
         shader::Program,
     },
     texture::Texture,
+    Input,
 };
 
 pub struct Gui {
@@ -110,9 +111,8 @@ impl Gui {
         })
     }
 
-    pub fn draw(&mut self) {
-        let gui_input = RawInput::default();
-        self.ctx.begin_frame(gui_input);
+    pub fn interact_and_draw(&mut self, game_input: &Input) {
+        self.ctx.begin_frame(game_input.into());
 
         // ================== GUI starts ========================
         egui::SidePanel::left("my_side_panel").show(&self.ctx, |ui| {
@@ -229,4 +229,10 @@ struct Vertex {
     pos: [f32; 2],
     uv: [f32; 2],
     srgba: [u8; 4],
+}
+
+impl From<&Input> for RawInput {
+    fn from(input: &Input) -> Self {
+        RawInput::default()
+    }
 }

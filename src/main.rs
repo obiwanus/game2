@@ -53,7 +53,7 @@ fn main() {
 // ==================================== Game ======================================================
 
 #[derive(Default)]
-struct Input {
+pub struct Input {
     forward: bool,
     back: bool,
     left: bool,
@@ -351,6 +351,7 @@ impl Game {
         }
 
         if self.camera.moved {
+            // should we include it into input?
             self.camera.moved = false;
         }
 
@@ -361,7 +362,7 @@ impl Game {
         self.terrain.draw();
         self.skybox.draw(&proj, &view)?; // draw skybox last
 
-        self.gui.draw();
+        self.gui.interact_and_draw(&self.input);
 
         self.windowed_context.swap_buffers()?;
 
