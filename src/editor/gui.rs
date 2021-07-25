@@ -171,6 +171,7 @@ impl Gui {
             Buffer::send_stream_data(gl::ELEMENT_ARRAY_BUFFER, &mesh.indices);
 
             unsafe {
+                gl::Disable(gl::DEPTH_TEST);
                 gl::Enable(gl::BLEND);
                 gl::BlendEquation(gl::FUNC_ADD);
                 gl::BlendFuncSeparate(
@@ -186,6 +187,7 @@ impl Gui {
                     std::ptr::null(),
                 );
                 gl::Disable(gl::BLEND);
+                gl::Enable(gl::DEPTH_TEST);
             }
         }
     }

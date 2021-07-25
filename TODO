@@ -1,11 +1,9 @@
 TODO:
 
-- Add proper blending
-    + Read about blending
-    + Read about premultiplied alpha
-    - Enable it only for gui
-- Disable depth-stencil buffer for gui
-
+- Pass input to egui and make it work
+- Figure out why the UI is dark
+    - Check egui_glium example in renderdoc and compare the colors
+    - If the colors in buffers are the same then it must be blending
 - Consider using a heightmap
     - Get an example heightmap
     - How to build vertices from it? Using a shader?
@@ -16,7 +14,12 @@ TODO:
 DONE:
 
 25 Jul 2021, Sun
-
+- Draw the UI (but it's very dark)
+- Add proper blending
+    + Read about blending
+    + Read about premultiplied alpha
+    + Enable it only for gui
++ Disable depth-stencil buffer for gui
 
 24 Jul 2021, Sat
 - Verified that the program crashes on glTexImage2D
