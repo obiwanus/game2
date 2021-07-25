@@ -14,6 +14,7 @@ DONE:
 
 26 Jul 2021, Mon
 - Pass input to egui and make it work
+- Fix the gui screen rect
 
 25 Jul 2021, Sun
 - Draw the UI (but it's very dark)

@@ -212,7 +212,7 @@ impl Game {
 
             windowed_context,
             input: Input::default(),
-            gui_input: RawInput::default(),
+            gui_input,
             camera,
             in_focus: true,
             gui,
@@ -425,7 +425,7 @@ impl Game {
         self.terrain.draw();
         self.skybox.draw(&proj, &view)?; // draw skybox last
 
-        self.gui.interact_and_draw(self.gui_input.take());
+        self.gui.interact_and_draw(self.gui_input.clone());
         self.gui_input = RawInput::default();
 
         self.windowed_context.swap_buffers()?;
