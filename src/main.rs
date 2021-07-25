@@ -15,6 +15,7 @@ mod utils;
 use std::error::Error;
 use std::time::Instant;
 
+use egui::{Event as GuiEvent, Modifiers, PointerButton, Pos2, RawInput, Rect};
 use glam::{Vec2, Vec3, Vec4};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
@@ -53,14 +54,14 @@ fn main() {
 // ==================================== Game ======================================================
 
 #[derive(Default)]
-pub struct Input {
+struct Input {
     forward: bool,
     back: bool,
     left: bool,
     right: bool,
 
-    cursor: Vec2,
-    cursor_moved: bool,
+    pointer: Vec2,
+    pointer_moved: bool,
     left_mouse_button_pressed: bool,
     brush_size_changed: bool,
 
@@ -73,11 +74,14 @@ struct DirectionalLight {
 }
 
 struct Game {
+    game_start: Instant,
+    frame_start: Instant,
+
     windowed_context: WindowedContext<PossiblyCurrent>,
     input: Input,
+    gui_input: RawInput,
     camera: Camera,
     in_focus: bool,
-    frame_start: Instant,
     gui: Gui,
 
     shader: Program,
@@ -184,15 +188,33 @@ impl Game {
             "textures/skybox/back.jpg",
         ])?;
 
-        let screen_size = Vec2::new(window_size.width as f32, window_size.height as f32);
-        let gui = Gui::new(screen_size)?;
+        let screen_size_physical = Vec2::new(window_size.width as f32, window_size.height as f32);
+        let gui = Gui::new(screen_size_physical)?;
+
+        // Set some initial parameters which will then be used every frame
+        let gui_input = {
+            let screen_size_logical = screen_size_physical / window.scale_factor() as f32;
+            RawInput {
+                screen_rect: Some(Rect::from_min_max(
+                    Pos2::new(0.0, 0.0),
+                    Pos2::new(screen_size_logical.x, screen_size_logical.y),
+                )),
+                pixels_per_point: Some(window.scale_factor() as f32),
+                time: Some(0.0),
+
+                ..Default::default()
+            }
+        };
 
         Ok(Game {
+            game_start: Instant::now(),
+            frame_start: Instant::now(),
+
             windowed_context,
             input: Input::default(),
+            gui_input: RawInput::default(),
             camera,
             in_focus: true,
-            frame_start: Instant::now(),
             gui,
 
             shader,
@@ -211,12 +233,31 @@ impl Game {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                WindowEvent::MouseInput {
-                    button: MouseButton::Left,
-                    state,
-                    ..
+                WindowEvent::ScaleFactorChanged {
+                    scale_factor,
+                    new_inner_size: _,
                 } => {
-                    self.input.left_mouse_button_pressed = state == ElementState::Pressed;
+                    self.gui_input.pixels_per_point = Some(scale_factor as f32);
+                }
+                WindowEvent::MouseInput { button, state, .. } => {
+                    if button == MouseButton::Left {
+                        self.input.left_mouse_button_pressed = state == ElementState::Pressed;
+                    }
+
+                    let pointer_button = match button {
+                        MouseButton::Left => Some(PointerButton::Primary),
+                        MouseButton::Middle => Some(PointerButton::Middle),
+                        MouseButton::Right => Some(PointerButton::Secondary),
+                        _ => None,
+                    };
+                    if let Some(button) = pointer_button {
+                        self.gui_input.events.push(GuiEvent::PointerButton {
+                            pos: Pos2::new(self.input.pointer.x, self.input.pointer.y),
+                            button,
+                            pressed: state == ElementState::Pressed,
+                            modifiers: self.gui_input.modifiers,
+                        });
+                    }
                 }
                 WindowEvent::MouseInput {
                     button: MouseButton::Right,
@@ -247,10 +288,27 @@ impl Game {
                 }
                 WindowEvent::ModifiersChanged(state) => {
                     self.camera.speed_boost = state.shift();
+                    self.gui_input.modifiers = Modifiers {
+                        alt: state.alt(),
+                        ctrl: state.ctrl(),
+                        shift: state.shift(),
+                        command: state.ctrl(),
+                        mac_cmd: false, // must be false unless on Mac
+                    };
+                    #[cfg(target_os = "macos")]
+                    {
+                        self.gui_input.modifiers.command = state.logo();
+                        self.gui_input.modifiers.mac_cmd = state.logo();
+                    }
                 }
                 WindowEvent::CursorMoved { position, .. } => {
-                    self.input.cursor = Vec2::new(position.x as f32, position.y as f32);
-                    self.input.cursor_moved = true;
+                    let pointer = Vec2::new(position.x as f32, position.y as f32);
+                    self.input.pointer = pointer;
+                    self.input.pointer_moved = true;
+
+                    self.gui_input
+                        .events
+                        .push(GuiEvent::PointerMoved(Pos2::new(pointer.x, pointer.y)))
                 }
                 _ => {}
             },
@@ -260,10 +318,12 @@ impl Game {
                     self.camera.rotate(yaw_delta, pitch_delta);
                 }
                 DeviceEvent::MouseWheel {
-                    delta: MouseScrollDelta::LineDelta(_x, y),
+                    delta: MouseScrollDelta::LineDelta(x, y),
                 } => {
                     self.brush.size = (self.brush.size - y * 0.5).clamp(0.1, 20.0);
                     self.input.brush_size_changed = true;
+
+                    self.gui_input.scroll_delta = egui::emath::vec2(x, y);
                 }
                 _ => {}
             },
@@ -278,6 +338,9 @@ impl Game {
         let now = Instant::now();
         let delta_time = now.duration_since(self.frame_start).as_secs_f32();
         self.frame_start = now;
+
+        // For GUI animations
+        self.gui_input.time = Some(now.duration_since(self.game_start).as_secs_f64());
 
         // Move camera
         if self.input.wasd_mode {
@@ -316,11 +379,11 @@ impl Game {
             self.shader.set_mat4("view", &view)?;
         }
 
-        if self.input.cursor_moved || self.camera.moved {
-            self.input.cursor_moved = false;
+        if self.input.pointer_moved || self.camera.moved {
+            self.input.pointer_moved = false;
 
             let cursor = {
-                let ray = self.camera.get_ray_through_pixel(self.input.cursor);
+                let ray = self.camera.get_ray_through_pixel(self.input.pointer);
                 let mut hit = f32::INFINITY;
                 for (a, b, c) in self.terrain.triangles() {
                     let new_hit = ray.hits_triangle(a, b, c);
@@ -362,7 +425,8 @@ impl Game {
         self.terrain.draw();
         self.skybox.draw(&proj, &view)?; // draw skybox last
 
-        self.gui.interact_and_draw(&self.input);
+        self.gui.interact_and_draw(self.gui_input.take());
+        self.gui_input = RawInput::default();
 
         self.windowed_context.swap_buffers()?;
 

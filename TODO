@@ -1,6 +1,5 @@
 TODO:
 
-- Pass input to egui and make it work
 - Figure out why the UI is dark
     - Check egui_glium example in renderdoc and compare the colors
     - If the colors in buffers are the same then it must be blending
@@ -12,6 +11,9 @@ TODO:
 - Figure out the next steps (splatmap etc)
 
 DONE:
+
+26 Jul 2021, Mon
+- Pass input to egui and make it work
 
 25 Jul 2021, Sun
 - Draw the UI (but it's very dark)
