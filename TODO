@@ -1,8 +1,9 @@
 TODO:
 
-- Make sure egui texture is correct
-    - Read the code of the example again
 - Add proper blending
+    + Read about blending
+    + Read about premultiplied alpha
+    - Enable it only for gui
 - Disable depth-stencil buffer for gui
 
 - Consider using a heightmap
@@ -13,6 +14,9 @@ TODO:
 - Figure out the next steps (splatmap etc)
 
 DONE:
+
+25 Jul 2021, Sun
+
 
 24 Jul 2021, Sat
 - Verified that the program crashes on glTexImage2D

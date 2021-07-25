@@ -2,8 +2,8 @@
 
 uniform vec2 u_screen_size;
 layout(location = 0) in vec2 pos;
-layout(location = 1) in vec4 srgba;  // 0-255 sRGB
-layout(location = 2) in vec2 uv;
+layout(location = 1) in vec2 uv;
+layout(location = 2) in vec4 srgba;  // 0-255 sRGB
 
 out vec4 v_rgba;
 out vec2 v_tc;
@@ -22,6 +22,7 @@ void main() {
     gl_Position =
         vec4(2.0 * pos.x / u_screen_size.x - 1.0, 1.0 - 2.0 * pos.y / u_screen_size.y, 0.0, 1.0);
     // egui encodes vertex colors in gamma spaces, so we must decode the colors here:
-    v_rgba = linear_from_srgba(srgba);
+    // v_rgba = linear_from_srgba(srgba);
+    v_rgba = srgba / vec4(255.0);
     v_tc = uv;
 }

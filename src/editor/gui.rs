@@ -171,12 +171,21 @@ impl Gui {
             Buffer::send_stream_data(gl::ELEMENT_ARRAY_BUFFER, &mesh.indices);
 
             unsafe {
+                gl::Enable(gl::BLEND);
+                gl::BlendEquation(gl::FUNC_ADD);
+                gl::BlendFuncSeparate(
+                    gl::ONE,
+                    gl::ONE_MINUS_SRC_ALPHA,
+                    gl::ONE_MINUS_DST_ALPHA,
+                    gl::ONE,
+                );
                 gl::DrawElements(
                     gl::TRIANGLES,
                     mesh.indices.len() as i32,
                     gl::UNSIGNED_INT,
                     std::ptr::null(),
                 );
+                gl::Disable(gl::BLEND);
             }
         }
     }
