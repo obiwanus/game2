@@ -19,6 +19,7 @@ DONE:
 - Pass input to egui and make it work
 - Fix the gui screen rect
 - Add scissor
+- Add global GL error handler
 
 25 Jul 2021, Sun
 - Draw the UI (but it's very dark)

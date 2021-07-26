@@ -9,7 +9,7 @@ fn main() {
 
     Registry::new(
         Api::Gl,
-        (3, 3),
+        (4, 3),
         Profile::Core,
         Fallbacks::All,
         ["GL_NV_command_list", "GL_EXT_texture_filter_anisotropic"],

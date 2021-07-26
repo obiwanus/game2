@@ -1,6 +1,10 @@
 #![macro_use]
 #![allow(dead_code)]
 
+use std::ffi::CStr;
+
+use gl::types::*;
+
 pub mod buffers;
 pub mod shader;
 
@@ -25,4 +29,22 @@ macro_rules! gl_check_error {
     () => {
         gl_check_error(file!(), line!())
     };
+}
+
+pub extern "system" fn debug_callback(
+    source: GLenum,
+    gltype: GLenum,
+    id: GLuint,
+    severity: GLenum,
+    length: GLsizei,
+    message: *const GLchar,
+    user_param: *mut std::os::raw::c_void,
+) {
+    let msg_type = if gltype == gl::DEBUG_TYPE_ERROR {
+        "** GL ERROR ** "
+    } else {
+        "** GL DEBUG **"
+    };
+    let msg = unsafe { CStr::from_ptr(message) };
+    eprintln!("{} {}", msg_type, msg.to_str().unwrap().to_owned());
 }
