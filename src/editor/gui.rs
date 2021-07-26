@@ -169,23 +169,43 @@ impl Gui {
             self.ebo.bind_as(gl::ELEMENT_ARRAY_BUFFER);
             Buffer::send_stream_data(gl::ELEMENT_ARRAY_BUFFER, &mesh.indices);
 
+            // // Calculate the scissor box
+            // let clip_min_x = pixels_per_point * clip_rect.min.x;
+            // let clip_min_y = pixels_per_point * clip_rect.min.y;
+            // let clip_max_x = pixels_per_point * clip_rect.max.x;
+            // let clip_max_y = pixels_per_point * clip_rect.max.y;
+
+            // let clip_max_x = clip_max_x.clamp(clip_min_x, self.screen_size.x).round() as i32;
+            // let clip_max_y = clip_max_y.clamp(clip_min_y, self.screen_size.y).round() as i32;
+            // let clip_min_x = clip_min_x.clamp(0.0, self.screen_size.x).round() as i32;
+            // let clip_min_y = clip_min_y.clamp(0.0, self.screen_size.y).round() as i32;
+
             unsafe {
                 gl::Disable(gl::DEPTH_TEST);
+                // gl::Enable(gl::SCISSOR_TEST);
+                // gl::Scissor(
+                //     clip_min_x,
+                //     clip_min_y,
+                //     clip_max_x - clip_min_x,
+                //     clip_max_y - clip_min_y,
+                // );
                 gl::Enable(gl::BLEND);
-                gl::BlendEquation(gl::FUNC_ADD);
                 gl::BlendFuncSeparate(
                     gl::ONE,
                     gl::ONE_MINUS_SRC_ALPHA,
                     gl::ONE_MINUS_DST_ALPHA,
                     gl::ONE,
                 );
+
                 gl::DrawElements(
                     gl::TRIANGLES,
                     mesh.indices.len() as i32,
                     gl::UNSIGNED_INT,
                     std::ptr::null(),
                 );
+
                 gl::Disable(gl::BLEND);
+                // gl::Disable(gl::SCISSOR_TEST);
                 gl::Enable(gl::DEPTH_TEST);
             }
         }

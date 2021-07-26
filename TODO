@@ -1,8 +1,10 @@
 TODO:
 
 - Figure out why the UI is dark
-    - Check egui_glium example in renderdoc and compare the colors
-    - If the colors in buffers are the same then it must be blending
+    + Check egui_glium example in renderdoc and compare the colors
+    + If the colors in buffers are the same then it must be blending or shader
+    - Try switching shader
+
 - Consider using a heightmap
     - Get an example heightmap
     - How to build vertices from it? Using a shader?
@@ -15,6 +17,7 @@ DONE:
 26 Jul 2021, Mon
 - Pass input to egui and make it work
 - Fix the gui screen rect
+- Add scissor
 
 25 Jul 2021, Sun
 - Draw the UI (but it's very dark)
