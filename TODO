@@ -1,10 +1,5 @@
 TODO:
 
-- Figure out why the UI is dark
-    + Check egui_glium example in renderdoc and compare the colors
-    + If the colors in buffers are the same then it must be blending or shader
-    - Try switching shader
-
 - Add lighting and shadows
 - Consider using a heightmap
     - Get an example heightmap
@@ -20,6 +15,10 @@ DONE:
 - Fix the gui screen rect
 - Add scissor
 - Add global GL error handler
+- Figure out why the UI is dark
+    + Check egui_glium example in renderdoc and compare the colors
+    + If the colors in buffers are the same then it must be blending or shader
+    + Try switching shader
 
 25 Jul 2021, Sun
 - Draw the UI (but it's very dark)
