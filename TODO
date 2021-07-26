@@ -1,5 +1,7 @@
 TODO:
 
+- Read about framebuffers
+- Read about sRGB
 - Add lighting and shadows
 - Consider using a heightmap
     - Get an example heightmap
@@ -9,6 +11,9 @@ TODO:
 - Figure out the next steps (splatmap etc)
 
 DONE:
+
+27 Jul 2021, Tue
+- Adjust things for macos
 
 26 Jul 2021, Mon
 - Pass input to egui and make it work

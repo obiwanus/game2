@@ -120,11 +120,12 @@ impl Game {
         #[cfg(not(windows))]
         let window_builder = WindowBuilder::new()
             .with_title("Game 2")
-            .with_resizable(false)
             .with_position(glutin::dpi::LogicalPosition::new(70, 10))
-            .with_fullscreen(Some(glutin::window::Fullscreen::Borderless(
-                event_loop.primary_monitor(),
-            )));
+            // .with_fullscreen(Some(glutin::window::Fullscreen::Borderless(
+            //     event_loop.primary_monitor(),
+            // )))
+            .with_inner_size(glutin::dpi::LogicalSize::new(1920, 1080))
+            .with_resizable(false);
 
         let gl_request = GlRequest::Specific(Api::OpenGl, (3, 3));
         let gl_profile = GlProfile::Core;
@@ -149,8 +150,12 @@ impl Game {
             gl::ClearColor(0.05, 0.05, 0.05, 1.0);
             gl::Enable(gl::DEPTH_TEST);
 
-            gl::Enable(gl::DEBUG_OUTPUT);
-            gl::DebugMessageCallback(Some(opengl::debug_callback), std::ptr::null());
+            #[cfg(not(target_os = "macos"))]
+            {
+                // MacOS deprecated OpenGL, which is stuck at 4.1 so no debug callbacks here :(
+                gl::Enable(gl::DEBUG_OUTPUT);
+                gl::DebugMessageCallback(Some(opengl::debug_callback), std::ptr::null());
+            }
         }
 
         let shader = Program::new()
