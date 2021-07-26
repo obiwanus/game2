@@ -240,8 +240,12 @@ impl Game {
                     self.gui_input.pixels_per_point = Some(scale_factor as f32);
                 }
                 WindowEvent::MouseInput { button, state, .. } => {
+                    let pressed = state == ElementState::Pressed;
+
                     if button == MouseButton::Left {
-                        self.input.left_mouse_button_pressed = state == ElementState::Pressed;
+                        self.input.left_mouse_button_pressed = pressed;
+                    } else if button == MouseButton::Right {
+                        self.input.wasd_mode = pressed;
                     }
 
                     let pointer_button = match button {
@@ -254,16 +258,11 @@ impl Game {
                         self.gui_input.events.push(GuiEvent::PointerButton {
                             pos: Pos2::new(self.input.pointer.x, self.input.pointer.y),
                             button,
-                            pressed: state == ElementState::Pressed,
+                            pressed,
                             modifiers: self.gui_input.modifiers,
                         });
                     }
                 }
-                WindowEvent::MouseInput {
-                    button: MouseButton::Right,
-                    state,
-                    ..
-                } => self.input.wasd_mode = state == ElementState::Pressed,
                 WindowEvent::Focused(focused) => {
                     self.in_focus = focused;
                 }

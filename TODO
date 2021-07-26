@@ -5,6 +5,7 @@ TODO:
     + If the colors in buffers are the same then it must be blending or shader
     - Try switching shader
 
+- Add lighting and shadows
 - Consider using a heightmap
     - Get an example heightmap
     - How to build vertices from it? Using a shader?
