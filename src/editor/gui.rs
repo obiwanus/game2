@@ -182,7 +182,6 @@ impl Gui {
 
             unsafe {
                 gl::Disable(gl::DEPTH_TEST);
-                gl::Enable(gl::FRAMEBUFFER_SRGB);
                 // gl::Enable(gl::SCISSOR_TEST);
                 // gl::Scissor(
                 //     clip_min_x,
@@ -207,8 +206,6 @@ impl Gui {
 
                 gl::Disable(gl::BLEND);
                 // gl::Disable(gl::SCISSOR_TEST);
-                // @unknown:
-                gl::Disable(gl::FRAMEBUFFER_SRGB);
                 gl::Enable(gl::DEPTH_TEST);
             }
         }

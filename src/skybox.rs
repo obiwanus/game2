@@ -65,7 +65,7 @@ impl Skybox {
                 gl::TexImage2D(
                     gl::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
                     0,
-                    gl::RGB as GLint,
+                    gl::SRGB8 as GLint,
                     img.width as GLint,
                     img.height as GLint,
                     0,

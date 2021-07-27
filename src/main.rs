@@ -149,6 +149,7 @@ impl Game {
             gl::Viewport(0, 0, window_size.width as i32, window_size.height as i32);
             gl::ClearColor(0.05, 0.05, 0.05, 1.0);
             gl::Enable(gl::DEPTH_TEST);
+            gl::Enable(gl::FRAMEBUFFER_SRGB);
 
             #[cfg(not(target_os = "macos"))]
             {

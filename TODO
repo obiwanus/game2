@@ -1,7 +1,5 @@
 TODO:
 
-- Read about framebuffers
-- Read about sRGB
 - Add lighting and shadows
 - Consider using a heightmap
     - Get an example heightmap
@@ -12,8 +10,13 @@ TODO:
 
 DONE:
 
+28 Jul 2021, Wed
+- Finish reading about gamma
+- Use sRGB-aware textures and sRGB framebuffer
+
 27 Jul 2021, Tue
 - Adjust things for macos
+- Read about gamma correctness/sRGB
 
 26 Jul 2021, Mon
 - Pass input to egui and make it work
