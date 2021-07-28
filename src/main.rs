@@ -30,7 +30,7 @@ use glutin::{PossiblyCurrent, WindowedContext};
 use camera::Camera;
 use editor::gui::Gui;
 use editor::Brush;
-use input::Input;
+use input::{Input, RawInput};
 use opengl::buffers::Buffer;
 use opengl::shader::Program;
 use skybox::Skybox;
