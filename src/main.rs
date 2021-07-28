@@ -5,6 +5,7 @@ extern crate gl as opengl_lib;
 
 mod camera;
 mod editor;
+mod input;
 mod opengl;
 mod ray;
 mod skybox;
@@ -29,6 +30,7 @@ use glutin::{PossiblyCurrent, WindowedContext};
 use camera::Camera;
 use editor::gui::Gui;
 use editor::Brush;
+use input::Input;
 use opengl::buffers::Buffer;
 use opengl::shader::Program;
 use skybox::Skybox;
@@ -54,21 +56,6 @@ fn main() {
 }
 
 // ==================================== Game ======================================================
-
-#[derive(Default)]
-struct Input {
-    forward: bool,
-    back: bool,
-    left: bool,
-    right: bool,
-
-    pointer: Vec2,
-    pointer_moved: bool,
-    left_mouse_button_pressed: bool,
-    brush_size_changed: bool,
-
-    wasd_mode: bool,
-}
 
 struct DirectionalLight {
     color: Vec3,
