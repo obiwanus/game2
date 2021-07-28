@@ -1,9 +1,14 @@
+use std::error::Error;
+
 use glam::{Vec2, Vec3};
 use memoffset::offset_of;
 use opengl_lib::types::GLvoid;
 
 use crate::{
-    opengl::buffers::{Buffer, VertexArray},
+    opengl::{
+        buffers::{Buffer, VertexArray},
+        shader::Program,
+    },
     texture::Texture,
 };
 
@@ -21,7 +26,7 @@ pub struct Terrain {
 }
 
 impl Terrain {
-    pub fn new(size: f32, cells: i32) -> Self {
+    pub fn new(size: f32, cells: i32) -> Result<Self, Box<dyn Error>> {
         let mut vertices = vec![];
         let cell_size = size / cells as f32;
         let start_x = -size / 2.0;
@@ -115,7 +120,12 @@ impl Terrain {
 
         let cursor = Vec3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
 
-        Terrain {
+        let shader = Program::new()
+            .vertex_shader("shaders/editor/terrain.vert")?
+            .fragment_shader("shaders/editor/terrain.frag")?
+            .link()?;
+
+        Ok(Terrain {
             vertices,
             indices,
             num_indices,
@@ -126,7 +136,7 @@ impl Terrain {
 
             texture,
             cursor,
-        }
+        })
     }
 
     pub fn triangles(&self) -> TriangleIter {

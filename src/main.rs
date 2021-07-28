@@ -84,12 +84,8 @@ struct Game {
     in_focus: bool,
     gui: Gui,
 
-    shader: Program,
     terrain: Terrain,
     skybox: Skybox,
-
-    // tmp
-    brush: Brush,
 }
 
 impl Game {
@@ -159,12 +155,6 @@ impl Game {
             }
         }
 
-        let shader = Program::new()
-            .vertex_shader("shaders/basic/basic.vert")?
-            .fragment_shader("shaders/basic/basic.frag")?
-            .link()?;
-        shader.set_used();
-
         // // Directional light
         // let light_color = Vec3::new(1.0, 0.7, 0.7);
         // shader.set_vec3("directional_light.ambient", &(0.2f32 * light_color))?;
@@ -183,10 +173,9 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(60.0, 120);
+        let terrain = Terrain::new(60.0, 120)?;
 
-        let brush = Brush::new("src/editor/brushes/brush1.png");
-        shader.set_float("brush_size", brush.size)?;
+        // let brush = Brush::new("src/editor/brushes/brush1.png");
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
@@ -226,11 +215,8 @@ impl Game {
             in_focus: true,
             gui,
 
-            shader,
             terrain,
             skybox,
-
-            brush,
         })
     }
 
@@ -328,8 +314,8 @@ impl Game {
                 DeviceEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(x, y),
                 } => {
-                    self.brush.size = (self.brush.size - y * 0.5).clamp(0.1, 20.0);
-                    self.input.brush_size_changed = true;
+                    let brush_size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
+                    self.terrain.set_brush_size(brush_size);
 
                     self.gui_input.scroll_delta = egui::emath::vec2(x, y);
                 }
@@ -369,18 +355,6 @@ impl Game {
 
         let proj = self.camera.get_projection_matrix();
         let view = self.camera.get_view_matrix();
-
-        self.shader.set_used();
-
-        // let light_dir = view * Vec4::new(0.37f32, -0.56, 0.75, 0.0);
-        // let light_dir: Vec3 = light_dir.into();
-
-        // self.shader
-        //     .set_vec3("directional_light.direction", &light_dir)?;
-
-        if self.input.brush_size_changed {
-            self.shader.set_float("brush_size", self.brush.size)?;
-        }
 
         if self.camera.moved {
             self.shader.set_mat4("proj", &proj)?;

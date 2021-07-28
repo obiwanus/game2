@@ -1,12 +1,13 @@
 TODO:
 
-- Add lighting and shadows
-- Consider using a heightmap
+- Try using a heightmap
     - Get an example heightmap
     - How to build vertices from it? Using a shader?
+- Add lighting and shadows
 - Use a proper brush
 - Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
+- Refactor input system
 
 DONE:
 
