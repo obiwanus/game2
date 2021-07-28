@@ -2,6 +2,7 @@ use gl::types::*;
 use glam::Mat4;
 use thiserror::Error;
 
+use crate::camera::Camera;
 use crate::opengl::buffers::{Buffer, VertexArray};
 use crate::opengl::shader::{Program, ShaderError};
 use crate::texture::{load_image, TextureError};
@@ -155,13 +156,18 @@ impl Skybox {
         })
     }
 
-    pub fn draw(&self, proj: &Mat4, view: &Mat4) -> Result<(), SkyboxError> {
+    pub fn draw(&self, camera: &Camera) -> Result<(), SkyboxError> {
         unsafe {
             gl::DepthFunc(gl::LEQUAL);
         }
         self.shader.set_used();
-        self.shader.set_mat4("proj", proj)?;
-        self.shader.set_mat4("view", view)?;
+        // @tmp
+        if camera.moved {
+            let proj = camera.get_projection_matrix();
+            let view = camera.get_view_matrix();
+            self.shader.set_mat4("proj", &proj)?;
+            self.shader.set_mat4("view", &view)?;
+        }
         self.vao.bind();
 
         unsafe {

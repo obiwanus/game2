@@ -15,7 +15,7 @@ mod utils;
 use std::error::Error;
 use std::time::Instant;
 
-use egui::{Event as GuiEvent, Modifiers, PointerButton, Pos2, RawInput, Rect};
+use egui::{Event as GuiEvent, Modifiers, PointerButton, Pos2, RawInput as EguiInput, Rect};
 use glam::{Vec2, Vec3, Vec4};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
@@ -33,6 +33,8 @@ use opengl::buffers::Buffer;
 use opengl::shader::Program;
 use skybox::Skybox;
 use terrain::Terrain;
+
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 // ==================================== Main loop =================================================
 
@@ -79,7 +81,7 @@ struct Game {
 
     windowed_context: WindowedContext<PossiblyCurrent>,
     input: Input,
-    gui_input: RawInput,
+    gui_input: EguiInput,
     camera: Camera,
     in_focus: bool,
     gui: Gui,
@@ -90,7 +92,7 @@ struct Game {
 
 impl Game {
     /// Creates a window and inits a new game
-    fn new(event_loop: &EventLoop<()>) -> Result<Self, Box<dyn Error>> {
+    fn new(event_loop: &EventLoop<()>) -> Result<Self> {
         // Create window
 
         #[cfg(all(windows))]
@@ -175,8 +177,6 @@ impl Game {
 
         let terrain = Terrain::new(60.0, 120)?;
 
-        // let brush = Brush::new("src/editor/brushes/brush1.png");
-
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
             "textures/skybox/left.jpg",
@@ -192,7 +192,7 @@ impl Game {
         // Set some initial parameters which will then be used every frame
         let gui_input = {
             let screen_size_logical = screen_size_physical / window.scale_factor() as f32;
-            RawInput {
+            EguiInput {
                 screen_rect: Some(Rect::from_min_max(
                     Pos2::new(0.0, 0.0),
                     Pos2::new(screen_size_logical.x, screen_size_logical.y),
@@ -220,11 +220,7 @@ impl Game {
         })
     }
 
-    fn process_event(
-        &mut self,
-        event: Event<()>,
-        control_flow: &mut ControlFlow,
-    ) -> Result<(), Box<dyn Error>> {
+    fn process_event(&mut self, event: Event<()>, control_flow: &mut ControlFlow) -> Result<()> {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
@@ -314,8 +310,7 @@ impl Game {
                 DeviceEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(x, y),
                 } => {
-                    let brush_size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
-                    self.terrain.set_brush_size(brush_size);
+                    self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
 
                     self.gui_input.scroll_delta = egui::emath::vec2(x, y);
                 }
@@ -327,7 +322,7 @@ impl Game {
         Ok(())
     }
 
-    fn update_and_render(&mut self) -> Result<(), Box<dyn Error>> {
+    fn update_and_render(&mut self) -> Result<()> {
         // Application code
         let now = Instant::now();
         let delta_time = now.duration_since(self.frame_start).as_secs_f32();
@@ -353,14 +348,6 @@ impl Game {
             }
         }
 
-        let proj = self.camera.get_projection_matrix();
-        let view = self.camera.get_view_matrix();
-
-        if self.camera.moved {
-            self.shader.set_mat4("proj", &proj)?;
-            self.shader.set_mat4("view", &view)?;
-        }
-
         if self.input.pointer_moved || self.camera.moved {
             self.input.pointer_moved = false;
 
@@ -379,13 +366,12 @@ impl Game {
                 ray.get_point_at(hit)
             };
 
-            self.shader.set_vec3("cursor", &cursor)?;
             self.terrain.cursor = cursor;
         }
 
         // Shape the terrain
         if self.input.left_mouse_button_pressed {
-            let brush_size_squared = self.brush.size * self.brush.size;
+            let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
             for v in self.terrain.vertices.iter_mut() {
                 let dist_sq = (v.pos - self.terrain.cursor).length_squared();
                 if dist_sq < brush_size_squared {
@@ -395,22 +381,22 @@ impl Game {
             self.terrain.send_vertex_buffer();
         }
 
-        if self.camera.moved {
-            // should we include it into input?
-            self.camera.moved = false;
-        }
-
         // Draw
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
-        self.terrain.draw();
-        self.skybox.draw(&proj, &view)?; // draw skybox last
+        self.terrain.draw(&self.camera)?;
+        self.skybox.draw(&self.camera)?; // draw skybox last
 
         self.gui.interact_and_draw(self.gui_input.clone());
-        self.gui_input = RawInput::default();
+        self.gui_input = EguiInput::default();
 
         self.windowed_context.swap_buffers()?;
+
+        if self.camera.moved {
+            // TODO: move to input and clear automatically
+            self.camera.moved = false;
+        }
 
         #[cfg(feature = "debug")]
         {

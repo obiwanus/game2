@@ -1,5 +1,6 @@
 TODO:
 
+- Refactor input into a raw input
 - Try using a heightmap
     - Get an example heightmap
     - How to build vertices from it? Using a shader?
@@ -10,6 +11,9 @@ TODO:
 - Refactor input system
 
 DONE:
+
+29 Jul 2021, Thu
+- Use a separate shader for terrain
 
 28 Jul 2021, Wed
 - Finish reading about gamma

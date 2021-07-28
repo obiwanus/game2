@@ -11,6 +11,7 @@ use crate::{
         shader::Program,
     },
     texture::Texture,
+    Result,
 };
 
 pub struct Gui {
@@ -28,7 +29,7 @@ pub struct Gui {
 
 impl Gui {
     // Note: assuming non-resizable window for now
-    pub fn new(screen_size: Vec2) -> Result<Gui, Box<dyn Error>> {
+    pub fn new(screen_size: Vec2) -> Result<Gui> {
         let vao = VertexArray::new();
         vao.bind();
         let vbo = Buffer::new();

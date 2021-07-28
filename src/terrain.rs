@@ -5,11 +5,14 @@ use memoffset::offset_of;
 use opengl_lib::types::GLvoid;
 
 use crate::{
+    camera::Camera,
+    editor::Brush,
     opengl::{
         buffers::{Buffer, VertexArray},
         shader::Program,
     },
     texture::Texture,
+    Result,
 };
 
 pub struct Terrain {
@@ -20,13 +23,15 @@ pub struct Terrain {
     vao: VertexArray,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
+    shader: Program,
 
     texture: Texture,
     pub cursor: Vec3,
+    pub brush: Brush,
 }
 
 impl Terrain {
-    pub fn new(size: f32, cells: i32) -> Result<Self, Box<dyn Error>> {
+    pub fn new(size: f32, cells: i32) -> Result<Self> {
         let mut vertices = vec![];
         let cell_size = size / cells as f32;
         let start_x = -size / 2.0;
@@ -44,8 +49,8 @@ impl Terrain {
             }
         }
 
-        // TODO: triangle strip?
-        // TODO: optimise mesh?
+        // @efficiency: triangle strip?
+        // @speed: optimise mesh?
         let num_indices = cells * cells * 6;
         let mut indices = Vec::with_capacity(num_indices as usize);
         let stride = (cells + 1) as u16;
@@ -120,6 +125,8 @@ impl Terrain {
 
         let cursor = Vec3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
 
+        let brush = Brush::new("src/editor/brushes/brush1.png");
+
         let shader = Program::new()
             .vertex_shader("shaders/editor/terrain.vert")?
             .fragment_shader("shaders/editor/terrain.frag")?
@@ -133,9 +140,11 @@ impl Terrain {
             vao,
             vertex_buffer,
             index_buffer,
+            shader,
 
             texture,
             cursor,
+            brush,
         })
     }
 
@@ -143,15 +152,24 @@ impl Terrain {
         TriangleIter::new(self)
     }
 
-    pub fn draw(&self) {
+    // @tmp: remove camera and move to renderer
+    pub fn draw(&self, camera: &Camera) -> Result<()> {
+        self.shader.set_used();
+        self.shader.set_vec3("cursor", &self.cursor)?;
+        self.shader.set_float("brush_size", self.brush.size)?;
+
+        // @tmp
+        if camera.moved {
+            let proj = camera.get_projection_matrix();
+            let view = camera.get_view_matrix();
+            self.shader.set_mat4("proj", &proj)?;
+            self.shader.set_mat4("view", &view)?;
+        }
+
         self.vao.bind();
         self.texture.bind_2d(0);
 
         unsafe {
-            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-            // use crate::opengl::gl_check_error;
-            // gl_check_error!();
-
             gl::DrawElements(
                 gl::TRIANGLES,
                 self.num_indices,
@@ -159,6 +177,8 @@ impl Terrain {
                 std::ptr::null(),
             );
         }
+
+        Ok(())
     }
 
     // @speed: slowwwww
