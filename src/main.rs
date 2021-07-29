@@ -63,15 +63,15 @@ struct DirectionalLight {
 }
 
 struct Game {
-    game_start: Instant,
-    frame_start: Instant,
-
     windowed_context: WindowedContext<PossiblyCurrent>,
-    input: Input,
+
+    prev_input: RawInput,
+    input: RawInput,
     gui_input: EguiInput,
+    gui: Gui,
+
     camera: Camera,
     in_focus: bool,
-    gui: Gui,
 
     terrain: Terrain,
     skybox: Skybox,
@@ -174,33 +174,36 @@ impl Game {
         ])?;
 
         let screen_size_physical = Vec2::new(window_size.width as f32, window_size.height as f32);
+        let screen_size_logical = screen_size_physical / window.scale_factor() as f32;
+
+        let now = Instant::now();
+        let input = RawInput::new(Instant::now(), screen_size_logical, window.scale_factor());
+        let prev_input = input.clone();
+
+        // Gui and its initial input
         let gui = Gui::new(screen_size_physical)?;
+        let gui_input = EguiInput {
+            screen_rect: Some(Rect::from_min_max(
+                Pos2::new(0.0, 0.0),
+                Pos2::new(screen_size_logical.x, screen_size_logical.y),
+            )),
+            pixels_per_point: Some(window.scale_factor() as f32),
+            time: Some(0.0),
 
-        // Set some initial parameters which will then be used every frame
-        let gui_input = {
-            let screen_size_logical = screen_size_physical / window.scale_factor() as f32;
-            EguiInput {
-                screen_rect: Some(Rect::from_min_max(
-                    Pos2::new(0.0, 0.0),
-                    Pos2::new(screen_size_logical.x, screen_size_logical.y),
-                )),
-                pixels_per_point: Some(window.scale_factor() as f32),
-                time: Some(0.0),
-
-                ..Default::default()
-            }
+            ..Default::default()
         };
 
         Ok(Game {
-            game_start: Instant::now(),
-            frame_start: Instant::now(),
-
             windowed_context,
-            input: Input::default(),
+
+            input,
+            prev_input,
+
             gui_input,
+            gui,
+
             camera,
             in_focus: true,
-            gui,
 
             terrain,
             skybox,

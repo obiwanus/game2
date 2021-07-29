@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use glam::Vec2;
 
+#[derive(Clone, Debug)]
 pub struct RawInput {
     /// The point in time when the game started (don't change it once set)
     pub game_start: Instant,
@@ -29,16 +30,21 @@ pub struct RawInput {
 }
 
 impl RawInput {
-    fn new() -> Self {
+    pub fn new(now: Instant, screen_size: Vec2, scale_factor: f64) -> Self {
         RawInput {
-            game_start: Instant::now(),
-            frame_start: Instant::now(),
+            game_start: now,
+            frame_start: now,
             delta_time: 0.0,
-            screen_size: Vec2::new(),
+            screen_size,
+            scale_factor,
+            scroll_delta: Vec2::new(0.0, 0.0),
+            modifiers: Default::default(),
+            events: Vec::new(),
         }
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum Event {
     Copy,
     Cut,
