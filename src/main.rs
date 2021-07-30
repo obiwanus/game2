@@ -218,16 +218,19 @@ impl Game {
                     scale_factor,
                     new_inner_size: _,
                 } => {
-                    self.gui_input.pixels_per_point = Some(scale_factor as f32);
+                    self.input.scale_factor = scale_factor;
+                    // self.gui_input.pixels_per_point = Some(scale_factor as f32);
                 }
                 WindowEvent::MouseInput { button, state, .. } => {
                     let pressed = state == ElementState::Pressed;
 
-                    if button == MouseButton::Left {
-                        self.input.left_mouse_button_pressed = pressed;
-                    } else if button == MouseButton::Right {
-                        self.input.wasd_mode = pressed;
-                    }
+                    // if button == MouseButton::Left {
+                    //     self.input.left_mouse_button_pressed = pressed;
+                    // } else if button == MouseButton::Right {
+                    //     self.input.wasd_mode = pressed;
+                    // }
+
+
 
                     let pointer_button = match button {
                         MouseButton::Left => Some(PointerButton::Primary),
@@ -251,18 +254,19 @@ impl Game {
                     input:
                         KeyboardInput {
                             state,
-                            virtual_keycode: Some(key),
+                            virtual_keycode: Some(virtual_key_code),
                             ..
                         },
                     ..
                 } => {
                     // Key press
-                    match key {
+                    match virtual_key_code {
                         VirtualKeyCode::W => self.input.forward = state == ElementState::Pressed,
                         VirtualKeyCode::A => self.input.left = state == ElementState::Pressed,
                         VirtualKeyCode::S => self.input.back = state == ElementState::Pressed,
                         VirtualKeyCode::D => self.input.right = state == ElementState::Pressed,
                         VirtualKeyCode::Escape => *control_flow = ControlFlow::Exit,
+                        VirtualKeyCode::Num
                         _ => {}
                     }
                 }
@@ -306,21 +310,25 @@ impl Game {
                 }
                 _ => {}
             },
-            Event::MainEventsCleared => self.update_and_render()?,
+            Event::MainEventsCleared => {
+                self.gui_input = self.input.into_egui_input();
+                let input = self.derive_game_input();
+
+                self.update_and_render(input)?;
+
+                self.prev_input = self.input.renew();
+            },
             _ => {}
         };
         Ok(())
     }
 
-    fn update_and_render(&mut self) -> Result<()> {
-        // Application code
-        let now = Instant::now();
-        let delta_time = now.duration_since(self.frame_start).as_secs_f32();
-        self.frame_start = now;
+    /// Uses raw input and previous input to derive game input for the frame
+    fn derive_game_input(&self) -> Input {
 
-        // For GUI animations
-        self.gui_input.time = Some(now.duration_since(self.game_start).as_secs_f64());
+    }
 
+    fn update_and_render(&mut self, input: Input) -> Result<()> {
         // Move camera
         if self.input.wasd_mode {
             use camera::Movement::*;
