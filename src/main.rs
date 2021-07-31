@@ -13,11 +13,12 @@ mod terrain;
 mod texture;
 mod utils;
 
+use std::convert::TryInto;
 use std::error::Error;
 use std::time::Instant;
 
-use egui::{Event as GuiEvent, Modifiers, PointerButton, Pos2, RawInput as EguiInput, Rect};
-use glam::{Vec2, Vec3, Vec4};
+use egui::{Event as GuiEvent, PointerButton, Pos2, RawInput as EguiInput, Rect};
+use glam::{DVec2, Vec2, Vec3, Vec4};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
     WindowEvent,
@@ -30,7 +31,9 @@ use glutin::{PossiblyCurrent, WindowedContext};
 use camera::Camera;
 use editor::gui::Gui;
 use editor::Brush;
-use input::{Input, RawInput};
+use input::{
+    vec2_to_egui_pos2, vec2_to_egui_vec2, Event as InputEvent, Input, Modifiers, RawInput,
+};
 use opengl::buffers::Buffer;
 use opengl::shader::Program;
 use skybox::Skybox;
@@ -65,8 +68,9 @@ struct DirectionalLight {
 struct Game {
     windowed_context: WindowedContext<PossiblyCurrent>,
 
-    prev_input: RawInput,
-    input: RawInput,
+    prev_raw_input: RawInput,
+    raw_input: RawInput,
+
     gui_input: EguiInput,
     gui: Gui,
 
@@ -196,8 +200,8 @@ impl Game {
         Ok(Game {
             windowed_context,
 
-            input,
-            prev_input,
+            raw_input: input,
+            prev_raw_input: prev_input,
 
             gui_input,
             gui,
@@ -218,37 +222,29 @@ impl Game {
                     scale_factor,
                     new_inner_size: _,
                 } => {
-                    self.input.scale_factor = scale_factor;
-                    // self.gui_input.pixels_per_point = Some(scale_factor as f32);
+                    self.raw_input.scale_factor = scale_factor;
+                }
+                WindowEvent::CursorMoved { position, .. } => {
+                    let pointer = Vec2::new(position.x as f32, position.y as f32);
+                    self.raw_input.pointer_pos = pointer;
                 }
                 WindowEvent::MouseInput { button, state, .. } => {
                     let pressed = state == ElementState::Pressed;
-
-                    // if button == MouseButton::Left {
-                    //     self.input.left_mouse_button_pressed = pressed;
-                    // } else if button == MouseButton::Right {
-                    //     self.input.wasd_mode = pressed;
-                    // }
-
-
-
-                    let pointer_button = match button {
-                        MouseButton::Left => Some(PointerButton::Primary),
-                        MouseButton::Middle => Some(PointerButton::Middle),
-                        MouseButton::Right => Some(PointerButton::Secondary),
-                        _ => None,
-                    };
-                    if let Some(button) = pointer_button {
-                        self.gui_input.events.push(GuiEvent::PointerButton {
-                            pos: Pos2::new(self.input.pointer.x, self.input.pointer.y),
-                            button,
-                            pressed,
-                            modifiers: self.gui_input.modifiers,
-                        });
-                    }
+                    self.raw_input.events.push(InputEvent::MouseButtonPressed {
+                        pos: self.raw_input.pointer_pos,
+                        button: match button {
+                            MouseButton::Left => input::MouseButton::Primary,
+                            MouseButton::Right => input::MouseButton::Secondary,
+                            MouseButton::Middle => input::MouseButton::Middle,
+                            _ => input::MouseButton::Unknown,
+                        },
+                        pressed,
+                        modifiers: self.raw_input.modifiers,
+                    });
                 }
                 WindowEvent::Focused(focused) => {
                     self.in_focus = focused;
+                    // Try using Poll here?
                 }
                 WindowEvent::KeyboardInput {
                     input:
@@ -259,98 +255,150 @@ impl Game {
                         },
                     ..
                 } => {
-                    // Key press
-                    match virtual_key_code {
-                        VirtualKeyCode::W => self.input.forward = state == ElementState::Pressed,
-                        VirtualKeyCode::A => self.input.left = state == ElementState::Pressed,
-                        VirtualKeyCode::S => self.input.back = state == ElementState::Pressed,
-                        VirtualKeyCode::D => self.input.right = state == ElementState::Pressed,
-                        VirtualKeyCode::Escape => *control_flow = ControlFlow::Exit,
-                        VirtualKeyCode::Num
-                        _ => {}
+                    let key: input::Key = virtual_key_code.into();
+                    if key != input::Key::Unknown {
+                        self.raw_input.events.push(InputEvent::Key {
+                            key,
+                            pressed: state == ElementState::Pressed,
+                            modifiers: self.raw_input.modifiers,
+                        });
                     }
                 }
                 WindowEvent::ModifiersChanged(state) => {
-                    self.camera.speed_boost = state.shift();
-                    self.gui_input.modifiers = Modifiers {
+                    self.raw_input.modifiers = Modifiers {
                         alt: state.alt(),
                         ctrl: state.ctrl(),
                         shift: state.shift(),
-                        command: state.ctrl(),
-                        mac_cmd: false, // must be false unless on Mac
+                        logo: state.logo(),
                     };
-                    #[cfg(target_os = "macos")]
-                    {
-                        self.gui_input.modifiers.command = state.logo();
-                        self.gui_input.modifiers.mac_cmd = state.logo();
-                    }
-                }
-                WindowEvent::CursorMoved { position, .. } => {
-                    let pointer = Vec2::new(position.x as f32, position.y as f32);
-                    self.input.pointer = pointer;
-                    self.input.pointer_moved = true;
-
-                    self.gui_input
-                        .events
-                        .push(GuiEvent::PointerMoved(Pos2::new(pointer.x, pointer.y)))
                 }
                 _ => {}
             },
             Event::DeviceEvent { event, .. } => match event {
-                DeviceEvent::MouseMotion { delta } if self.in_focus && self.input.wasd_mode => {
-                    let (yaw_delta, pitch_delta) = delta;
-                    self.camera.rotate(yaw_delta, pitch_delta);
+                DeviceEvent::MouseMotion { delta } if self.in_focus => {
+                    let (x, y) = delta;
+                    self.raw_input.pointer_delta = DVec2::new(x, y);
                 }
                 DeviceEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(x, y),
                 } => {
-                    self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
+                    // TODO:
+                    // self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
 
-                    self.gui_input.scroll_delta = egui::emath::vec2(x, y);
+                    self.raw_input.scroll_delta = Vec2::new(x, y);
                 }
                 _ => {}
             },
-            Event::MainEventsCleared => {
-                self.gui_input = self.input.into_egui_input();
-                let input = self.derive_game_input();
-
-                self.update_and_render(input)?;
-
-                self.prev_input = self.input.renew();
-            },
+            Event::MainEventsCleared => self.update_and_render()?,
             _ => {}
         };
         Ok(())
     }
 
-    /// Uses raw input and previous input to derive game input for the frame
-    fn derive_game_input(&self) -> Input {
-
+    fn derive_gui_input(input: &RawInput, prev_input: &RawInput) -> EguiInput {
+        EguiInput {
+            scroll_delta: vec2_to_egui_vec2(input.scroll_delta),
+            screen_rect: if input.screen_size != prev_input.screen_size {
+                Some(egui::Rect {
+                    min: Default::default(),
+                    max: vec2_to_egui_pos2(input.screen_size),
+                })
+            } else {
+                None
+            },
+            pixels_per_point: if (input.scale_factor - prev_input.scale_factor).abs() < f64::EPSILON
+            {
+                Some(input.scale_factor as f32)
+            } else {
+                None
+            },
+            time: Some(
+                input
+                    .frame_start
+                    .duration_since(input.game_start)
+                    .as_secs_f64(),
+            ),
+            modifiers: input.modifiers.into(),
+            events: input
+                .events
+                .iter()
+                .filter_map(|e| e.try_into().ok())
+                .collect(),
+            ..Default::default()
+        }
     }
 
-    fn update_and_render(&mut self, input: Input) -> Result<()> {
+    fn derive_game_input(&self, raw_input: &RawInput, prev_raw_input: &RawInput) -> Input {
+        let mut input = Input {
+            pointer: raw_input.pointer_pos,
+            ..Default::default()
+        };
+
+        for event in self.raw_input.events.iter() {
+            match *event {
+                InputEvent::Key {
+                    key,
+                    pressed,
+                    modifiers: _,
+                } => {
+                    use input::Key::*;
+                    match key {
+                        W => input.forward = pressed,
+                        A => input.left = pressed,
+                        S => input.back = pressed,
+                        D => input.right = pressed,
+                        Escape => input.should_exit = true,
+                        _ => {}
+                    }
+                }
+                InputEvent::MouseButtonPressed {
+                    pos,
+                    button,
+                    pressed,
+                    modifiers: _,
+                } => {
+                    use input::MouseButton::*;
+                    match button {
+                        Primary => input.left_mouse_button_pressed = pressed,
+                        Secondary => input.wasd_mode = pressed,
+                        _ => {}
+                    }
+                }
+                InputEvent::PointerMoved(pos) => {
+                    input.pointer_moved = true;
+                    input.pointer = pos;
+                }
+                _ => {}
+            }
+        }
+
+        input
+    }
+
+    fn update_and_render(&mut self) -> Result<()> {
+        let input = self.derive_game_input(&self.raw_input, &self.prev_raw_input);
+        let delta_time = self.raw_input.delta_time;
+
         // Move camera
-        if self.input.wasd_mode {
+        if input.wasd_mode {
             use camera::Movement::*;
-            if self.input.forward {
+            if input.forward {
                 self.camera.go(Forward, delta_time);
             }
-            if self.input.left {
+            if input.left {
                 self.camera.go(Left, delta_time);
             }
-            if self.input.back {
+            if input.back {
                 self.camera.go(Backward, delta_time);
             }
-            if self.input.right {
+            if input.right {
                 self.camera.go(Right, delta_time);
             }
         }
 
-        if self.input.pointer_moved || self.camera.moved {
-            self.input.pointer_moved = false;
-
+        if input.pointer_moved || self.camera.moved {
             let cursor = {
-                let ray = self.camera.get_ray_through_pixel(self.input.pointer);
+                let ray = self.camera.get_ray_through_pixel(input.pointer);
                 let mut hit = f32::INFINITY;
                 for (a, b, c) in self.terrain.triangles() {
                     let new_hit = ray.hits_triangle(a, b, c);
@@ -368,7 +416,7 @@ impl Game {
         }
 
         // Shape the terrain
-        if self.input.left_mouse_button_pressed {
+        if input.left_mouse_button_pressed {
             let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
             for v in self.terrain.vertices.iter_mut() {
                 let dist_sq = (v.pos - self.terrain.cursor).length_squared();
@@ -386,22 +434,17 @@ impl Game {
         self.terrain.draw(&self.camera)?;
         self.skybox.draw(&self.camera)?; // draw skybox last
 
+        self.gui_input = Game::derive_gui_input(&self.raw_input, &self.prev_raw_input);
         self.gui.interact_and_draw(self.gui_input.clone());
-        self.gui_input = EguiInput::default();
 
         self.windowed_context.swap_buffers()?;
+
+        // Clear input and save as old
+        self.prev_raw_input = self.raw_input.renew();
 
         if self.camera.moved {
             // TODO: move to input and clear automatically
             self.camera.moved = false;
-        }
-
-        #[cfg(feature = "debug")]
-        {
-            // Display frame time
-            let frame_ms =
-                Instant::now().duration_since(self.frame_start).as_micros() as f32 / 1000.0;
-            println!("frame: {} ms", frame_ms);
         }
 
         Ok(())

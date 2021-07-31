@@ -1,7 +1,10 @@
-use std::time::Instant;
+use std::{
+    convert::{TryFrom, TryInto},
+    time::Instant,
+};
 
 use egui::RawInput as EguiInput;
-use glam::Vec2;
+use glam::{DVec2, Vec2};
 use glutin::event::VirtualKeyCode;
 
 #[derive(Clone, Debug)]
@@ -17,6 +20,12 @@ pub struct RawInput {
 
     /// In logical pixels
     pub screen_size: Vec2,
+
+    /// In physical pixels
+    pub pointer_pos: Vec2,
+
+    /// In physical pixels
+    pub pointer_delta: DVec2,
 
     /// Screen scale factor
     pub scale_factor: f64,
@@ -38,6 +47,8 @@ impl RawInput {
             frame_start: now,
             delta_time: 0.0,
             screen_size,
+            pointer_pos: Vec2::new(f32::INFINITY, f32::INFINITY),
+            pointer_delta: Default::default(),
             scale_factor,
             scroll_delta: Vec2::new(0.0, 0.0),
             modifiers: Default::default(),
@@ -55,6 +66,8 @@ impl RawInput {
             frame_start: std::mem::replace(&mut self.frame_start, now),
             delta_time: std::mem::replace(&mut self.delta_time, delta_time),
             screen_size: self.screen_size,
+            pointer_pos: self.pointer_pos,
+            pointer_delta: std::mem::take(&mut self.pointer_delta),
             scale_factor: self.scale_factor,
             scroll_delta: std::mem::take(&mut self.scroll_delta),
             modifiers: self.modifiers,
@@ -77,12 +90,56 @@ pub enum Event {
         modifiers: Modifiers,
     },
     PointerMoved(Vec2),
-    MouseButton {
+    MouseButtonPressed {
         pos: Vec2,
         button: MouseButton,
         pressed: bool,
         modifiers: Modifiers,
     },
+}
+
+impl TryFrom<&Event> for egui::Event {
+    type Error = ();
+
+    /// May fail because not all keys are supported by egui
+    fn try_from(value: &Event) -> Result<Self, Self::Error> {
+        use Event::*;
+        let result = match *value {
+            Copy => egui::Event::Copy,
+            Cut => egui::Event::Cut,
+            Key {
+                key,
+                pressed,
+                modifiers,
+            } => {
+                let egui_key = key.try_into()?;
+                egui::Event::Key {
+                    key: egui_key,
+                    pressed,
+                    modifiers: modifiers.into(),
+                }
+            }
+            PointerMoved(vec2) => egui::Event::PointerMoved(vec2_to_egui_pos2(vec2)),
+            MouseButtonPressed {
+                pos,
+                button,
+                pressed,
+                modifiers,
+            } => egui::Event::PointerButton {
+                pos: vec2_to_egui_pos2(pos),
+                button: match button {
+                    MouseButton::Primary => egui::PointerButton::Primary,
+                    MouseButton::Secondary => egui::PointerButton::Secondary,
+                    MouseButton::Middle => egui::PointerButton::Middle,
+                    _ => return Err(()),
+                },
+                pressed,
+                modifiers: modifiers.into(),
+            },
+        };
+
+        Ok(result)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -93,11 +150,33 @@ pub struct Modifiers {
     pub logo: bool,
 }
 
+impl From<Modifiers> for egui::Modifiers {
+    fn from(src: Modifiers) -> Self {
+        egui::Modifiers {
+            alt: src.alt,
+            ctrl: src.ctrl,
+            shift: src.shift,
+            command: if cfg!(target_os = "macos") {
+                src.logo
+            } else {
+                src.ctrl
+            },
+            mac_cmd: if cfg!(target_os = "macos") {
+                src.logo
+            } else {
+                false
+            },
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MouseButton {
     Primary = 0,
     Secondary = 1,
     Middle = 2,
+
+    Unknown,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]
@@ -300,6 +379,86 @@ impl From<VirtualKeyCode> for Key {
     }
 }
 
+impl TryFrom<Key> for egui::Key {
+    type Error = ();
+
+    fn try_from(value: Key) -> Result<Self, Self::Error> {
+        use Key::*;
+
+        let result = match value {
+            A => egui::Key::A,
+            B => egui::Key::B,
+            C => egui::Key::C,
+            D => egui::Key::D,
+            E => egui::Key::E,
+            F => egui::Key::F,
+            G => egui::Key::G,
+            H => egui::Key::H,
+            I => egui::Key::I,
+            J => egui::Key::J,
+            K => egui::Key::K,
+            L => egui::Key::L,
+            M => egui::Key::M,
+            N => egui::Key::N,
+            O => egui::Key::O,
+            P => egui::Key::P,
+            Q => egui::Key::Q,
+            R => egui::Key::R,
+            S => egui::Key::S,
+            T => egui::Key::T,
+            U => egui::Key::U,
+            V => egui::Key::V,
+            W => egui::Key::W,
+            X => egui::Key::X,
+            Y => egui::Key::Y,
+            Z => egui::Key::Z,
+
+            Escape => egui::Key::Escape,
+            Insert => egui::Key::Insert,
+            Home => egui::Key::Home,
+            Delete => egui::Key::Delete,
+            End => egui::Key::End,
+            PageDown => egui::Key::PageDown,
+            PageUp => egui::Key::PageUp,
+
+            ArrowLeft => egui::Key::ArrowLeft,
+            ArrowUp => egui::Key::ArrowUp,
+            ArrowRight => egui::Key::ArrowRight,
+            ArrowDown => egui::Key::ArrowDown,
+
+            Backspace => egui::Key::Backspace,
+            Enter => egui::Key::Enter,
+            Space => egui::Key::Space,
+
+            Key1 => egui::Key::Num1,
+            Key2 => egui::Key::Num2,
+            Key3 => egui::Key::Num3,
+            Key4 => egui::Key::Num4,
+            Key5 => egui::Key::Num5,
+            Key6 => egui::Key::Num6,
+            Key7 => egui::Key::Num7,
+            Key8 => egui::Key::Num8,
+            Key9 => egui::Key::Num9,
+            Key0 => egui::Key::Num0,
+
+            Num0 => egui::Key::Num0,
+            Num1 => egui::Key::Num1,
+            Num2 => egui::Key::Num2,
+            Num3 => egui::Key::Num3,
+            Num4 => egui::Key::Num4,
+            Num5 => egui::Key::Num5,
+            Num6 => egui::Key::Num6,
+            Num7 => egui::Key::Num7,
+            Num8 => egui::Key::Num8,
+            Num9 => egui::Key::Num9,
+
+            _ => return Err(()),
+        };
+
+        Ok(result)
+    }
+}
+
 #[derive(Default)]
 pub struct Input {
     pub forward: bool,
@@ -310,7 +469,21 @@ pub struct Input {
     pub pointer: Vec2,
     pub pointer_moved: bool,
     pub left_mouse_button_pressed: bool,
-    pub brush_size_changed: bool,
 
     pub wasd_mode: bool,
+    pub should_exit: bool,
+}
+
+pub fn vec2_to_egui_vec2(vec2: Vec2) -> egui::Vec2 {
+    egui::Vec2 {
+        x: vec2.x,
+        y: vec2.y,
+    }
+}
+
+pub fn vec2_to_egui_pos2(vec2: Vec2) -> egui::Pos2 {
+    egui::Pos2 {
+        x: vec2.x,
+        y: vec2.y,
+    }
 }
