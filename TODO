@@ -13,6 +13,7 @@ DONE:
 
 31 Jul 2021, Sat
 - Refactored so it compiled
+- Support text entry
 
 30 Jul 2021, Fri
 - Refactor input into a raw input (WIP)

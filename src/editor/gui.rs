@@ -25,6 +25,8 @@ pub struct Gui {
     vao: VertexArray,
     vbo: Buffer,
     ebo: Buffer,
+
+    name: String,
 }
 
 impl Gui {
@@ -104,6 +106,7 @@ impl Gui {
             egui_texture_version: None,
 
             shader,
+            name: String::new(),
 
             vao,
             vbo,
@@ -113,6 +116,8 @@ impl Gui {
 
     pub fn interact_and_draw(&mut self, input: RawInput) {
         self.ctx.begin_frame(input);
+
+        let mut name = self.name.clone();
 
         // ================== GUI starts ========================
         egui::SidePanel::left("my_side_panel").show(&self.ctx, |ui| {
@@ -131,7 +136,14 @@ impl Gui {
                             ui.label("contents");
                         });
                 });
+
+            ui.horizontal(|ui| {
+                ui.label("Your name: ");
+                ui.text_edit_singleline(&mut name);
+            });
         });
+
+        self.name = name;
         // ================== GUI ends ===========================
 
         let (output, shapes) = self.ctx.end_frame();

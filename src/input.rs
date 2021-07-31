@@ -35,9 +35,8 @@ pub struct RawInput {
 
     /// The state of modifier keys
     pub modifiers: Modifiers,
-
-    /// In-order events received since last frame
-    pub events: Vec<Event>,
+    // In-order events received since last frame
+    // pub events: Vec<Event>,
 }
 
 impl RawInput {
@@ -52,13 +51,11 @@ impl RawInput {
             scale_factor,
             scroll_delta: Vec2::new(0.0, 0.0),
             modifiers: Default::default(),
-            events: Vec::new(),
+            // events: Vec::new(),
         }
     }
 
-    /// To be used an the end of the frame to get a fresh input
-    /// Returns old input
-    pub fn renew(&mut self) -> Self {
+    pub fn take(&mut self) -> Self {
         let now = Instant::now();
         let delta_time = now.duration_since(self.frame_start).as_secs_f32();
         RawInput {
@@ -71,74 +68,12 @@ impl RawInput {
             scale_factor: self.scale_factor,
             scroll_delta: std::mem::take(&mut self.scroll_delta),
             modifiers: self.modifiers,
-            events: std::mem::take(&mut self.events),
+            // events: std::mem::take(&mut self.events),
         }
     }
 
     pub fn into_egui_input(&self) -> EguiInput {
         EguiInput::default()
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum Event {
-    Copy,
-    Cut,
-    Key {
-        key: Key,
-        pressed: bool,
-        modifiers: Modifiers,
-    },
-    PointerMoved(Vec2),
-    MouseButtonPressed {
-        pos: Vec2,
-        button: MouseButton,
-        pressed: bool,
-        modifiers: Modifiers,
-    },
-}
-
-impl TryFrom<&Event> for egui::Event {
-    type Error = ();
-
-    /// May fail because not all keys are supported by egui
-    fn try_from(value: &Event) -> Result<Self, Self::Error> {
-        use Event::*;
-        let result = match *value {
-            Copy => egui::Event::Copy,
-            Cut => egui::Event::Cut,
-            Key {
-                key,
-                pressed,
-                modifiers,
-            } => {
-                let egui_key = key.try_into()?;
-                egui::Event::Key {
-                    key: egui_key,
-                    pressed,
-                    modifiers: modifiers.into(),
-                }
-            }
-            PointerMoved(vec2) => egui::Event::PointerMoved(vec2_to_egui_pos2(vec2)),
-            MouseButtonPressed {
-                pos,
-                button,
-                pressed,
-                modifiers,
-            } => egui::Event::PointerButton {
-                pos: vec2_to_egui_pos2(pos),
-                button: match button {
-                    MouseButton::Primary => egui::PointerButton::Primary,
-                    MouseButton::Secondary => egui::PointerButton::Secondary,
-                    MouseButton::Middle => egui::PointerButton::Middle,
-                    _ => return Err(()),
-                },
-                pressed,
-                modifiers: modifiers.into(),
-            },
-        };
-
-        Ok(result)
     }
 }
 
@@ -148,315 +83,6 @@ pub struct Modifiers {
     pub ctrl: bool,
     pub shift: bool,
     pub logo: bool,
-}
-
-impl From<Modifiers> for egui::Modifiers {
-    fn from(src: Modifiers) -> Self {
-        egui::Modifiers {
-            alt: src.alt,
-            ctrl: src.ctrl,
-            shift: src.shift,
-            command: if cfg!(target_os = "macos") {
-                src.logo
-            } else {
-                src.ctrl
-            },
-            mac_cmd: if cfg!(target_os = "macos") {
-                src.logo
-            } else {
-                false
-            },
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MouseButton {
-    Primary = 0,
-    Secondary = 1,
-    Middle = 2,
-
-    Unknown,
-}
-
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]
-pub enum Key {
-    ArrowDown,
-    ArrowLeft,
-    ArrowRight,
-    ArrowUp,
-
-    Escape,
-    Tab,
-    Backspace,
-    Enter,
-    Space,
-
-    Insert,
-    Delete,
-    Home,
-    End,
-    PageUp,
-    PageDown,
-
-    // Numpad digits
-    Num0,
-    Num1,
-    Num2,
-    Num3,
-    Num4,
-    Num5,
-    Num6,
-    Num7,
-    Num8,
-    Num9,
-
-    // Keyboard digits
-    Key0,
-    Key1,
-    Key2,
-    Key3,
-    Key4,
-    Key5,
-    Key6,
-    Key7,
-    Key8,
-    Key9,
-
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
-    G,
-    H,
-    I,
-    J,
-    K,
-    L,
-    M,
-    N,
-    O,
-    P,
-    Q,
-    R,
-    S,
-    T,
-    U,
-    V,
-    W,
-    X,
-    Y,
-    Z,
-
-    F1,
-    F2,
-    F3,
-    F4,
-    F5,
-    F6,
-    F7,
-    F8,
-    F9,
-    F10,
-    F11,
-    F12,
-    F13,
-    F14,
-    F15,
-    F16,
-    F17,
-    F18,
-    F19,
-    F20,
-    F21,
-    F22,
-    F23,
-    F24,
-
-    Unknown,
-}
-
-impl From<VirtualKeyCode> for Key {
-    fn from(virtual_key_code: VirtualKeyCode) -> Self {
-        use glutin::event::VirtualKeyCode::*;
-
-        match virtual_key_code {
-            A => Key::A,
-            B => Key::B,
-            C => Key::C,
-            D => Key::D,
-            E => Key::E,
-            F => Key::F,
-            G => Key::G,
-            H => Key::H,
-            I => Key::I,
-            J => Key::J,
-            K => Key::K,
-            L => Key::L,
-            M => Key::M,
-            N => Key::N,
-            O => Key::O,
-            P => Key::P,
-            Q => Key::Q,
-            R => Key::R,
-            S => Key::S,
-            T => Key::T,
-            U => Key::U,
-            V => Key::V,
-            W => Key::W,
-            X => Key::X,
-            Y => Key::Y,
-            Z => Key::Z,
-
-            F1 => Key::F1,
-            F2 => Key::F2,
-            F3 => Key::F3,
-            F4 => Key::F4,
-            F5 => Key::F5,
-            F6 => Key::F6,
-            F7 => Key::F7,
-            F8 => Key::F8,
-            F9 => Key::F9,
-            F10 => Key::F10,
-            F11 => Key::F11,
-            F12 => Key::F12,
-            F13 => Key::F13,
-            F14 => Key::F14,
-            F15 => Key::F15,
-            F16 => Key::F16,
-            F17 => Key::F17,
-            F18 => Key::F18,
-            F19 => Key::F19,
-            F20 => Key::F20,
-            F21 => Key::F21,
-            F22 => Key::F22,
-            F23 => Key::F23,
-            F24 => Key::F24,
-
-            Escape => Key::Escape,
-            Insert => Key::Insert,
-            Home => Key::Home,
-            Delete => Key::Delete,
-            End => Key::End,
-            PageDown => Key::PageDown,
-            PageUp => Key::PageUp,
-
-            Left => Key::ArrowLeft,
-            Up => Key::ArrowUp,
-            Right => Key::ArrowRight,
-            Down => Key::ArrowDown,
-
-            Back => Key::Backspace,
-            Return => Key::Enter,
-            Space => Key::Space,
-
-            Key1 => Key::Key1,
-            Key2 => Key::Key2,
-            Key3 => Key::Key3,
-            Key4 => Key::Key4,
-            Key5 => Key::Key5,
-            Key6 => Key::Key6,
-            Key7 => Key::Key7,
-            Key8 => Key::Key8,
-            Key9 => Key::Key9,
-            Key0 => Key::Key0,
-
-            Numpad0 => Key::Num0,
-            Numpad1 => Key::Num1,
-            Numpad2 => Key::Num2,
-            Numpad3 => Key::Num3,
-            Numpad4 => Key::Num4,
-            Numpad5 => Key::Num5,
-            Numpad6 => Key::Num6,
-            Numpad7 => Key::Num7,
-            Numpad8 => Key::Num8,
-            Numpad9 => Key::Num9,
-
-            _ => Key::Unknown,
-        }
-    }
-}
-
-impl TryFrom<Key> for egui::Key {
-    type Error = ();
-
-    fn try_from(value: Key) -> Result<Self, Self::Error> {
-        use Key::*;
-
-        let result = match value {
-            A => egui::Key::A,
-            B => egui::Key::B,
-            C => egui::Key::C,
-            D => egui::Key::D,
-            E => egui::Key::E,
-            F => egui::Key::F,
-            G => egui::Key::G,
-            H => egui::Key::H,
-            I => egui::Key::I,
-            J => egui::Key::J,
-            K => egui::Key::K,
-            L => egui::Key::L,
-            M => egui::Key::M,
-            N => egui::Key::N,
-            O => egui::Key::O,
-            P => egui::Key::P,
-            Q => egui::Key::Q,
-            R => egui::Key::R,
-            S => egui::Key::S,
-            T => egui::Key::T,
-            U => egui::Key::U,
-            V => egui::Key::V,
-            W => egui::Key::W,
-            X => egui::Key::X,
-            Y => egui::Key::Y,
-            Z => egui::Key::Z,
-
-            Escape => egui::Key::Escape,
-            Insert => egui::Key::Insert,
-            Home => egui::Key::Home,
-            Delete => egui::Key::Delete,
-            End => egui::Key::End,
-            PageDown => egui::Key::PageDown,
-            PageUp => egui::Key::PageUp,
-
-            ArrowLeft => egui::Key::ArrowLeft,
-            ArrowUp => egui::Key::ArrowUp,
-            ArrowRight => egui::Key::ArrowRight,
-            ArrowDown => egui::Key::ArrowDown,
-
-            Backspace => egui::Key::Backspace,
-            Enter => egui::Key::Enter,
-            Space => egui::Key::Space,
-
-            Key1 => egui::Key::Num1,
-            Key2 => egui::Key::Num2,
-            Key3 => egui::Key::Num3,
-            Key4 => egui::Key::Num4,
-            Key5 => egui::Key::Num5,
-            Key6 => egui::Key::Num6,
-            Key7 => egui::Key::Num7,
-            Key8 => egui::Key::Num8,
-            Key9 => egui::Key::Num9,
-            Key0 => egui::Key::Num0,
-
-            Num0 => egui::Key::Num0,
-            Num1 => egui::Key::Num1,
-            Num2 => egui::Key::Num2,
-            Num3 => egui::Key::Num3,
-            Num4 => egui::Key::Num4,
-            Num5 => egui::Key::Num5,
-            Num6 => egui::Key::Num6,
-            Num7 => egui::Key::Num7,
-            Num8 => egui::Key::Num8,
-            Num9 => egui::Key::Num9,
-
-            _ => return Err(()),
-        };
-
-        Ok(result)
-    }
 }
 
 #[derive(Default)]
@@ -486,4 +112,131 @@ pub fn vec2_to_egui_pos2(vec2: Vec2) -> egui::Pos2 {
         x: vec2.x,
         y: vec2.y,
     }
+}
+
+pub fn vkeycode_to_egui_key(virtual_key_code: VirtualKeyCode) -> Option<egui::Key> {
+    let key = match virtual_key_code {
+        VirtualKeyCode::Down => egui::Key::ArrowDown,
+        VirtualKeyCode::Left => egui::Key::ArrowLeft,
+        VirtualKeyCode::Right => egui::Key::ArrowRight,
+        VirtualKeyCode::Up => egui::Key::ArrowUp,
+
+        VirtualKeyCode::Escape => egui::Key::Escape,
+        VirtualKeyCode::Tab => egui::Key::Tab,
+        VirtualKeyCode::Back => egui::Key::Backspace,
+        VirtualKeyCode::Return => egui::Key::Enter,
+        VirtualKeyCode::Space => egui::Key::Space,
+
+        VirtualKeyCode::Insert => egui::Key::Insert,
+        VirtualKeyCode::Delete => egui::Key::Delete,
+        VirtualKeyCode::Home => egui::Key::Home,
+        VirtualKeyCode::End => egui::Key::End,
+        VirtualKeyCode::PageUp => egui::Key::PageUp,
+        VirtualKeyCode::PageDown => egui::Key::PageDown,
+
+        VirtualKeyCode::Numpad0 => egui::Key::Num0,
+        VirtualKeyCode::Numpad1 => egui::Key::Num1,
+        VirtualKeyCode::Numpad2 => egui::Key::Num2,
+        VirtualKeyCode::Numpad3 => egui::Key::Num3,
+        VirtualKeyCode::Numpad4 => egui::Key::Num4,
+        VirtualKeyCode::Numpad5 => egui::Key::Num5,
+        VirtualKeyCode::Numpad6 => egui::Key::Num6,
+        VirtualKeyCode::Numpad7 => egui::Key::Num7,
+        VirtualKeyCode::Numpad8 => egui::Key::Num8,
+        VirtualKeyCode::Numpad9 => egui::Key::Num9,
+
+        VirtualKeyCode::Key0 => egui::Key::Num0,
+        VirtualKeyCode::Key1 => egui::Key::Num1,
+        VirtualKeyCode::Key2 => egui::Key::Num2,
+        VirtualKeyCode::Key3 => egui::Key::Num3,
+        VirtualKeyCode::Key4 => egui::Key::Num4,
+        VirtualKeyCode::Key5 => egui::Key::Num5,
+        VirtualKeyCode::Key6 => egui::Key::Num6,
+        VirtualKeyCode::Key7 => egui::Key::Num7,
+        VirtualKeyCode::Key8 => egui::Key::Num8,
+        VirtualKeyCode::Key9 => egui::Key::Num9,
+
+        VirtualKeyCode::A => egui::Key::A,
+        VirtualKeyCode::B => egui::Key::B,
+        VirtualKeyCode::C => egui::Key::C,
+        VirtualKeyCode::D => egui::Key::D,
+        VirtualKeyCode::E => egui::Key::E,
+        VirtualKeyCode::F => egui::Key::F,
+        VirtualKeyCode::G => egui::Key::G,
+        VirtualKeyCode::H => egui::Key::H,
+        VirtualKeyCode::I => egui::Key::I,
+        VirtualKeyCode::J => egui::Key::J,
+        VirtualKeyCode::K => egui::Key::K,
+        VirtualKeyCode::L => egui::Key::L,
+        VirtualKeyCode::M => egui::Key::M,
+        VirtualKeyCode::N => egui::Key::N,
+        VirtualKeyCode::O => egui::Key::O,
+        VirtualKeyCode::P => egui::Key::P,
+        VirtualKeyCode::Q => egui::Key::Q,
+        VirtualKeyCode::R => egui::Key::R,
+        VirtualKeyCode::S => egui::Key::S,
+        VirtualKeyCode::T => egui::Key::T,
+        VirtualKeyCode::U => egui::Key::U,
+        VirtualKeyCode::V => egui::Key::V,
+        VirtualKeyCode::W => egui::Key::W,
+        VirtualKeyCode::X => egui::Key::X,
+        VirtualKeyCode::Y => egui::Key::Y,
+        VirtualKeyCode::Z => egui::Key::Z,
+
+        _ => return None,
+    };
+
+    Some(key)
+}
+
+pub fn key_to_string(key: egui::Key, shift: bool) -> Option<String> {
+    let str = match key {
+        egui::Key::A => "A",
+        egui::Key::B => "B",
+        egui::Key::C => "C",
+        egui::Key::D => "D",
+        egui::Key::E => "E",
+        egui::Key::F => "F",
+        egui::Key::G => "G",
+        egui::Key::H => "H",
+        egui::Key::I => "I",
+        egui::Key::J => "J",
+        egui::Key::K => "K",
+        egui::Key::L => "L",
+        egui::Key::M => "M",
+        egui::Key::N => "N",
+        egui::Key::O => "O",
+        egui::Key::P => "P",
+        egui::Key::Q => "Q",
+        egui::Key::R => "R",
+        egui::Key::S => "S",
+        egui::Key::T => "T",
+        egui::Key::U => "U",
+        egui::Key::V => "V",
+        egui::Key::W => "W",
+        egui::Key::X => "X",
+        egui::Key::Y => "Y",
+        egui::Key::Z => "Z",
+
+        egui::Key::Num0 => "0",
+        egui::Key::Num1 => "1",
+        egui::Key::Num2 => "2",
+        egui::Key::Num3 => "3",
+        egui::Key::Num4 => "4",
+        egui::Key::Num5 => "5",
+        egui::Key::Num6 => "6",
+        egui::Key::Num7 => "7",
+        egui::Key::Num8 => "8",
+        egui::Key::Num9 => "9",
+
+        egui::Key::Space => " ",
+
+        _ => return None,
+    };
+
+    Some(if shift {
+        str.to_owned()
+    } else {
+        str.to_ascii_lowercase()
+    })
 }
