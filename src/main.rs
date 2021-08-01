@@ -17,7 +17,7 @@ use std::error::Error;
 use std::time::Instant;
 
 use egui::{Event as GuiEvent, Pos2, RawInput as EguiInput, Rect};
-use glam::{DVec2, Vec2, Vec3};
+use glam::{Vec2, Vec3};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
     WindowEvent,
@@ -29,9 +29,7 @@ use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
 use editor::gui::Gui;
-use input::{
-    key_to_string, vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers,
-};
+use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
 use skybox::Skybox;
 use terrain::Terrain;
 
@@ -293,7 +291,8 @@ impl Game {
                     }
                 }
                 WindowEvent::CursorMoved { position, .. } => {
-                    let pointer = Vec2::new(position.x as f32, position.y as f32);
+                    let pointer =
+                        Vec2::new(position.x as f32, position.y as f32) / self.scale_factor;
                     self.input.pointer = pointer;
                     self.input.pointer_moved = true;
                     self.gui_input
@@ -329,6 +328,14 @@ impl Game {
                     self.in_focus = focused;
                     // @idea: Try using Wait here?
                 }
+                WindowEvent::ReceivedCharacter(ch) => {
+                    if is_printable_char(ch)
+                        && !self.gui_input.modifiers.ctrl
+                        && !self.gui_input.modifiers.mac_cmd
+                    {
+                        self.gui_input.events.push(GuiEvent::Text(ch.to_string()));
+                    }
+                }
                 WindowEvent::KeyboardInput {
                     input:
                         KeyboardInput {
@@ -354,13 +361,6 @@ impl Game {
                             pressed,
                             modifiers: self.gui_input.modifiers,
                         });
-
-                        if pressed {
-                            if let Some(letter) = key_to_string(key, self.gui_input.modifiers.shift)
-                            {
-                                self.gui_input.events.push(GuiEvent::Text(letter));
-                            }
-                        }
                     }
                 }
                 _ => {}
@@ -417,67 +417,75 @@ impl Game {
         mut mode: EditorMode,
         mut state: EditorState,
     ) -> Result<GameMode> {
-        // Process input
-        state.free_camera = self.input.mouse_buttons.secondary;
-        self.camera.speed_boost = self.input.modifiers.shift;
+        self.gui.begin_frame(self.gui_input.take());
 
-        // Move camera
-        if state.free_camera {
-            use camera::Movement::*;
-            if self.input.forward {
-                self.camera.go(Forward, delta_time);
-                self.input.camera_moved = true;
-            }
-            if self.input.left {
-                self.camera.go(Left, delta_time);
-                self.input.camera_moved = true;
-            }
-            if self.input.back {
-                self.camera.go(Backward, delta_time);
-                self.input.camera_moved = true;
-            }
-            if self.input.right {
-                self.camera.go(Right, delta_time);
-                self.input.camera_moved = true;
-            }
-
-            // Rotate camera
-            if self.input.pointer_moved {
-                let delta = self.input.pointer_delta;
-                self.camera.rotate(delta.x, delta.y);
-                self.input.camera_moved = true;
-            }
+        if self.input.pointer_moved {
+            dbg!(self.gui.wants_input());
         }
 
-        if self.input.pointer_moved || self.input.camera_moved {
-            let cursor = {
-                let ray = self.camera.get_ray_through_pixel(self.input.pointer);
-                let mut hit = f32::INFINITY;
-                for (a, b, c) in self.terrain.triangles() {
-                    let new_hit = ray.hits_triangle(a, b, c);
-                    if new_hit.t < hit {
-                        hit = new_hit.t;
+        // Process input
+        if !self.gui.wants_input() {
+            state.free_camera = self.input.mouse_buttons.secondary;
+            self.camera.speed_boost = self.input.modifiers.shift;
+
+            // Move camera
+            if state.free_camera {
+                use camera::Movement::*;
+                if self.input.forward {
+                    self.camera.go(Forward, delta_time);
+                    self.input.camera_moved = true;
+                }
+                if self.input.left {
+                    self.camera.go(Left, delta_time);
+                    self.input.camera_moved = true;
+                }
+                if self.input.back {
+                    self.camera.go(Backward, delta_time);
+                    self.input.camera_moved = true;
+                }
+                if self.input.right {
+                    self.camera.go(Right, delta_time);
+                    self.input.camera_moved = true;
+                }
+
+                // Rotate camera
+                if self.input.pointer_moved {
+                    let delta = self.input.pointer_delta;
+                    self.camera.rotate(delta.x, delta.y);
+                    self.input.camera_moved = true;
+                }
+            }
+
+            if self.input.pointer_moved || self.input.camera_moved {
+                let cursor = {
+                    let ray = self.camera.get_ray_through_pixel(self.input.pointer);
+                    let mut hit = f32::INFINITY;
+                    for (a, b, c) in self.terrain.triangles() {
+                        let new_hit = ray.hits_triangle(a, b, c);
+                        if new_hit.t < hit {
+                            hit = new_hit.t;
+                        }
+                    }
+                    self.windowed_context
+                        .window()
+                        .set_cursor_visible(hit == f32::INFINITY);
+                    ray.get_point_at(hit)
+                };
+
+                self.terrain.cursor = cursor;
+            }
+
+            // Shape the terrain
+            if self.input.mouse_buttons.primary {
+                let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
+                for v in self.terrain.vertices.iter_mut() {
+                    let dist_sq = (v.pos - self.terrain.cursor).length_squared();
+                    if dist_sq < brush_size_squared {
+                        v.pos.y += 5.0 * delta_time;
                     }
                 }
-                self.windowed_context
-                    .window()
-                    .set_cursor_visible(hit == f32::INFINITY);
-                ray.get_point_at(hit)
-            };
-
-            self.terrain.cursor = cursor;
-        }
-
-        // Shape the terrain
-        if self.input.mouse_buttons.primary {
-            let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
-            for v in self.terrain.vertices.iter_mut() {
-                let dist_sq = (v.pos - self.terrain.cursor).length_squared();
-                if dist_sq < brush_size_squared {
-                    v.pos.y += 5.0 * delta_time;
-                }
+                self.terrain.send_vertex_buffer();
             }
-            self.terrain.send_vertex_buffer();
         }
 
         // Draw
@@ -487,7 +495,7 @@ impl Game {
         self.terrain.draw(&self.camera, self.input.camera_moved)?;
         self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
 
-        self.gui.interact_and_draw(self.gui_input.take());
+        self.gui.interact_and_draw();
 
         self.windowed_context.swap_buffers()?;
 
@@ -497,4 +505,16 @@ impl Game {
 
         Ok(GameMode::Editor { state, mode })
     }
+}
+
+/// Winit sends special keys (backspace, delete, F1, ...) as characters.
+/// Ignore those.
+/// We also ignore '\r', '\n', '\t'.
+/// Newlines are handled by the `Key::Enter` event.
+fn is_printable_char(chr: char) -> bool {
+    let is_in_private_use_area = '\u{e000}' <= chr && chr <= '\u{f8ff}'
+        || '\u{f0000}' <= chr && chr <= '\u{ffffd}'
+        || '\u{100000}' <= chr && chr <= '\u{10fffd}';
+
+    !is_in_private_use_area && !chr.is_ascii_control()
 }
