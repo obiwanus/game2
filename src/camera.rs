@@ -43,7 +43,6 @@ pub struct Camera {
     v_fov: f32,
     locked: bool, // whether to allow flying
 
-    pub moved: bool,
     pub speed_boost: bool,
 }
 
@@ -92,7 +91,6 @@ impl Camera {
             screen_dimensions,
             aspect_ratio,
             locked: false,
-            moved: true,
             pitch,
             yaw,
             direction,
@@ -119,7 +117,6 @@ impl Camera {
             Movement::Left => self.position -= speed * self.right,
             Movement::Right => self.position += speed * self.right,
         }
-        self.moved = true;
     }
 
     /// Zoom is used to calculate the vertical FOV:
@@ -131,11 +128,11 @@ impl Camera {
         self.zoom = self.zoom.clamp(ZOOM_MIN, ZOOM_MAX);
     }
 
-    pub fn rotate(&mut self, yaw_delta: f64, pitch_delta: f64) {
+    pub fn rotate(&mut self, yaw_delta: f32, pitch_delta: f32) {
         // Adjust Euler angles
-        self.pitch -= pitch_delta as f32 * self.sensitivity;
+        self.pitch -= pitch_delta * self.sensitivity;
         self.pitch = self.pitch.clamp(PITCH_MIN, PITCH_MAX);
-        self.yaw += yaw_delta as f32 * self.sensitivity;
+        self.yaw += yaw_delta * self.sensitivity;
 
         // Recalculate direction
         self.direction = Vec3::new(
@@ -146,7 +143,6 @@ impl Camera {
         .normalize();
         self.right = self.direction.cross(TRUE_UP).normalize();
         self.up = self.right.cross(self.direction).normalize();
-        self.moved = true;
     }
 
     pub fn calculate_vert_fov(zoom: f32) -> f32 {

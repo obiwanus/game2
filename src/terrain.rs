@@ -153,13 +153,13 @@ impl Terrain {
     }
 
     // @tmp: remove camera and move to renderer
-    pub fn draw(&self, camera: &Camera) -> Result<()> {
+    pub fn draw(&self, camera: &Camera, camera_moved: bool) -> Result<()> {
         self.shader.set_used();
         self.shader.set_vec3("cursor", &self.cursor)?;
         self.shader.set_float("brush_size", self.brush.size)?;
 
         // @tmp
-        if camera.moved {
+        if camera_moved {
             let proj = camera.get_projection_matrix();
             let view = camera.get_view_matrix();
             self.shader.set_mat4("proj", &proj)?;

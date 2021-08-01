@@ -156,13 +156,13 @@ impl Skybox {
         })
     }
 
-    pub fn draw(&self, camera: &Camera) -> Result<(), SkyboxError> {
+    pub fn draw(&self, camera: &Camera, camera_moved: bool) -> Result<(), SkyboxError> {
         unsafe {
             gl::DepthFunc(gl::LEQUAL);
         }
         self.shader.set_used();
         // @tmp
-        if camera.moved {
+        if camera_moved {
             let proj = camera.get_projection_matrix();
             let view = camera.get_view_matrix();
             self.shader.set_mat4("proj", &proj)?;

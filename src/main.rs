@@ -226,6 +226,10 @@ impl Game {
         };
 
         let now = Instant::now();
+        let input = Input {
+            camera_moved: true,
+            ..Default::default()
+        };
 
         Ok(Game {
             windowed_context,
@@ -236,7 +240,7 @@ impl Game {
             screen_size: screen_size_logical,
             scale_factor,
 
-            input: Input::default(),
+            input,
 
             gui_input,
             gui,
@@ -354,8 +358,9 @@ impl Game {
             Event::DeviceEvent { event, .. } => match event {
                 DeviceEvent::MouseMotion { delta } if self.in_focus => {
                     let (x, y) = delta;
-                    self.input.pointer_delta =
-                        Some(Vec2::new(x as f32, y as f32) / self.scale_factor);
+                    let delta = Vec2::new(x as f32, y as f32) / self.scale_factor;
+                    self.input.pointer_delta = self.input.pointer_delta + delta;
+                    self.input.pointer_moved = true;
                 }
                 DeviceEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(x, y),
@@ -410,19 +415,29 @@ impl Game {
             use camera::Movement::*;
             if self.input.forward {
                 self.camera.go(Forward, delta_time);
+                self.input.camera_moved = true;
             }
             if self.input.left {
                 self.camera.go(Left, delta_time);
+                self.input.camera_moved = true;
             }
             if self.input.back {
                 self.camera.go(Backward, delta_time);
+                self.input.camera_moved = true;
             }
             if self.input.right {
                 self.camera.go(Right, delta_time);
+                self.input.camera_moved = true;
+            }
+
+            if self.input.pointer_moved {
+                let delta = self.input.pointer_delta;
+                self.camera.rotate(delta.x, delta.y);
+                self.input.camera_moved = true;
             }
         }
 
-        if self.input.pointer_moved || self.camera.moved {
+        if self.input.pointer_moved || self.input.camera_moved {
             let cursor = {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
                 let mut hit = f32::INFINITY;
@@ -457,8 +472,8 @@ impl Game {
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
-        self.terrain.draw(&self.camera)?;
-        self.skybox.draw(&self.camera)?; // draw skybox last
+        self.terrain.draw(&self.camera, self.input.camera_moved)?;
+        self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
 
         self.gui.interact_and_draw(self.gui_input.take());
 
@@ -467,11 +482,6 @@ impl Game {
         // Clear old input
         // Should we save it for future reference?
         self.input.renew();
-
-        if self.camera.moved {
-            // TODO: move to input and clear automatically
-            self.camera.moved = false;
-        }
 
         Ok(GameMode::Editor { state, mode })
     }

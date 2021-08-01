@@ -6,7 +6,7 @@ pub struct Input {
     // Raw
     pub pointer: Vec2,
     pub pointer_moved: bool,
-    pub pointer_delta: Option<Vec2>,
+    pub pointer_delta: Vec2,
     pub scroll_delta: Option<Vec2>,
     pub modifiers: Modifiers,
     pub mouse_buttons: MouseButtons,
