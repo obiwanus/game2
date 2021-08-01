@@ -16,6 +16,7 @@ DONE:
 - Only touch the scene if not over GUI
 - Show pointer when over UI
 - Don't show terrain cursor when over UI
+- Resize brush using cursor only when cursor is visible
 
 1 Aug 2021, Sun
 - Finish input simplification

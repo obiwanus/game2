@@ -378,10 +378,9 @@ impl Game {
                 DeviceEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(x, y),
                 } => {
-                    // TODO:
-                    // self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
                     let scroll_delta = Vec2::new(x, y) / self.scale_factor;
                     self.input.scroll_delta += scroll_delta;
+                    self.input.scrolled = true;
                     self.gui_input.scroll_delta = vec2_to_egui_vec2(scroll_delta)
                 }
                 _ => {}
@@ -476,6 +475,11 @@ impl Game {
                 };
 
                 self.terrain.cursor = cursor;
+            }
+
+            if self.input.scrolled && self.terrain.cursor.is_finite() {
+                let y = self.input.scroll_delta.y;
+                self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
             }
 
             // Shape the terrain
