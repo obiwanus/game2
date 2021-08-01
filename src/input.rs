@@ -1,80 +1,41 @@
-use std::{
-    convert::{TryFrom, TryInto},
-    time::Instant,
-};
-
-use egui::RawInput as EguiInput;
-use glam::{DVec2, Vec2};
+use glam::Vec2;
 use glutin::event::VirtualKeyCode;
 
-#[derive(Clone, Debug)]
-pub struct RawInput {
-    /// The point in time when the game started (don't change it once set)
-    pub game_start: Instant,
-
-    /// The start time of the current frame (must monotonically increase)
-    pub frame_start: Instant,
-
-    /// Seconds passed since last frame started
-    pub delta_time: f32,
-
-    /// In logical pixels
-    pub screen_size: Vec2,
-
-    /// In physical pixels
-    pub pointer_pos: Vec2,
-
-    /// In physical pixels
-    pub pointer_delta: DVec2,
-
-    /// Screen scale factor
-    pub scale_factor: f64,
-
-    /// In logical pixels
-    pub scroll_delta: Vec2,
-
-    /// The state of modifier keys
+#[derive(Default)]
+pub struct Input {
+    // Raw
+    pub pointer: Vec2,
+    pub pointer_moved: bool,
+    pub pointer_delta: Option<Vec2>,
+    pub scroll_delta: Option<Vec2>,
     pub modifiers: Modifiers,
-    // In-order events received since last frame
-    // pub events: Vec<Event>,
+    pub mouse_buttons: MouseButtons,
+
+    // Processed
+    pub should_exit: bool,
+    pub camera_moved: bool,
+    pub forward: bool,
+    pub back: bool,
+    pub left: bool,
+    pub right: bool,
 }
 
-impl RawInput {
-    pub fn new(now: Instant, screen_size: Vec2, scale_factor: f64) -> Self {
-        RawInput {
-            game_start: now,
-            frame_start: now,
-            delta_time: 0.0,
-            screen_size,
-            pointer_pos: Vec2::new(f32::INFINITY, f32::INFINITY),
-            pointer_delta: Default::default(),
-            scale_factor,
-            scroll_delta: Vec2::new(0.0, 0.0),
-            modifiers: Default::default(),
-            // events: Vec::new(),
-        }
+impl Input {
+    /// Clear volatiles, persist everything else
+    pub fn renew(&mut self) {
+        *self = Input {
+            pointer: self.pointer,
+            mouse_buttons: self.mouse_buttons,
+            ..Default::default()
+        };
     }
+}
 
-    pub fn take(&mut self) -> Self {
-        let now = Instant::now();
-        let delta_time = now.duration_since(self.frame_start).as_secs_f32();
-        RawInput {
-            game_start: self.game_start,
-            frame_start: std::mem::replace(&mut self.frame_start, now),
-            delta_time: std::mem::replace(&mut self.delta_time, delta_time),
-            screen_size: self.screen_size,
-            pointer_pos: self.pointer_pos,
-            pointer_delta: std::mem::take(&mut self.pointer_delta),
-            scale_factor: self.scale_factor,
-            scroll_delta: std::mem::take(&mut self.scroll_delta),
-            modifiers: self.modifiers,
-            // events: std::mem::take(&mut self.events),
-        }
-    }
-
-    pub fn into_egui_input(&self) -> EguiInput {
-        EguiInput::default()
-    }
+#[derive(Clone, Copy, Debug, Default)]
+pub struct MouseButtons {
+    pub primary: bool,
+    pub middle: bool,
+    pub secondary: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -83,21 +44,6 @@ pub struct Modifiers {
     pub ctrl: bool,
     pub shift: bool,
     pub logo: bool,
-}
-
-#[derive(Default)]
-pub struct Input {
-    pub forward: bool,
-    pub back: bool,
-    pub left: bool,
-    pub right: bool,
-
-    pub pointer: Vec2,
-    pub pointer_moved: bool,
-    pub left_mouse_button_pressed: bool,
-
-    pub wasd_mode: bool,
-    pub should_exit: bool,
 }
 
 pub fn vec2_to_egui_vec2(vec2: Vec2) -> egui::Vec2 {

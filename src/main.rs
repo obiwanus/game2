@@ -13,15 +13,13 @@ mod terrain;
 mod texture;
 mod utils;
 
-use std::convert::TryInto;
 use std::error::Error;
 use std::time::Instant;
 
-use egui::{Event as GuiEvent, PointerButton, Pos2, RawInput as EguiInput, Rect};
-use glam::{DVec2, Vec2, Vec3, Vec4};
+use egui::{Event as GuiEvent, Pos2, RawInput as EguiInput, Rect};
+use glam::{DVec2, Vec2, Vec3};
 use glutin::event::{
-    DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
-    WindowEvent,
+    DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, WindowEvent,
 };
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
@@ -30,13 +28,9 @@ use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
 use editor::gui::Gui;
-use editor::Brush;
 use input::{
     key_to_string, vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers,
-    RawInput,
 };
-use opengl::buffers::Buffer;
-use opengl::shader::Program;
 use skybox::Skybox;
 use terrain::Terrain;
 
@@ -66,20 +60,56 @@ struct DirectionalLight {
     direction: Vec3,
 }
 
+#[derive(Clone)]
+enum GameMode {
+    Game,
+    Editor {
+        state: EditorState,
+        mode: EditorMode,
+    },
+    Menu,
+}
+
+#[derive(Clone)]
+enum EditorMode {
+    General,
+    Terrain { tool: TerrainTool },
+}
+
+#[derive(Clone)]
+struct EditorState {
+    free_camera: bool,
+}
+
+#[derive(Clone)]
+enum TerrainTool {
+    Sculpt,
+    PaintTextures,
+    PaintTrees,
+    PaintVegetation,
+}
+
 struct Game {
     windowed_context: WindowedContext<PossiblyCurrent>,
+    in_focus: bool,
 
-    raw_input: RawInput,
+    game_start: Instant,
+    frame_start: Instant,
+
+    screen_size: Vec2, // in logical pixels
+    scale_factor: f32,
+
     input: Input,
 
     gui_input: EguiInput,
     gui: Gui,
 
     camera: Camera,
-    in_focus: bool,
 
     terrain: Terrain,
     skybox: Skybox,
+
+    mode: GameMode,
 }
 
 impl Game {
@@ -178,10 +208,9 @@ impl Game {
             "textures/skybox/back.jpg",
         ])?;
 
+        let scale_factor = window.scale_factor() as f32;
         let screen_size_physical = Vec2::new(window_size.width as f32, window_size.height as f32);
-        let screen_size_logical = screen_size_physical / window.scale_factor() as f32;
-
-        let input = RawInput::new(Instant::now(), screen_size_logical, window.scale_factor());
+        let screen_size_logical = screen_size_physical / scale_factor;
 
         // Gui and its initial input
         let gui = Gui::new(screen_size_physical)?;
@@ -190,16 +219,23 @@ impl Game {
                 Pos2::new(0.0, 0.0),
                 Pos2::new(screen_size_logical.x, screen_size_logical.y),
             )),
-            pixels_per_point: Some(window.scale_factor() as f32),
+            pixels_per_point: Some(scale_factor),
             time: Some(0.0),
 
             ..Default::default()
         };
 
+        let now = Instant::now();
+
         Ok(Game {
             windowed_context,
 
-            raw_input: input,
+            game_start: now,
+            frame_start: now,
+
+            screen_size: screen_size_logical,
+            scale_factor,
+
             input: Input::default(),
 
             gui_input,
@@ -210,22 +246,29 @@ impl Game {
 
             terrain,
             skybox,
+
+            mode: GameMode::Editor {
+                state: EditorState { free_camera: false },
+                mode: EditorMode::Terrain {
+                    tool: TerrainTool::Sculpt,
+                },
+            },
         })
     }
 
     fn process_event(&mut self, event: Event<()>, control_flow: &mut ControlFlow) -> Result<()> {
         match event {
             Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                WindowEvent::CloseRequested => self.input.should_exit = true,
                 WindowEvent::ScaleFactorChanged {
                     scale_factor,
                     new_inner_size: _,
                 } => {
-                    self.raw_input.scale_factor = scale_factor;
+                    self.scale_factor = scale_factor as f32;
                     self.gui_input.pixels_per_point = Some(scale_factor as f32);
                 }
                 WindowEvent::ModifiersChanged(state) => {
-                    self.raw_input.modifiers = Modifiers {
+                    self.input.modifiers = Modifiers {
                         alt: state.alt(),
                         ctrl: state.ctrl(),
                         shift: state.shift(),
@@ -246,13 +289,21 @@ impl Game {
                 }
                 WindowEvent::CursorMoved { position, .. } => {
                     let pointer = Vec2::new(position.x as f32, position.y as f32);
-                    self.raw_input.pointer_pos = pointer;
+                    self.input.pointer = pointer;
+                    self.input.pointer_moved = true;
                     self.gui_input
                         .events
                         .push(GuiEvent::PointerMoved(vec2_to_egui_pos2(pointer)));
                 }
                 WindowEvent::MouseInput { button, state, .. } => {
                     let pressed = state == ElementState::Pressed;
+
+                    match button {
+                        MouseButton::Left => self.input.mouse_buttons.primary = pressed,
+                        MouseButton::Right => self.input.mouse_buttons.secondary = pressed,
+                        MouseButton::Middle => self.input.mouse_buttons.middle = pressed,
+                        _ => {}
+                    }
 
                     let button = match button {
                         MouseButton::Left => Some(egui::PointerButton::Primary),
@@ -262,7 +313,7 @@ impl Game {
                     };
                     if let Some(button) = button {
                         self.gui_input.events.push(GuiEvent::PointerButton {
-                            pos: vec2_to_egui_pos2(self.raw_input.pointer_pos),
+                            pos: vec2_to_egui_pos2(self.input.pointer),
                             button,
                             pressed,
                             modifiers: self.gui_input.modifiers,
@@ -271,7 +322,7 @@ impl Game {
                 }
                 WindowEvent::Focused(focused) => {
                     self.in_focus = focused;
-                    // @idea: Try using Poll here?
+                    // @idea: Try using Wait here?
                 }
                 WindowEvent::KeyboardInput {
                     input:
@@ -303,29 +354,59 @@ impl Game {
             Event::DeviceEvent { event, .. } => match event {
                 DeviceEvent::MouseMotion { delta } if self.in_focus => {
                     let (x, y) = delta;
-                    self.raw_input.pointer_delta = DVec2::new(x, y);
+                    self.input.pointer_delta =
+                        Some(Vec2::new(x as f32, y as f32) / self.scale_factor);
                 }
                 DeviceEvent::MouseWheel {
                     delta: MouseScrollDelta::LineDelta(x, y),
                 } => {
                     // TODO:
                     // self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
-
-                    self.raw_input.scroll_delta = Vec2::new(x, y);
+                    let scroll_delta = Vec2::new(x, y) / self.scale_factor;
+                    self.input.scroll_delta = Some(scroll_delta);
+                    self.gui_input.scroll_delta = vec2_to_egui_vec2(scroll_delta)
                 }
                 _ => {}
             },
-            Event::MainEventsCleared => self.update_and_render()?,
+            Event::MainEventsCleared => {
+                if !self.input.should_exit {
+                    self.update_and_render()?;
+                } else {
+                    *control_flow = ControlFlow::Exit;
+                }
+            }
             _ => {}
         };
         Ok(())
     }
 
     fn update_and_render(&mut self) -> Result<()> {
-        let delta_time = self.raw_input.delta_time;
+        let now = Instant::now();
+        let delta_time = now.duration_since(self.frame_start).as_secs_f32();
+        self.frame_start = now;
+
+        let new_mode = match self.mode.clone() {
+            GameMode::Menu => unimplemented!("Menu is not implemented"),
+            GameMode::Game => unimplemented!("Game mode is not implemented"),
+            GameMode::Editor { mode, state } => self.draw_editor(delta_time, mode, state)?,
+        };
+
+        self.mode = new_mode;
+
+        Ok(())
+    }
+
+    fn draw_editor(
+        &mut self,
+        delta_time: f32,
+        mut mode: EditorMode,
+        mut state: EditorState,
+    ) -> Result<GameMode> {
+        // Process input
+        state.free_camera = self.input.mouse_buttons.secondary;
 
         // Move camera
-        if self.input.wasd_mode {
+        if state.free_camera {
             use camera::Movement::*;
             if self.input.forward {
                 self.camera.go(Forward, delta_time);
@@ -361,7 +442,7 @@ impl Game {
         }
 
         // Shape the terrain
-        if self.input.left_mouse_button_pressed {
+        if self.input.mouse_buttons.primary {
             let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
             for v in self.terrain.vertices.iter_mut() {
                 let dist_sq = (v.pos - self.terrain.cursor).length_squared();
@@ -384,13 +465,14 @@ impl Game {
         self.windowed_context.swap_buffers()?;
 
         // Clear old input
-        self.raw_input.take();
+        // Should we save it for future reference?
+        self.input.renew();
 
         if self.camera.moved {
             // TODO: move to input and clear automatically
             self.camera.moved = false;
         }
 
-        Ok(())
+        Ok(GameMode::Editor { state, mode })
     }
 }
