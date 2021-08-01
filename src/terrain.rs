@@ -12,6 +12,7 @@ use crate::{
         shader::Program,
     },
     texture::Texture,
+    utils::vec3_infinity,
     Result,
 };
 
@@ -123,7 +124,7 @@ impl Terrain {
             .set_image_2d("textures/checkerboard.png")
             .expect("Coudn't load texture");
 
-        let cursor = Vec3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
+        let cursor = vec3_infinity();
 
         let brush = Brush::new("src/editor/brushes/brush1.png");
 

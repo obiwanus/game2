@@ -32,6 +32,7 @@ use editor::gui::Gui;
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
 use skybox::Skybox;
 use terrain::Terrain;
+use utils::vec3_infinity;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -421,8 +422,12 @@ impl Game {
     ) -> Result<GameMode> {
         let (output, gui_shapes) = self.gui.layout_and_interact(self.gui_input.take());
 
-        // Process input
-        if !self.gui.wants_input() {
+        if self.gui.wants_input() {
+            // Pointer over UI or currently interacting with it
+            self.terrain.cursor = vec3_infinity(); // hide terrain cursor
+            self.windowed_context.window().set_cursor_visible(true); // we always want cursor with UI
+        } else {
+            // Process input
             state.free_camera = self.input.mouse_buttons.secondary;
             self.camera.speed_boost = self.input.modifiers.shift;
 
