@@ -19,7 +19,8 @@ use std::time::Instant;
 use egui::{Event as GuiEvent, Pos2, RawInput as EguiInput, Rect};
 use glam::{DVec2, Vec2, Vec3};
 use glutin::event::{
-    DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, WindowEvent,
+    DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
+    WindowEvent,
 };
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
@@ -338,6 +339,15 @@ impl Game {
                     ..
                 } => {
                     let pressed = state == ElementState::Pressed;
+
+                    match virtual_key_code {
+                        VirtualKeyCode::W => self.input.forward = pressed,
+                        VirtualKeyCode::A => self.input.left = pressed,
+                        VirtualKeyCode::S => self.input.back = pressed,
+                        VirtualKeyCode::D => self.input.right = pressed,
+                        _ => {}
+                    }
+
                     if let Some(key) = vkeycode_to_egui_key(virtual_key_code) {
                         self.gui_input.events.push(GuiEvent::Key {
                             key,
@@ -359,7 +369,7 @@ impl Game {
                 DeviceEvent::MouseMotion { delta } if self.in_focus => {
                     let (x, y) = delta;
                     let delta = Vec2::new(x as f32, y as f32) / self.scale_factor;
-                    self.input.pointer_delta = self.input.pointer_delta + delta;
+                    self.input.pointer_delta += delta;
                     self.input.pointer_moved = true;
                 }
                 DeviceEvent::MouseWheel {
@@ -368,7 +378,7 @@ impl Game {
                     // TODO:
                     // self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
                     let scroll_delta = Vec2::new(x, y) / self.scale_factor;
-                    self.input.scroll_delta = Some(scroll_delta);
+                    self.input.scroll_delta += scroll_delta;
                     self.gui_input.scroll_delta = vec2_to_egui_vec2(scroll_delta)
                 }
                 _ => {}
@@ -409,6 +419,7 @@ impl Game {
     ) -> Result<GameMode> {
         // Process input
         state.free_camera = self.input.mouse_buttons.secondary;
+        self.camera.speed_boost = self.input.modifiers.shift;
 
         // Move camera
         if state.free_camera {
@@ -430,6 +441,7 @@ impl Game {
                 self.input.camera_moved = true;
             }
 
+            // Rotate camera
             if self.input.pointer_moved {
                 let delta = self.input.pointer_delta;
                 self.camera.rotate(delta.x, delta.y);

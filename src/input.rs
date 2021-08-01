@@ -7,17 +7,18 @@ pub struct Input {
     pub pointer: Vec2,
     pub pointer_moved: bool,
     pub pointer_delta: Vec2,
-    pub scroll_delta: Option<Vec2>,
+    pub scrolled: bool,
+    pub scroll_delta: Vec2,
     pub modifiers: Modifiers,
     pub mouse_buttons: MouseButtons,
-
-    // Processed
-    pub should_exit: bool,
-    pub camera_moved: bool,
     pub forward: bool,
     pub back: bool,
     pub left: bool,
     pub right: bool,
+
+    // Processed
+    pub should_exit: bool,
+    pub camera_moved: bool,
 }
 
 impl Input {
@@ -26,6 +27,11 @@ impl Input {
         *self = Input {
             pointer: self.pointer,
             mouse_buttons: self.mouse_buttons,
+            forward: self.forward,
+            back: self.back,
+            left: self.left,
+            right: self.right,
+            modifiers: self.modifiers,
             ..Default::default()
         };
     }
