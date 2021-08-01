@@ -1,8 +1,8 @@
 TODO:
 
 - Try using a heightmap
-    - Get an example heightmap
-    - How to build vertices from it? Using a shader?
+    + Get an example heightmap
+- Use my own version of stb_image lib (do when loading brushes)
 - Add lighting and shadows
 - Use a proper brush
 - Add an acceleration structure for faster picking

@@ -71,7 +71,7 @@ impl Texture {
                     MAX_ANISOTROPY
                 }
             };
-            println!("Using anisotropic filtering: {:?}", anisotropy);
+            // println!("Using anisotropic filtering: {:?}", anisotropy);
             gl::TexParameterf(gl::TEXTURE_2D, gl::TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
         }
         self
