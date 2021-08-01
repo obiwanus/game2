@@ -326,6 +326,8 @@ impl Game {
                 }
                 WindowEvent::Focused(focused) => {
                     self.in_focus = focused;
+                    self.input.modifiers = Modifiers::default();
+                    self.gui_input.modifiers = egui::Modifiers::default();
                     // @idea: Try using Wait here?
                 }
                 WindowEvent::ReceivedCharacter(ch) => {
@@ -417,11 +419,7 @@ impl Game {
         mut mode: EditorMode,
         mut state: EditorState,
     ) -> Result<GameMode> {
-        self.gui.begin_frame(self.gui_input.take());
-
-        if self.input.pointer_moved {
-            dbg!(self.gui.wants_input());
-        }
+        let (output, gui_shapes) = self.gui.layout_and_interact(self.gui_input.take());
 
         // Process input
         if !self.gui.wants_input() {
@@ -495,7 +493,7 @@ impl Game {
         self.terrain.draw(&self.camera, self.input.camera_moved)?;
         self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
 
-        self.gui.interact_and_draw();
+        self.gui.draw(gui_shapes);
 
         self.windowed_context.swap_buffers()?;
 

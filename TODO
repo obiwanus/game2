@@ -7,14 +7,20 @@ TODO:
 - Use a proper brush
 - Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
+- Steal code from the egui integration
 
 DONE:
+
+2 Aug 2021, Mon
+- Debug egui hover and submit a bug
+- Only touch the scene if not over GUI
 
 1 Aug 2021, Sun
 - Finish input simplification
 - Define several game modes
 - Fix camera rotation
 - Fix camera movement
+- Accept all printable characters in text input
 
 31 Jul 2021, Sat
 - Refactored so it compiled

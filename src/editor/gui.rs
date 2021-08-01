@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use egui::{ClippedMesh, CtxRef, RawInput};
+use egui::{epaint::ClippedShape, ClippedMesh, CtxRef, Output, RawInput};
 use epaint::Color32;
 use glam::Vec2;
 use memoffset::offset_of;
@@ -114,7 +114,11 @@ impl Gui {
         })
     }
 
-    pub fn interact_and_draw(&mut self, input: RawInput) {
+    pub fn wants_input(&self) -> bool {
+        self.ctx.wants_pointer_input() || self.ctx.wants_keyboard_input()
+    }
+
+    pub fn layout_and_interact(&mut self, input: RawInput) -> (Output, Vec<ClippedShape>) {
         self.ctx.begin_frame(input);
 
         let mut name = self.name.clone();
@@ -147,8 +151,11 @@ impl Gui {
         // ================== GUI ends ===========================
 
         let (output, shapes) = self.ctx.end_frame();
-        // TODO: handle output
 
+        (output, shapes)
+    }
+
+    pub fn draw(&mut self, shapes: Vec<ClippedShape>) {
         let pixels_per_point = self.ctx.pixels_per_point();
         let screen_size_in_points = self.screen_size / pixels_per_point;
 
