@@ -7,6 +7,9 @@ layout(location = 2) in vec2 TexCoord;
 uniform mat4 proj;
 uniform mat4 view;
 
+uniform float heighmap_size;
+uniform sampler2D heighmap;
+
 const mat4 model = mat4(1.0);
 
 out VS_OUTPUT {
@@ -17,6 +20,8 @@ out VS_OUTPUT {
     vec2 tex_coord;
 }
 OUT;
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 void main() {
     gl_Position = proj * view * model * vec4(Position, 1.0);

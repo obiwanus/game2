@@ -230,6 +230,8 @@ impl Terrain {
         self.shader.set_used();
         self.shader.set_vec3("cursor", &self.cursor)?;
         self.shader.set_float("brush_size", self.brush.size)?;
+        self.shader
+            .set_float("heightmap_size", self.heightmap.size as f32)?;
 
         // @tmp
         if camera_moved {
@@ -240,7 +242,12 @@ impl Terrain {
         }
 
         self.vao.bind();
+
+        // @try moving outsize of the draw
         self.texture.bind_2d(0);
+        self.shader.set_texture_unit("terrain_texture", 0)?;
+        self.heightmap.bind_2d(1);
+        self.shader.set_texture_unit("heightmap", 1)?;
 
         unsafe {
             gl::DrawElements(

@@ -1,6 +1,6 @@
 TODO:
 
-- Change the shader so it uses the heightmap
+- !!!! Change the shader so it uses the heightmap
 - Draw using the stupid brush
 - Use a proper brush
 - Use my own version of stb_image lib (do when loading brushes)
