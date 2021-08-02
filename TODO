@@ -1,10 +1,10 @@
 TODO:
 
-- Try using a heightmap
-    + Get an example heightmap
+- Change the shader so it uses the heightmap
+- Draw using the stupid brush
+- Use a proper brush
 - Use my own version of stb_image lib (do when loading brushes)
 - Add lighting and shadows
-- Use a proper brush
 - Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
 - Steal code from the egui integration
@@ -17,6 +17,7 @@ DONE:
 - Show pointer when over UI
 - Don't show terrain cursor when over UI
 - Resize brush using cursor only when cursor is visible
+- Create an empty heightmap texture
 
 1 Aug 2021, Sun
 - Finish input simplification
