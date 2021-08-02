@@ -88,6 +88,7 @@ pub struct Terrain {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
     num_indices: i32,
+    size: f32,
 
     vao: VertexArray,
     vertex_buffer: Buffer,
@@ -207,6 +208,7 @@ impl Terrain {
             vertices,
             indices,
             num_indices,
+            size,
 
             vao,
             vertex_buffer,
@@ -230,8 +232,7 @@ impl Terrain {
         self.shader.set_used();
         self.shader.set_vec3("cursor", &self.cursor)?;
         self.shader.set_float("brush_size", self.brush.size)?;
-        self.shader
-            .set_float("heightmap_size", self.heightmap.size as f32)?;
+        self.shader.set_float("terrain_size", self.size)?;
 
         // @tmp
         if camera_moved {

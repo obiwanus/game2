@@ -1,6 +1,5 @@
 TODO:
 
-- !!!! Change the shader so it uses the heightmap
 - Draw using the stupid brush
 - Use a proper brush
 - Use my own version of stb_image lib (do when loading brushes)
@@ -10,6 +9,9 @@ TODO:
 - Steal code from the egui integration
 
 DONE:
+
+3 Aug 2021, Tue
+- Change the shader so it uses the heightmap
 
 2 Aug 2021, Mon
 - Debug egui hover and submit a bug

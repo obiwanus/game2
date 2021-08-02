@@ -1,16 +1,17 @@
 #version 330 core
 
-layout(location = 0) in vec3 Position;
-layout(location = 1) in vec3 Normal;
-layout(location = 2) in vec2 TexCoord;
+layout(location = 0) in vec3 in_Pos;
+layout(location = 1) in vec3 in_Normal;
+layout(location = 2) in vec2 in_TexCoord;
 
 uniform mat4 proj;
 uniform mat4 view;
 
-uniform float heighmap_size;
-uniform sampler2D heighmap;
+uniform float terrain_size;
+uniform sampler2D heightmap;
 
 const mat4 model = mat4(1.0);
+const float MAX_HEIGHT = 10;
 
 out VS_OUTPUT {
     vec3 normal;
@@ -21,13 +22,15 @@ out VS_OUTPUT {
 }
 OUT;
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 void main() {
-    gl_Position = proj * view * model * vec4(Position, 1.0);
-    OUT.normal = mat3(transpose(inverse(view * model))) * Normal;  // @performance: don't inverse
-    OUT.frag_pos_view = (view * model * vec4(Position, 1.0)).xyz;
-    OUT.frag_pos = Position;
+    // Read about sampling textures in GLSL
+    float height = texture(heightmap, in_Pos.xz / terrain_size).r * MAX_HEIGHT;
+    vec4 position = vec4(in_Pos.x, height, in_Pos.z, 1.0);
+    vec4 view_pos = view * model * position;
+    gl_Position = proj * view_pos;
+    OUT.normal = mat3(transpose(inverse(view * model))) * in_Normal;  // @performance: don't inverse
+    OUT.frag_pos_view = view_pos.xyz;
+    OUT.frag_pos = position.xyz;
     OUT.color = vec3(0.4, 0.5, 0.2);
-    OUT.tex_coord = TexCoord;
+    OUT.tex_coord = in_TexCoord;
 }
