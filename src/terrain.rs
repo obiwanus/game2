@@ -20,7 +20,7 @@ use crate::{
 struct Heightmap {
     id: GLuint, // @tmp_public
     size: usize,
-    pixels: Vec<u16>, // @speed: store efficiently?
+    pixels: Vec<f32>, // @speed: store efficiently?
 }
 
 impl Heightmap {
@@ -29,27 +29,36 @@ impl Heightmap {
         unsafe {
             gl::GenTextures(1, &mut id);
         }
-        let pixels = vec![0u16; size * size];
+        let pixels = vec![0.0; size * size];
         unsafe {
             gl::BindTexture(gl::TEXTURE_2D, id);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
+        }
+
+        let heightmap = Heightmap { id, size, pixels };
+        heightmap.upload_texture();
+
+        heightmap
+    }
+
+    fn upload_texture(&self) {
+        unsafe {
+            gl::BindTexture(gl::TEXTURE_2D, self.id);
             gl::TexImage2D(
                 gl::TEXTURE_2D,
                 0,
-                gl::RED as i32,
-                size as i32,
-                size as i32,
+                gl::R16 as i32,
+                self.size as i32,
+                self.size as i32,
                 0,
                 gl::RED,
-                gl::UNSIGNED_SHORT,
-                pixels.as_ptr() as *const GLvoid,
+                gl::FLOAT,
+                self.pixels.as_ptr() as *const GLvoid,
             );
         }
-
-        Heightmap { id, size, pixels }
     }
 
     // @duplicate
@@ -89,6 +98,7 @@ pub struct Terrain {
     pub indices: Vec<u16>,
     num_indices: i32,
     size: f32,
+    center_pos: Vec2,
 
     vao: VertexArray,
     vertex_buffer: Buffer,
@@ -102,17 +112,16 @@ pub struct Terrain {
 }
 
 impl Terrain {
-    pub fn new(size: f32, cells: i32) -> Result<Self> {
+    pub fn new(size: f32, cells: i32, center_pos: Vec2) -> Result<Self> {
         let mut vertices = vec![];
         let cell_size = size / cells as f32;
-        let start_x = -size / 2.0;
-        let start_z = -size / 2.0;
+        let start = center_pos - Vec2::new(size, size) / 2.0;
         for x in 0..cells + 1 {
             for z in 0..cells + 1 {
                 let pos = Vec3::new(
-                    start_x + x as f32 * cell_size,
+                    start.x + x as f32 * cell_size,
                     0.0,
-                    start_z + z as f32 * cell_size,
+                    start.y + z as f32 * cell_size,
                 );
                 let normal = Vec3::new(0.0, 1.0, 0.0);
                 let uv = Vec2::new(x as f32, z as f32);
@@ -209,6 +218,7 @@ impl Terrain {
             indices,
             num_indices,
             size,
+            center_pos,
 
             vao,
             vertex_buffer,
@@ -262,12 +272,40 @@ impl Terrain {
         Ok(())
     }
 
-    // @speed: slowwwww
-    pub fn send_vertex_buffer(&self) {
-        self.vertex_buffer.bind_as(gl::ARRAY_BUFFER);
-        self.vertex_buffer
-            .send_dynamic_data(gl::ARRAY_BUFFER, 0, &self.vertices);
+    pub fn raise_terrain(&mut self, delta_time: f32) {
+        // Find where the cursor is on the texture (relative to center)
+        let cursor = Vec2::new(0.5, 0.5)
+            + (Vec2::new(self.cursor.x, self.cursor.z) - self.center_pos) / self.size;
+
+        // Get brush size in terms of underlying texture
+        let brush_size = self.brush.size * (self.heightmap.size as f32) / self.size;
+        let brush_size_sq = brush_size * brush_size;
+
+        // Change the values around the cursor
+        // @speed: brute force (no need to step through the whole terrain)
+        for z in 0..self.heightmap.size {
+            for x in 0..self.heightmap.size {
+                // Position of pixel in texture coordinates
+                // @speed: no need to calculate every time
+                let pos = Vec2::new(x as f32, z as f32) / self.heightmap.size as f32;
+                let dist_sq = (pos - cursor).length_squared();
+                if dist_sq < brush_size_sq {
+                    let index = z * self.heightmap.size + x;
+                    self.heightmap.pixels[index] += delta_time;
+                }
+            }
+        }
+
+        // Update the texture
+        self.heightmap.upload_texture();
     }
+
+    // // @speed: slowwwww
+    // pub fn send_vertex_buffer(&self) {
+    //     self.vertex_buffer.bind_as(gl::ARRAY_BUFFER);
+    //     self.vertex_buffer
+    //         .send_dynamic_data(gl::ARRAY_BUFFER, 0, &self.vertices);
+    // }
 }
 
 pub struct TriangleIter<'a> {

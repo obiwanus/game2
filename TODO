@@ -1,6 +1,7 @@
 TODO:
 
 - Draw using the stupid brush
+    - Change
 - Use a proper brush
 - Use my own version of stb_image lib (do when loading brushes)
 - Add lighting and shadows
@@ -12,6 +13,7 @@ DONE:
 
 3 Aug 2021, Tue
 - Change the shader so it uses the heightmap
+- Draw on the heightmap texture (but it doesn't work)
 
 2 Aug 2021, Mon
 - Debug egui hover and submit a bug

@@ -197,7 +197,7 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(60.0, 120)?;
+        let terrain = Terrain::new(60.0, 120, Vec2::new(0.0, 0.0))?;
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
@@ -484,14 +484,15 @@ impl Game {
 
             // Shape the terrain
             if self.input.mouse_buttons.primary {
-                let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
-                for v in self.terrain.vertices.iter_mut() {
-                    let dist_sq = (v.pos - self.terrain.cursor).length_squared();
-                    if dist_sq < brush_size_squared {
-                        v.pos.y += 5.0 * delta_time;
-                    }
-                }
-                self.terrain.send_vertex_buffer();
+                self.terrain.raise_terrain(delta_time);
+                // let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
+                // for v in self.terrain.vertices.iter_mut() {
+                //     let dist_sq = (v.pos - self.terrain.cursor).length_squared();
+                //     if dist_sq < brush_size_squared {
+                //         v.pos.y += 5.0 * delta_time;
+                //     }
+                // }
+                // self.terrain.send_vertex_buffer();
             }
         }
 
