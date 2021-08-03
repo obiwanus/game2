@@ -181,6 +181,8 @@ impl Camera {
 
     // For OpenGL:
     pub fn get_projection_matrix(&self) -> Mat4 {
-        Mat4::perspective_rh(self.v_fov, self.aspect_ratio, 0.5, 400.0)
+        // Mat4::perspective_rh(self.v_fov, self.aspect_ratio, 0.5, 400.0)
+        // @explore: try setting different clip planes every frame based on z-buffer (glReadPixels)?
+        Mat4::perspective_infinite_rh(self.v_fov, self.aspect_ratio, 0.5)
     }
 }
