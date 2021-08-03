@@ -174,13 +174,13 @@ impl Camera {
 
     // // For Vulkan:
     // pub fn get_projection_matrix(&self) -> Mat4 {
-    //     let mut proj = Mat4::perspective_rh(self.fov(), self.aspect_ratio, 0.1, 100.0);
+    //     let mut proj = Mat4::perspective_rh(self.fov(), self.aspect_ratio, 0.5, 400.0);
     //     proj.y_axis.y *= -1.0; // account for the Vulkan coordinate system
     //     proj
     // }
 
     // For OpenGL:
     pub fn get_projection_matrix(&self) -> Mat4 {
-        Mat4::perspective_rh(self.v_fov, self.aspect_ratio, 0.1, 100.0)
+        Mat4::perspective_rh(self.v_fov, self.aspect_ratio, 0.5, 400.0)
     }
 }
