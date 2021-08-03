@@ -7,11 +7,12 @@ layout(location = 2) in vec2 in_TexCoord;
 uniform mat4 proj;
 uniform mat4 view;
 
+uniform vec2 terrain_origin;
 uniform float terrain_size;
 uniform sampler2D heightmap;
 
 const mat4 model = mat4(1.0);
-const float MAX_HEIGHT = 10;
+const float MAX_HEIGHT = 30.0;
 
 out VS_OUTPUT {
     vec3 normal;
@@ -24,7 +25,8 @@ OUT;
 
 void main() {
     // Read about sampling textures in GLSL
-    float height = texture(heightmap, in_Pos.xz / terrain_size).r * MAX_HEIGHT;
+    vec2 uv = (in_Pos.xz - terrain_origin) / terrain_size;
+    float height = texture(heightmap, uv).r * MAX_HEIGHT;
     vec4 position = vec4(in_Pos.x, height, in_Pos.z, 1.0);
     vec4 view_pos = view * model * position;
     gl_Position = proj * view_pos;

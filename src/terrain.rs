@@ -99,6 +99,7 @@ pub struct Terrain {
     num_indices: i32,
     size: f32,
     center_pos: Vec2,
+    origin: Vec2,
 
     vao: VertexArray,
     vertex_buffer: Buffer,
@@ -115,13 +116,13 @@ impl Terrain {
     pub fn new(size: f32, cells: i32, center_pos: Vec2) -> Result<Self> {
         let mut vertices = vec![];
         let cell_size = size / cells as f32;
-        let start = center_pos - Vec2::new(size, size) / 2.0;
+        let origin = center_pos - Vec2::new(size, size) / 2.0;
         for x in 0..cells + 1 {
             for z in 0..cells + 1 {
                 let pos = Vec3::new(
-                    start.x + x as f32 * cell_size,
+                    origin.x + x as f32 * cell_size,
                     0.0,
-                    start.y + z as f32 * cell_size,
+                    origin.y + z as f32 * cell_size,
                 );
                 let normal = Vec3::new(0.0, 1.0, 0.0);
                 let uv = Vec2::new(x as f32, z as f32);
@@ -219,6 +220,7 @@ impl Terrain {
             num_indices,
             size,
             center_pos,
+            origin,
 
             vao,
             vertex_buffer,
@@ -243,6 +245,7 @@ impl Terrain {
         self.shader.set_vec3("cursor", &self.cursor)?;
         self.shader.set_float("brush_size", self.brush.size)?;
         self.shader.set_float("terrain_size", self.size)?;
+        self.shader.set_vec2("terrain_origin", &self.origin)?;
 
         // @tmp
         if camera_moved {
@@ -278,8 +281,10 @@ impl Terrain {
             + (Vec2::new(self.cursor.x, self.cursor.z) - self.center_pos) / self.size;
 
         // Get brush size in terms of underlying texture
-        let brush_size = self.brush.size * (self.heightmap.size as f32) / self.size;
+        let brush_size = self.brush.size / self.size;
         let brush_size_sq = brush_size * brush_size;
+
+        let sensitivity = 0.3;
 
         // Change the values around the cursor
         // @speed: brute force (no need to step through the whole terrain)
@@ -291,7 +296,7 @@ impl Terrain {
                 let dist_sq = (pos - cursor).length_squared();
                 if dist_sq < brush_size_sq {
                     let index = z * self.heightmap.size + x;
-                    self.heightmap.pixels[index] += delta_time;
+                    self.heightmap.pixels[index] += delta_time * sensitivity;
                 }
             }
         }
