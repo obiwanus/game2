@@ -9,6 +9,7 @@ out TCS_OUT { vec2 uv; }
 tcs_out[];
 
 uniform mat4 mvp;
+uniform float tess_level;
 
 void main() {
     if (gl_InvocationID == 0) {
@@ -24,10 +25,14 @@ void main() {
             gl_TessLevelOuter[2] = 0.0;
             gl_TessLevelOuter[3] = 0.0;
         } else {
-            float l0 = length(p2.xy - p0.xy) + 1.0;
-            float l1 = length(p3.xy - p2.xy) + 1.0;
-            float l2 = length(p3.xy - p1.xy) + 1.0;
-            float l3 = length(p1.xy - p0.xy) + 1.0;
+            // float l0 = length(p2.xy - p0.xy) + 1.0;
+            // float l1 = length(p3.xy - p2.xy) + 1.0;
+            // float l2 = length(p3.xy - p1.xy) + 1.0;
+            // float l3 = length(p1.xy - p0.xy) + 1.0;
+            float l0 = tess_level;
+            float l1 = tess_level;
+            float l2 = tess_level;
+            float l3 = tess_level;
 
             gl_TessLevelOuter[0] = l0;
             gl_TessLevelOuter[1] = l1;

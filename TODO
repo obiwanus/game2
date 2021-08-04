@@ -1,6 +1,5 @@
 TODO:
 
-- Add tessellation control shader
 - Use a proper brush
 - Use my own version of stb_image lib (do when loading brushes)
 - Add lighting and shadows
@@ -14,6 +13,7 @@ DONE:
 - Generate vertices for patches on the GPU
 - Refactor shaders
 - Get rid of vertex generation on CPU
+- Add tessellation control shader
 
 3 Aug 2021, Tue
 - Change the shader so it uses the heightmap

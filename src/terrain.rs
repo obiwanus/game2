@@ -106,6 +106,7 @@ pub struct Terrain {
 
     vao: VertexArray,
     shader: Program,
+    pub tess_level: f32,
 
     texture: Texture,
     heightmap: Heightmap,
@@ -144,6 +145,7 @@ impl Terrain {
 
             vao,
             shader,
+            tess_level: 1.0,
 
             texture,
             heightmap,
@@ -158,6 +160,7 @@ impl Terrain {
         self.shader.set_used();
         // self.shader.set_vec3("cursor", &self.cursor)?;
         // self.shader.set_float("brush_size", self.brush.size)?;
+        self.shader.set_float("tess_level", self.tess_level)?;
 
         // @tmp
         if camera_moved {
