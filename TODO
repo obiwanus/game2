@@ -1,6 +1,6 @@
 TODO:
 
-- Read about tessellation in OpenGL
+- Add tessellation control shader
 - Use a proper brush
 - Use my own version of stb_image lib (do when loading brushes)
 - Add lighting and shadows

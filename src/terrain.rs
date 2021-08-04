@@ -131,8 +131,8 @@ impl Terrain {
 
         let shader = Program::new()
             .vertex_shader(include_str!("shaders/editor/terrain.vert.glsl"))?
-            // .tess_control_shader(include_str!("shaders/editor/terrain.tc.glsl"))?
-            // .tess_evaluation_shader(include_str!("shaders/editor/terrain.te.glsl"))?
+            .tess_control_shader(include_str!("shaders/editor/terrain.tc.glsl"))?
+            .tess_evaluation_shader(include_str!("shaders/editor/terrain.te.glsl"))?
             .fragment_shader(include_str!("shaders/editor/terrain.frag.glsl"))?
             .link()?;
 
@@ -153,8 +153,8 @@ impl Terrain {
     // @tmp: remove camera and move to renderer
     pub fn draw(&self, camera: &Camera, camera_moved: bool) -> Result<()> {
         self.shader.set_used();
-        self.shader.set_vec3("cursor", &self.cursor)?;
-        self.shader.set_float("brush_size", self.brush.size)?;
+        // self.shader.set_vec3("cursor", &self.cursor)?;
+        // self.shader.set_float("brush_size", self.brush.size)?;
 
         // @tmp
         if camera_moved {
@@ -173,9 +173,9 @@ impl Terrain {
         // self.shader.set_texture_unit("heightmap", 1)?;
 
         unsafe {
-            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-            gl::DrawArraysInstanced(gl::QUADS, 0, 4, 64 * 64);
-            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
         Ok(())

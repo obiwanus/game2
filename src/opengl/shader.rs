@@ -9,7 +9,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ShaderError {
-    #[error("Failed to compile shader {name}: {message}")]
+    #[error("Failed to compile {name}: {message}")]
     CompileError { name: String, message: String },
     #[error("Failed to link program: {0}")]
     LinkError(String),
