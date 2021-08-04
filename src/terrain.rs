@@ -117,6 +117,9 @@ impl Terrain {
     pub fn new(center: Vec2) -> Result<Self> {
         let vao = VertexArray::new();
         vao.bind();
+        unsafe {
+            gl::PatchParameteri(gl::PATCH_VERTICES, 4);
+        }
 
         let texture = Texture::new()
             .set_default_parameters()

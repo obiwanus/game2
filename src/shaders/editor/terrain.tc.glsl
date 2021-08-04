@@ -17,21 +17,17 @@ void main() {
         vec4 p2 = mvp * gl_in[2].gl_Position;
         vec4 p3 = mvp * gl_in[3].gl_Position;
 
-        if (p0.z <= 0.0 || p1.z <= 0.0 || p2.z <= 0.0 || p3.z <= 0.0) {
+        if (p0.z <= 0.0 && p1.z <= 0.0 && p2.z <= 0.0 && p3.z <= 0.0) {
             // Patch is behind the camera - cull
             gl_TessLevelOuter[0] = 0.0;
             gl_TessLevelOuter[1] = 0.0;
             gl_TessLevelOuter[2] = 0.0;
             gl_TessLevelOuter[3] = 0.0;
         } else {
-            float l0 = 1.0;
-            float l1 = 1.0;
-            float l2 = 1.0;
-            float l3 = 1.0;
-            // float l0 = length(p2.xy - p0.xy) * 16 + 1.0;
-            // float l1 = length(p3.xy - p2.xy) * 16 + 1.0;
-            // float l2 = length(p3.xy - p1.xy) * 16 + 1.0;
-            // float l3 = length(p1.xy - p0.xy) * 16 + 1.0;
+            float l0 = length(p2.xy - p0.xy) + 1.0;
+            float l1 = length(p3.xy - p2.xy) + 1.0;
+            float l2 = length(p3.xy - p1.xy) + 1.0;
+            float l3 = length(p1.xy - p0.xy) + 1.0;
 
             gl_TessLevelOuter[0] = l0;
             gl_TessLevelOuter[1] = l1;

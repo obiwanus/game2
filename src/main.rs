@@ -494,7 +494,7 @@ impl Game {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
         self.terrain.draw(&self.camera, self.input.camera_moved)?;
-        self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
+        // self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
 
         self.gui.draw(gui_shapes);
 
