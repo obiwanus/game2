@@ -197,7 +197,7 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(120.0, 20, Vec2::new(0.0, 0.0))?;
+        let terrain = Terrain::new(Vec2::new(0.0, 0.0))?;
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
@@ -459,22 +459,23 @@ impl Game {
             }
 
             if self.input.pointer_moved || self.input.camera_moved {
-                let cursor = {
-                    let ray = self.camera.get_ray_through_pixel(self.input.pointer);
-                    let mut hit = f32::INFINITY;
-                    for (a, b, c) in self.terrain.triangles() {
-                        let new_hit = ray.hits_triangle(a, b, c);
-                        if new_hit.t < hit {
-                            hit = new_hit.t;
-                        }
-                    }
-                    self.windowed_context
-                        .window()
-                        .set_cursor_visible(hit == f32::INFINITY);
-                    ray.get_point_at(hit)
-                };
+                // TODO: proper terrain picking
+                // let cursor = {
+                //     let ray = self.camera.get_ray_through_pixel(self.input.pointer);
+                //     let mut hit = f32::INFINITY;
+                //     for (a, b, c) in self.terrain.triangles() {
+                //         let new_hit = ray.hits_triangle(a, b, c);
+                //         if new_hit.t < hit {
+                //             hit = new_hit.t;
+                //         }
+                //     }
+                //     self.windowed_context
+                //         .window()
+                //         .set_cursor_visible(hit == f32::INFINITY);
+                //     ray.get_point_at(hit)
+                // };
 
-                self.terrain.cursor = cursor;
+                // self.terrain.cursor = cursor;
             }
 
             if self.input.scrolled && self.terrain.cursor.is_finite() {
@@ -485,14 +486,6 @@ impl Game {
             // Shape the terrain
             if self.input.mouse_buttons.primary {
                 self.terrain.raise_terrain(delta_time);
-                // let brush_size_squared = self.terrain.brush.size * self.terrain.brush.size;
-                // for v in self.terrain.vertices.iter_mut() {
-                //     let dist_sq = (v.pos - self.terrain.cursor).length_squared();
-                //     if dist_sq < brush_size_squared {
-                //         v.pos.y += 5.0 * delta_time;
-                //     }
-                // }
-                // self.terrain.send_vertex_buffer();
             }
         }
 
@@ -501,7 +494,7 @@ impl Game {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
         self.terrain.draw(&self.camera, self.input.camera_moved)?;
-        // self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
+        self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
 
         self.gui.draw(gui_shapes);
 

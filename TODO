@@ -12,6 +12,8 @@ DONE:
 
 4 Aug 2021, Wed
 - Generate vertices for patches on the GPU
+- Refactor shaders
+- Get rid of vertex generation on CPU
 
 3 Aug 2021, Tue
 - Change the shader so it uses the heightmap
