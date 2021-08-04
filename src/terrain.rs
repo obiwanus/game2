@@ -218,8 +218,10 @@ impl Terrain {
         let brush = Brush::new("src/editor/brushes/brush1.png");
 
         let shader = Program::new()
-            .vertex_shader("shaders/editor/terrain.vert")?
-            .fragment_shader("shaders/editor/terrain.frag")?
+            .vertex_shader(include_str!("shaders/editor/terrain.vert.glsl"))?
+            // .tess_control_shader(include_str!("shaders/editor/terrain.tc.glsl"))?
+            // .tess_evaluation_shader(include_str!("shaders/editor/terrain.te.glsl"))?
+            .fragment_shader(include_str!("shaders/editor/terrain.frag.glsl"))?
             .link()?;
 
         Ok(Terrain {

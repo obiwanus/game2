@@ -79,8 +79,8 @@ impl Skybox {
 
         // Create shader
         let shader = Program::new()
-            .vertex_shader("shaders/skybox/skybox.vert")?
-            .fragment_shader("shaders/skybox/skybox.frag")?
+            .vertex_shader(include_str!("shaders/skybox/skybox.vert"))?
+            .fragment_shader(include_str!("shaders/skybox/skybox.frag"))?
             .link()?;
         shader.set_used();
         shader.set_texture_unit("skybox", 0)?;

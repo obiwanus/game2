@@ -94,8 +94,8 @@ impl Gui {
         }
 
         let shader = Program::new()
-            .vertex_shader("shaders/editor/gui.vert")?
-            .fragment_shader("shaders/editor/gui.frag")?
+            .vertex_shader(include_str!("../shaders/editor/gui.vert"))?
+            .fragment_shader(include_str!("../shaders/editor/gui.frag"))?
             .link()?;
 
         Ok(Gui {

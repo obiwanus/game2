@@ -9,8 +9,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ShaderError {
-    #[error("I/O Error ({name}): {source}")]
-    IoError { name: String, source: io::Error },
     #[error("Failed to compile shader {name}: {message}")]
     CompileError { name: String, message: String },
     #[error("Failed to link program: {0}")]
@@ -31,19 +29,31 @@ impl Program {
         Program { id }
     }
 
-    pub fn vertex_shader(self, path: &str) -> Result<Self> {
-        let shader = Shader::new(gl::VERTEX_SHADER, path)?;
+    fn attach_shader(&self, code: &str, kind: GLenum) -> Result<()> {
+        let shader = Shader::new(kind, code)?;
         unsafe {
             gl::AttachShader(self.id, shader.id());
         }
+        Ok(())
+    }
+
+    pub fn vertex_shader(self, code: &str) -> Result<Self> {
+        self.attach_shader(code, gl::VERTEX_SHADER)?;
         Ok(self)
     }
 
-    pub fn fragment_shader(self, path: &str) -> Result<Self> {
-        let shader = Shader::new(gl::FRAGMENT_SHADER, path)?;
-        unsafe {
-            gl::AttachShader(self.id, shader.id());
-        }
+    pub fn fragment_shader(self, code: &str) -> Result<Self> {
+        self.attach_shader(code, gl::FRAGMENT_SHADER)?;
+        Ok(self)
+    }
+
+    pub fn tess_control_shader(self, code: &str) -> Result<Self> {
+        self.attach_shader(code, gl::TESS_CONTROL_SHADER)?;
+        Ok(self)
+    }
+
+    pub fn tess_evaluation_shader(self, code: &str) -> Result<Self> {
+        self.attach_shader(code, gl::TESS_EVALUATION_SHADER)?;
         Ok(self)
     }
 
@@ -162,12 +172,8 @@ struct Shader {
 }
 
 impl Shader {
-    pub fn new(kind: GLenum, path: &str) -> Result<Self> {
-        let source = fs::read_to_string(path).map_err(|e| ShaderError::IoError {
-            name: path.to_owned(),
-            source: e,
-        })?;
-        let source = CString::new(source).unwrap();
+    pub fn new(kind: GLenum, code: &str) -> Result<Self> {
+        let source = CString::new(code).unwrap();
         let id = unsafe { gl::CreateShader(kind) };
         unsafe {
             gl::ShaderSource(id, 1, &source.as_ptr(), std::ptr::null());
@@ -186,8 +192,15 @@ impl Shader {
             unsafe {
                 gl::GetShaderInfoLog(id, len, std::ptr::null_mut(), error.as_ptr() as *mut GLchar);
             }
+            let name = match kind {
+                gl::VERTEX_SHADER => "vertex shader",
+                gl::FRAGMENT_SHADER => "fragment shader",
+                gl::TESS_CONTROL_SHADER => "tessellation control shader",
+                gl::TESS_EVALUATION_SHADER => "tessellation evaluation shader",
+                _ => panic!("Unknown shader type"),
+            };
             return Err(ShaderError::CompileError {
-                name: path.to_owned(),
+                name: name.to_owned(),
                 message: error.to_string_lossy().into_owned(),
             });
         }
