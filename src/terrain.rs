@@ -250,34 +250,35 @@ impl Terrain {
     // @tmp: remove camera and move to renderer
     pub fn draw(&self, camera: &Camera, camera_moved: bool) -> Result<()> {
         self.shader.set_used();
-        self.shader.set_vec3("cursor", &self.cursor)?;
-        self.shader.set_float("brush_size", self.brush.size)?;
-        self.shader.set_float("terrain_size", self.size)?;
-        self.shader.set_vec2("terrain_origin", &self.origin)?;
+        // self.shader.set_vec3("cursor", &self.cursor)?;
+        // self.shader.set_float("brush_size", self.brush.size)?;
+        // self.shader.set_float("terrain_size", self.size)?;
+        // self.shader.set_vec2("terrain_origin", &self.origin)?;
 
         // @tmp
         if camera_moved {
             let proj = camera.get_projection_matrix();
             let view = camera.get_view_matrix();
-            self.shader.set_mat4("proj", &proj)?;
-            self.shader.set_mat4("view", &view)?;
+            let mvp = proj * view;
+            self.shader.set_mat4("mvp", &mvp)?;
         }
 
         self.vao.bind();
 
         // @try moving outsize of the draw
-        self.texture.bind_2d(0);
-        self.shader.set_texture_unit("terrain_texture", 0)?;
-        self.heightmap.bind_2d(1);
-        self.shader.set_texture_unit("heightmap", 1)?;
+        // self.texture.bind_2d(0);
+        // self.shader.set_texture_unit("terrain_texture", 0)?;
+        // self.heightmap.bind_2d(1);
+        // self.shader.set_texture_unit("heightmap", 1)?;
 
         unsafe {
-            gl::DrawElements(
-                gl::TRIANGLES,
-                self.num_indices,
-                gl::UNSIGNED_SHORT,
-                std::ptr::null(),
-            );
+            // gl::DrawElements(
+            //     gl::TRIANGLES,
+            //     self.num_indices,
+            //     gl::UNSIGNED_SHORT,
+            //     std::ptr::null(),
+            // );
+            gl::DrawArraysInstanced(gl::POINTS, 0, 4, 64 * 64);
         }
 
         Ok(())

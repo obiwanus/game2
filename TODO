@@ -1,5 +1,7 @@
 TODO:
 
+- Read about tessellation in OpenGL
+- Generate vertices for patches on the GPU
 - Use a proper brush
 - Use my own version of stb_image lib (do when loading brushes)
 - Add lighting and shadows
@@ -8,6 +10,8 @@ TODO:
 - Steal code from the egui integration
 
 DONE:
+
+4 Aug 2021, Wed
 
 3 Aug 2021, Tue
 - Change the shader so it uses the heightmap

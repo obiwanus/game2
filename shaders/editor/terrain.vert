@@ -1,38 +1,31 @@
-#version 330 core
+#version 410 core
 
-layout(location = 0) in vec3 in_Pos;
-layout(location = 1) in vec3 in_Normal;
-layout(location = 2) in vec2 in_TexCoord;
+uniform mat4 mvp;
 
-uniform mat4 proj;
-uniform mat4 view;
+// uniform vec2 terrain_origin;
+const vec2 terrain_origin = vec2(0.0);
 
-uniform vec2 terrain_origin;
-uniform float terrain_size;
-uniform sampler2D heightmap;
+const float PATCH_SIZE = 16.0;  // so that one terrain tile is 1000x1000 units
+const vec2 VERTICES[] = vec2[](vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(-0.5, 0.5), vec2(0.5, 0.5));
 
-const mat4 model = mat4(1.0);
-const float MAX_HEIGHT = 30.0;
-
-out VS_OUTPUT {
-    vec3 normal;
-    vec3 frag_pos;
-    vec3 frag_pos_view;
-    vec3 color;  // @note: not using now, consider using as an additional way to paint terrain
-    vec2 tex_coord;
-}
-OUT;
+out VS_OUT { vec2 uv; }
+vs_out;
 
 void main() {
-    // Read about sampling textures in GLSL
-    vec2 uv = (in_Pos.xz - terrain_origin) / terrain_size;
-    float height = texture(heightmap, uv).r * MAX_HEIGHT;
-    vec4 position = vec4(in_Pos.x, height, in_Pos.z, 1.0);
-    vec4 view_pos = view * model * position;
-    gl_Position = proj * view_pos;
-    OUT.normal = mat3(transpose(inverse(view * model))) * in_Normal;  // @performance: don't inverse
-    OUT.frag_pos_view = view_pos.xyz;
-    OUT.frag_pos = position.xyz;
-    OUT.color = vec3(0.4, 0.5, 0.2);
-    OUT.tex_coord = in_TexCoord;
+    vec2 vertex = VERTICES[gl_VertexID];
+
+    // One terrain tile will always have 64x64 patches
+    int x = gl_InstanceID & 63;
+    int y = gl_InstanceID >> 6;
+    vec2 offset = vec2(x, y);
+
+    // Texture coords
+    vs_out.uv = (vertex + offset + vec2(0.5)) / 64.0;
+
+    // Position
+    vec2 position = (vertex + vec2(offset.x - 32.0, offset.y - 32.0)) * PATCH_SIZE;
+
+    // TODO: displace height here?
+    float height = 0.0;
+    gl_Position = mvp * vec4(position.x, height, position.y, 1.0);
 }

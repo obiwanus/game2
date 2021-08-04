@@ -197,7 +197,7 @@ impl Game {
             window_size.height,
         );
 
-        let terrain = Terrain::new(60.0, 120, Vec2::new(0.0, 0.0))?;
+        let terrain = Terrain::new(120.0, 20, Vec2::new(0.0, 0.0))?;
 
         let skybox = Skybox::from([
             "textures/skybox/right.jpg",
@@ -501,7 +501,7 @@ impl Game {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
         self.terrain.draw(&self.camera, self.input.camera_moved)?;
-        self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
+        // self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
 
         self.gui.draw(gui_shapes);
 

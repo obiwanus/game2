@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 in VS_OUTPUT {
     vec3 normal;
@@ -49,27 +49,30 @@ uniform sampler2D terrain_texture;
 //     return (ambient + diffuse + specular);
 // }
 
-void main() {
-    vec3 normal = normalize(IN.normal);
-    vec3 view_direction = normalize(-IN.frag_pos_view);
+// void main() {
+//     vec3 normal = normalize(IN.normal);
+//     vec3 view_direction = normalize(-IN.frag_pos_view);
 
-    // vec4 base_color = vec4(calc_directional_light(directional_light, normal,
-    // view_direction), 1.0);
+//     // vec4 base_color = vec4(calc_directional_light(directional_light, normal,
+//     // view_direction), 1.0);
 
-    vec4 base_color = vec4(0.7, 0.2, 0.7, 1.0);
+//     vec4 base_color = vec4(0.7, 0.2, 0.7, 1.0);
 
-    // Cursor
-    float distance_to_cursor = clamp(distance(IN.frag_pos.xz, cursor.xz) / brush_size, 0.2, 1.0);
-    if (0.99 < distance_to_cursor && distance_to_cursor < 1.0) {
-        distance_to_cursor = 0.7;  // to create a border
-    }
+//     // Cursor
+//     float distance_to_cursor = clamp(distance(IN.frag_pos.xz, cursor.xz) / brush_size, 0.2, 1.0);
+//     if (0.99 < distance_to_cursor && distance_to_cursor < 1.0) {
+//         distance_to_cursor = 0.7;  // to create a border
+//     }
 
-    base_color =
-        mix(base_color, vec4(texture(terrain_texture, IN.tex_coord).xyz, 1.0), distance_to_cursor);
+//     base_color =
+//         mix(base_color, vec4(texture(terrain_texture, IN.tex_coord).xyz, 1.0),
+//         distance_to_cursor);
 
-    if (distance_to_cursor < 1.0) {
-        Color = base_color * clamp(0.1 * IN.frag_pos.y, 0.7, 1.0);
-    } else {
-        Color = base_color * clamp(0.1 * IN.frag_pos.y, 0.2, 1.0);
-    }
-}
+//     if (distance_to_cursor < 1.0) {
+//         Color = base_color * clamp(0.1 * IN.frag_pos.y, 0.7, 1.0);
+//     } else {
+//         Color = base_color * clamp(0.1 * IN.frag_pos.y, 0.2, 1.0);
+//     }
+// }
+
+void main() { Color = vec4(1.0); }
