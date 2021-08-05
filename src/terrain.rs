@@ -4,6 +4,7 @@ use gl::types::*;
 use glam::{Vec2, Vec3};
 use memoffset::offset_of;
 use opengl_lib::types::GLvoid;
+use stb_image::image::{Image, LoadResult};
 
 use crate::{
     camera::Camera,
@@ -24,12 +25,15 @@ struct Heightmap {
 }
 
 impl Heightmap {
-    fn new(size: usize) -> Self {
+    fn new(path: &str) -> Self {
         let mut id: GLuint = 0;
         unsafe {
             gl::GenTextures(1, &mut id);
         }
-        let pixels = vec![0.0; size * size];
+
+        let image = load_image(path, false);
+        let (pixels, size) = Heightmap::get_pixels_from_u8_grayscale_image(image);
+
         unsafe {
             gl::BindTexture(gl::TEXTURE_2D, id);
             gl::TexParameteri(
@@ -50,6 +54,15 @@ impl Heightmap {
         heightmap.upload_texture();
 
         heightmap
+    }
+
+    // TODO: is there a way to decompose a struct so that we don't have to do this?
+    fn get_pixels_from_u8_grayscale_image(image: Image<u8>) -> (Vec<f32>, usize) {
+        assert_eq!(image.width, image.height);
+        let size = image.width;
+        let pixels = image.data.into_iter().map(|p| (p as f32) / 256.0).collect();
+
+        (pixels, size)
     }
 
     fn upload_texture(&self) {
@@ -127,7 +140,7 @@ impl Terrain {
             .set_image_2d("textures/checkerboard.png")
             .expect("Coudn't load texture");
 
-        let heightmap = Heightmap::new(513);
+        let heightmap = Heightmap::new("textures/heightmaps/valley.png");
 
         let cursor = vec3_infinity();
 
@@ -175,8 +188,8 @@ impl Terrain {
         // @try moving outsize of the draw
         self.texture.bind_2d(0);
         self.shader.set_texture_unit("terrain_texture", 0)?;
-        // self.heightmap.bind_2d(1);
-        // self.shader.set_texture_unit("heightmap", 1)?;
+        self.heightmap.bind_2d(1);
+        self.shader.set_texture_unit("heightmap", 1)?;
 
         unsafe {
             gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
@@ -216,5 +229,21 @@ impl Terrain {
 
         // Update the texture
         self.heightmap.upload_texture();
+    }
+}
+
+// @duplication: merge with texture.rs/load_image?
+pub fn load_image(path: &str, flip: bool) -> Image<u8> {
+    let flip = if flip { 1 } else { 0 };
+    unsafe {
+        stb_image::stb_image::bindgen::stbi_set_flip_vertically_on_load(flip);
+    }
+    match stb_image::image::load_with_depth(path, 1, false) {
+        LoadResult::ImageU8(image) => image,
+        LoadResult::ImageF32(_) => panic!(
+            "Couldn't load brush {}. Only U8 grayscale brush images are supported.",
+            path
+        ),
+        LoadResult::Error(msg) => panic!("Couldn't load brush {}: {}", path, msg),
     }
 }

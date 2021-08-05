@@ -22,6 +22,7 @@ void main() {
     vec4 p = mix(p2, p1, gl_TessCoord.y);
 
     // TODO: add displacement
+    p.y += texture(heightmap, uv).r * 150.0;
     gl_Position = mvp * p;
     tes_out.uv = uv;
 }

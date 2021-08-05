@@ -9,6 +9,9 @@ TODO:
 
 DONE:
 
+5 Aug 2021, Thu
+- Load an existing heightmap as an option
+
 4 Aug 2021, Wed
 - Generate vertices for patches on the GPU
 - Refactor shaders
