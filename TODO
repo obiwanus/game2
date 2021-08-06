@@ -16,6 +16,7 @@ DONE:
 
 7 Aug 2021, Sat
 - Trying to replace skybox
+- Skybox works but is noticeable
 
 6 Aug 2021, Fri
 - Bumped OpenGL to 4.5 - we won't ship with OpenGL anyway
