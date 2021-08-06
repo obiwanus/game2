@@ -199,14 +199,15 @@ impl Game {
 
         let terrain = Terrain::new(Vec2::new(0.0, 0.0))?;
 
-        let skybox = Skybox::from([
-            "textures/skybox/right.jpg",
-            "textures/skybox/left.jpg",
-            "textures/skybox/top.jpg",
-            "textures/skybox/bottom.jpg",
-            "textures/skybox/front.jpg",
-            "textures/skybox/back.jpg",
-        ])?;
+        let skybox = Skybox::from("textures/skybox/sky-texture.png")?;
+        // let skybox = Skybox::from([
+        //     "textures/skybox/right.jpg",
+        //     "textures/skybox/left.jpg",
+        //     "textures/skybox/top.jpg",
+        //     "textures/skybox/bottom.jpg",
+        //     "textures/skybox/front.jpg",
+        //     "textures/skybox/back.jpg",
+        // ])?;
 
         let scale_factor = window.scale_factor() as f32;
         let screen_size_physical = Vec2::new(window_size.width as f32, window_size.height as f32);
@@ -495,7 +496,7 @@ impl Game {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
         self.terrain.draw(&self.camera, self.input.camera_moved)?;
-        // self.skybox.draw(&self.camera, self.input.camera_moved)?; // draw skybox last
+        self.skybox.draw(&self.camera, self.input.camera_moved)?;
 
         self.gui.draw(gui_shapes);
 

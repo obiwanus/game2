@@ -1,11 +1,10 @@
 use gl::types::*;
-use glam::Mat4;
 use thiserror::Error;
 
 use crate::camera::Camera;
 use crate::opengl::buffers::{Buffer, VertexArray};
 use crate::opengl::shader::{Program, ShaderError};
-use crate::texture::{load_image, TextureError};
+use crate::texture::{load_image, Texture, TextureError};
 
 #[derive(Debug, Error)]
 pub enum SkyboxError {
@@ -16,7 +15,8 @@ pub enum SkyboxError {
 }
 
 pub struct Skybox {
-    id: GLuint,
+    // id: GLuint,
+    texture: Texture,
     shader: Program,
     vao: VertexArray,
     _vbo: Buffer,
@@ -24,57 +24,75 @@ pub struct Skybox {
 
 impl Skybox {
     /// right, left, top, bottom, front, back
-    pub fn from(paths: [&str; 6]) -> Result<Self, SkyboxError> {
-        // Generate texture
-        let mut id: GLuint = 0;
-        unsafe {
-            gl::GenTextures(1, &mut id);
-            gl::BindTexture(gl::TEXTURE_CUBE_MAP, id);
+    // pub fn from(paths: [&str; 6]) -> Result<Self, SkyboxError> {
+    pub fn from(path: &str) -> Result<Self, SkyboxError> {
+        // // Generate texture
+        // let mut id: GLuint = 0;
+        // unsafe {
+        //     gl::GenTextures(1, &mut id);
+        //     gl::BindTexture(gl::TEXTURE_CUBE_MAP, id);
 
+        //     gl::TexParameteri(
+        //         gl::TEXTURE_CUBE_MAP,
+        //         gl::TEXTURE_WRAP_S,
+        //         gl::CLAMP_TO_EDGE as GLint,
+        //     );
+        //     gl::TexParameteri(
+        //         gl::TEXTURE_CUBE_MAP,
+        //         gl::TEXTURE_WRAP_T,
+        //         gl::CLAMP_TO_EDGE as GLint,
+        //     );
+        //     gl::TexParameteri(
+        //         gl::TEXTURE_CUBE_MAP,
+        //         gl::TEXTURE_WRAP_R,
+        //         gl::CLAMP_TO_EDGE as GLint,
+        //     );
+        //     gl::TexParameteri(
+        //         gl::TEXTURE_CUBE_MAP,
+        //         gl::TEXTURE_MIN_FILTER,
+        //         gl::LINEAR as GLint,
+        //     );
+        //     gl::TexParameteri(
+        //         gl::TEXTURE_CUBE_MAP,
+        //         gl::TEXTURE_MAG_FILTER,
+        //         gl::LINEAR as GLint,
+        //     );
+        // }
+
+        // // Load images
+        // for (i, path) in paths.iter().enumerate() {
+        //     let img = load_image(path, false)?;
+        //     unsafe {
+        //         // Send to GPU
+        //         gl::TexImage2D(
+        //             gl::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
+        //             0,
+        //             gl::SRGB8 as GLint,
+        //             img.width as GLint,
+        //             img.height as GLint,
+        //             0,
+        //             gl::RGB,
+        //             gl::UNSIGNED_BYTE,
+        //             img.data.as_ptr() as *const std::ffi::c_void,
+        //         );
+        //     }
+        // }
+
+        let texture = Texture::new().set_image_2d(path)?;
+        unsafe {
+            gl::BindTexture(gl::TEXTURE_2D, texture.id);
             gl::TexParameteri(
-                gl::TEXTURE_CUBE_MAP,
+                gl::TEXTURE_2D,
                 gl::TEXTURE_WRAP_S,
                 gl::CLAMP_TO_EDGE as GLint,
             );
             gl::TexParameteri(
-                gl::TEXTURE_CUBE_MAP,
+                gl::TEXTURE_2D,
                 gl::TEXTURE_WRAP_T,
                 gl::CLAMP_TO_EDGE as GLint,
             );
-            gl::TexParameteri(
-                gl::TEXTURE_CUBE_MAP,
-                gl::TEXTURE_WRAP_R,
-                gl::CLAMP_TO_EDGE as GLint,
-            );
-            gl::TexParameteri(
-                gl::TEXTURE_CUBE_MAP,
-                gl::TEXTURE_MIN_FILTER,
-                gl::LINEAR as GLint,
-            );
-            gl::TexParameteri(
-                gl::TEXTURE_CUBE_MAP,
-                gl::TEXTURE_MAG_FILTER,
-                gl::LINEAR as GLint,
-            );
-        }
-
-        // Load images
-        for (i, path) in paths.iter().enumerate() {
-            let img = load_image(path, false)?;
-            unsafe {
-                // Send to GPU
-                gl::TexImage2D(
-                    gl::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
-                    0,
-                    gl::SRGB8 as GLint,
-                    img.width as GLint,
-                    img.height as GLint,
-                    0,
-                    gl::RGB,
-                    gl::UNSIGNED_BYTE,
-                    img.data.as_ptr() as *const std::ffi::c_void,
-                );
-            }
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
         }
 
         // Create shader
@@ -83,11 +101,11 @@ impl Skybox {
             .fragment_shader(include_str!("shaders/skybox/skybox.frag"))?
             .link()?;
         shader.set_used();
-        shader.set_texture_unit("skybox", 0)?;
+        shader.set_texture_unit("SkyTexture", 0)?;
 
         #[rustfmt::skip]
         let vertices = [
-            // positions
+            // x, y, z
             -1.0f32,  1.0, -1.0,
             -1.0, -1.0, -1.0,
             1.0, -1.0, -1.0,
@@ -149,7 +167,8 @@ impl Skybox {
         vao.unbind();
 
         Ok(Skybox {
-            id,
+            // id,
+            texture,
             shader,
             vao,
             _vbo: vbo,
@@ -157,9 +176,6 @@ impl Skybox {
     }
 
     pub fn draw(&self, camera: &Camera, camera_moved: bool) -> Result<(), SkyboxError> {
-        unsafe {
-            gl::DepthFunc(gl::LEQUAL);
-        }
         self.shader.set_used();
         // @tmp
         if camera_moved {
@@ -169,9 +185,11 @@ impl Skybox {
             self.shader.set_mat4("view", &view)?;
         }
         self.vao.bind();
+        self.texture.bind_2d(0);
 
         unsafe {
-            gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.id);
+            gl::DepthFunc(gl::LEQUAL);
+            // gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.id);
             gl::DrawArrays(gl::TRIANGLES, 0, 36);
             gl::DepthFunc(gl::LESS);
         }
