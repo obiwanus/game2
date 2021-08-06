@@ -1,4 +1,4 @@
-#version 410 core
+#version 450 core
 
 const vec2 terrain_center = vec2(0.0);
 

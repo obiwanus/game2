@@ -1,4 +1,4 @@
-#version 330 core
+#version 450 core
 
 uniform vec2 u_screen_size;
 layout(location = 0) in vec2 pos;
