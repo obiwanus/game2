@@ -18,6 +18,7 @@ pub enum SkyboxError {
 pub struct Skybox {
     texture_id: GLuint,
     shader: Program,
+    wshader: Program,
     vao: VertexArray,
     _vbo: Buffer,
 }
@@ -66,6 +67,10 @@ impl Skybox {
             .link()?;
         shader.set_used();
         shader.set_texture_unit("SkyTexture", 0)?;
+        let wshader = Program::new()
+            .vertex_shader(include_str!("shaders/skybox/skybox-wireframe.vert"))?
+            .fragment_shader(include_str!("shaders/skybox/skybox-wireframe.frag"))?
+            .link()?;
 
         #[rustfmt::skip]
         let vertices = [
@@ -133,6 +138,7 @@ impl Skybox {
         Ok(Skybox {
             texture_id,
             shader,
+            wshader,
             vao,
             _vbo: vbo,
         })
@@ -155,6 +161,21 @@ impl Skybox {
             gl::DepthFunc(gl::LEQUAL);
             gl::DrawArrays(gl::TRIANGLES, 0, 36);
             gl::DepthFunc(gl::LESS);
+        }
+
+        self.wshader.set_used();
+        if camera_moved {
+            let proj = camera.get_projection_matrix();
+            let view = camera.get_view_matrix();
+            self.wshader.set_mat4("proj", &proj)?;
+            self.wshader.set_mat4("view", &view)?;
+        }
+        unsafe {
+            gl::Disable(gl::DEPTH_TEST);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            gl::Enable(gl::DEPTH_TEST);
         }
 
         Ok(())

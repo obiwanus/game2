@@ -1,7 +1,5 @@
 TODO:
 
-
-- Add a gradient skybox
 - Ray/heightmap intersection
 - Draw a cursor
 - Shape the heightmap using the simple brush
@@ -11,8 +9,12 @@ TODO:
 - Add an acceleration structure for faster picking
 - Figure out the next steps (splatmap etc)
 - Steal code from the egui integration
+- Add a proper skybox
 
 DONE:
+
+8 Aug 2021, Sun
+- Debugging skybox
 
 7 Aug 2021, Sat
 - Trying to replace skybox
