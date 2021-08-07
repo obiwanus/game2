@@ -1,12 +1,19 @@
 TODO:
 
 - Ray/heightmap intersection
+    - Read some more on ray/heightmap intersection
+    - Add a picking buffer (most likely)
+    - Get a point of intersection
 - Draw a cursor
+    - Change the shader
 - Shape the heightmap using the simple brush
+    - Check what are the options on modifying the buffer directly on the GPU
 - Use a proper brush
     - Use my own version of stb_image (do when loading brushes)
 - Add lighting and shadows
 - Add an acceleration structure for faster picking
+    - Not sure if still needed
+    - Maybe we need to be able to select different heightmap tiles when we have them
 - Figure out the next steps (splatmap etc)
 - Steal code from the egui integration
 
