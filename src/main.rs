@@ -199,7 +199,14 @@ impl Game {
 
         let terrain = Terrain::new(Vec2::new(0.0, 0.0))?;
 
-        let skybox = Skybox::from("textures/skybox/sky-texture1.png")?;
+        let skybox = Skybox::from([
+            "textures/skybox/default/right.png",
+            "textures/skybox/default/left.png",
+            "textures/skybox/default/top.png",
+            "textures/skybox/default/bottom.png",
+            "textures/skybox/default/front.png",
+            "textures/skybox/default/back.png",
+        ])?;
 
         let scale_factor = window.scale_factor() as f32;
         let screen_size_physical = Vec2::new(window_size.width as f32, window_size.height as f32);

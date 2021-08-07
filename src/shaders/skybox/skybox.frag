@@ -3,6 +3,8 @@ out vec4 FragColor;
 
 in vec3 TexCoords;
 
-uniform sampler1D SkyTexture;
+uniform samplerCube skybox;
 
-void main() { FragColor = texture(SkyTexture, 0.5 + TexCoords.y / 2.0); }
+void main() {
+    FragColor = texture(skybox, TexCoords);  // * vec4(1.0, 0.7, 0.7, 1.0);
+}
