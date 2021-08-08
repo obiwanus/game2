@@ -486,7 +486,7 @@ impl Game {
 
             // Shape the terrain
             if self.input.mouse_buttons.primary {
-                self.terrain.raise_terrain(delta_time);
+                // self.terrain.raise_terrain(delta_time);
             }
         }
 

@@ -192,9 +192,9 @@ impl Terrain {
         self.shader.set_texture_unit("heightmap", 1)?;
 
         unsafe {
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
         Ok(())

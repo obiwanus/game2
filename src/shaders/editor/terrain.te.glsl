@@ -6,23 +6,23 @@ uniform sampler2D heightmap;
 
 uniform mat4 mvp;
 
-in TCS_OUT { vec2 uv; }
+in TCS_OUT { vec2 tile_uv; }
 tes_in[];
 
-out TES_OUT { vec2 uv; }
+out TES_OUT { vec2 tile_uv; }
 tes_out;
 
 void main() {
-    vec2 uv1 = mix(tes_in[0].uv, tes_in[1].uv, gl_TessCoord.x);
-    vec2 uv2 = mix(tes_in[2].uv, tes_in[3].uv, gl_TessCoord.x);
-    vec2 uv = mix(uv2, uv1, gl_TessCoord.y);
+    vec2 uv1 = mix(tes_in[0].tile_uv, tes_in[1].tile_uv, gl_TessCoord.x);
+    vec2 uv2 = mix(tes_in[2].tile_uv, tes_in[3].tile_uv, gl_TessCoord.x);
+    vec2 tile_uv = mix(uv2, uv1, gl_TessCoord.y);
 
     vec4 p1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
     vec4 p2 = mix(gl_in[2].gl_Position, gl_in[3].gl_Position, gl_TessCoord.x);
     vec4 p = mix(p2, p1, gl_TessCoord.y);
 
     // TODO: add displacement
-    p.y += texture(heightmap, uv).r * 150.0;
+    p.y += texture(heightmap, tile_uv).r * 200.0;
     gl_Position = mvp * p;
-    tes_out.uv = uv;
+    tes_out.tile_uv = tile_uv;
 }

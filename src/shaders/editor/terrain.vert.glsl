@@ -2,10 +2,10 @@
 
 const vec2 terrain_center = vec2(0.0);
 
-const float PATCH_SIZE = 8.0;  // so that one terrain tile is 1000x1000 units
+const float PATCH_SIZE = 16.0;  // so that one terrain tile is 1000x1000 units?
 const vec2 VERTICES[] = vec2[](vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(-0.5, 0.5), vec2(0.5, 0.5));
 
-out VS_OUT { vec2 uv; }
+out VS_OUT { vec2 tile_uv; }
 vs_out;
 
 uniform mat4 mvp;
@@ -19,7 +19,7 @@ void main() {
     vec2 offset = vec2(x, y);
 
     // Texture coords
-    vs_out.uv = (vertex + offset + vec2(0.5)) / 64.0;
+    vs_out.tile_uv = (vertex + offset + vec2(0.5)) / 64.0;
 
     // Position
     vec2 position = (vertex + vec2(offset.x - 32.0, offset.y - 32.0)) * PATCH_SIZE + terrain_center;

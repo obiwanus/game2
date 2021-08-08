@@ -2,10 +2,10 @@
 
 layout(vertices = 4) out;
 
-in VS_OUT { vec2 uv; }
+in VS_OUT { vec2 tile_uv; }
 tcs_in[];
 
-out TCS_OUT { vec2 uv; }
+out TCS_OUT { vec2 tile_uv; }
 tcs_out[];
 
 uniform mat4 mvp;
@@ -20,6 +20,7 @@ void main() {
 
         if (p0.z <= 0.0 && p1.z <= 0.0 && p2.z <= 0.0 && p3.z <= 0.0) {
             // Patch is behind the camera - cull
+            // TODO: understand why visible patches are culled sometimes
             gl_TessLevelOuter[0] = 0.0;
             gl_TessLevelOuter[1] = 0.0;
             gl_TessLevelOuter[2] = 0.0;
@@ -45,5 +46,5 @@ void main() {
     }
 
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-    tcs_out[gl_InvocationID].uv = tcs_in[gl_InvocationID].uv;
+    tcs_out[gl_InvocationID].tile_uv = tcs_in[gl_InvocationID].tile_uv;
 }

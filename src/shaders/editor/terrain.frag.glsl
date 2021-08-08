@@ -22,7 +22,7 @@
 //     vec3 specular;
 // };
 
-in TES_OUT { vec2 uv; }
+in TES_OUT { vec2 tile_uv; }
 fs_in;
 
 out vec4 Color;
@@ -78,4 +78,7 @@ uniform sampler2D terrain_texture;
 //     }
 // }
 
-void main() { Color = texture(terrain_texture, fs_in.uv); }
+void main() {
+    vec2 patch_uv = fs_in.tile_uv * 64.0;
+    Color = texture(terrain_texture, patch_uv);
+}
