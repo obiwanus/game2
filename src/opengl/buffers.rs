@@ -2,10 +2,32 @@ use gl::types::*;
 
 // ==================================== Buffer ====================================================
 
+pub struct StaticBuffer {
+    buffer: Buffer,
+}
+
+impl StaticBuffer {
+    /// Initialise with static data
+    pub fn init<T>(data: &[T]) -> Self {
+        let size = std::mem::size_of::<T>() * data.len();
+        let mut buffer = Buffer::new();
+        buffer.size = Some(size);
+        unsafe {
+            gl::NamedBufferStorage(buffer.id, size as isize, data.as_ptr() as *const _, 0);
+        }
+        StaticBuffer { buffer }
+    }
+
+    #[inline(always)]
+    pub fn id(&self) -> GLuint {
+        self.buffer.id
+    }
+}
+
 #[derive(Debug)]
-pub struct Buffer {
+struct Buffer {
     id: GLuint,
-    size: usize,
+    size: Option<usize>,
 }
 
 // @abstraction: need to think more about this
@@ -14,21 +36,9 @@ impl Buffer {
     pub fn new() -> Self {
         let mut id: GLuint = 0;
         unsafe {
-            gl::GenBuffers(1, &mut id);
+            gl::CreateBuffers(1, &mut id);
         }
-        Buffer { id, size: 0 }
-    }
-
-    pub fn send_static_data<T>(target: GLenum, data: &[T]) {
-        let size = std::mem::size_of::<T>() * data.len();
-        unsafe {
-            gl::BufferData(
-                target,
-                size as isize,
-                data.as_ptr() as *const GLvoid,
-                gl::STATIC_DRAW,
-            );
-        }
+        Buffer { id, size: None }
     }
 
     pub fn allocate_dynamic_data<T>(&mut self, target: GLenum, data: &[T]) {

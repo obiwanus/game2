@@ -2,7 +2,7 @@ use gl::types::*;
 use thiserror::Error;
 
 use crate::camera::Camera;
-use crate::opengl::buffers::{Buffer, VertexArray};
+use crate::opengl::buffers::{StaticBuffer, VertexArray};
 use crate::opengl::shader::{Program, ShaderError};
 use crate::texture::{load_image, TextureError};
 
@@ -18,7 +18,7 @@ pub struct Skybox {
     id: GLuint,
     shader: Program,
     vao: VertexArray,
-    _vbo: Buffer,
+    _vbo: StaticBuffer,
 }
 
 impl Skybox {
@@ -131,9 +131,7 @@ impl Skybox {
         ];
         let vao = VertexArray::new();
         vao.bind();
-        let vbo = Buffer::new();
-        vbo.bind_as(gl::ARRAY_BUFFER);
-        Buffer::send_static_data(gl::ARRAY_BUFFER, &vertices);
+        let vertex_buffer = StaticBuffer::init(&vertices);
         unsafe {
             gl::VertexAttribPointer(
                 0,
@@ -151,7 +149,7 @@ impl Skybox {
             id,
             shader,
             vao,
-            _vbo: vbo,
+            _vbo: vertex_buffer,
         })
     }
 
