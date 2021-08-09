@@ -1,5 +1,6 @@
 TODO:
 
+- Rewrite buffers and buffer attributes using OpenGL 4.5
 - Ray/heightmap intersection
     - Read some more on ray/heightmap intersection
     - Add a picking buffer (most likely)
