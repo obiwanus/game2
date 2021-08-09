@@ -22,7 +22,10 @@
 //     vec3 specular;
 // };
 
-in TES_OUT { vec2 tile_uv; }
+in TES_OUT {
+    vec2 tile_uv;
+    vec3 frag_pos;
+}
 fs_in;
 
 out vec4 Color;
@@ -30,6 +33,9 @@ out vec4 Color;
 // uniform vec3 cursor;
 // uniform float brush_size;
 uniform sampler2D terrain_texture;
+
+const vec2 cursor = vec2(100.0, 100.0);
+const float brush_size = 10.0;
 
 // uniform Material material;
 // uniform DirectionalLight directional_light;
@@ -80,5 +86,16 @@ uniform sampler2D terrain_texture;
 
 void main() {
     vec2 patch_uv = fs_in.tile_uv * 64.0;
-    Color = texture(terrain_texture, patch_uv);
+    vec4 terrain_color = texture(terrain_texture, patch_uv);
+
+    // Cursor
+    float distance_to_cursor = clamp(distance(fs_in.frag_pos.xz, cursor) / brush_size, 0.2, 1.0);
+
+    vec4 base_color = mix(vec4(1.0, 0.5, 0.5, 1.0), terrain_color, distance_to_cursor);
+
+    if (distance_to_cursor < 1.0) {
+        Color = base_color * clamp(0.1 * fs_in.frag_pos.y, 0.7, 1.0);
+    } else {
+        Color = base_color * clamp(0.1 * fs_in.frag_pos.y, 0.2, 1.0);
+    }
 }

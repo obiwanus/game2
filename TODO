@@ -1,6 +1,5 @@
 TODO:
 
-- Draw a cursor
 - Ray/heightmap intersection
     - Read some more on ray/heightmap intersection
     - Add a picking buffer (most likely)
@@ -21,6 +20,7 @@ DONE:
 
 9 Aug 2021, Mon
 - Draw a different checkerboard pattern
+- Draw a cursor somewhere
 
 8 Aug 2021, Sun
 - Debugging skybox

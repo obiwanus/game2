@@ -9,7 +9,10 @@ uniform mat4 mvp;
 in TCS_OUT { vec2 tile_uv; }
 tes_in[];
 
-out TES_OUT { vec2 tile_uv; }
+out TES_OUT {
+    vec2 tile_uv;
+    vec3 frag_pos;
+}
 tes_out;
 
 void main() {
@@ -25,4 +28,5 @@ void main() {
     p.y += texture(heightmap, tile_uv).r * 200.0;
     gl_Position = mvp * p;
     tes_out.tile_uv = tile_uv;
+    tes_out.frag_pos = p.xyz;
 }
