@@ -1,10 +1,12 @@
+use std::mem::size_of;
+
 use gl::types::*;
 use thiserror::Error;
 
 use crate::camera::Camera;
-use crate::opengl::buffers::{StaticBuffer, VertexArray};
 use crate::opengl::shader::{Program, ShaderError};
 use crate::texture::{load_image, TextureError};
+use crate::utils::size_of_slice;
 
 #[derive(Debug, Error)]
 pub enum SkyboxError {
@@ -17,8 +19,8 @@ pub enum SkyboxError {
 pub struct Skybox {
     id: GLuint,
     shader: Program,
-    vao: VertexArray,
-    _vbo: StaticBuffer,
+    vao: GLuint,
+    vbo: GLuint,
 }
 
 impl Skybox {
@@ -129,27 +131,33 @@ impl Skybox {
             -1.0, -1.0,  1.0,
             1.0, -1.0,  1.0,
         ];
-        let vao = VertexArray::new();
-        vao.bind();
-        let vertex_buffer = StaticBuffer::init(&vertices);
+
+        // Init buffers
+        let mut vao: GLuint = 0;
+        let mut vbo: GLuint = 0;
         unsafe {
-            gl::VertexAttribPointer(
+            gl::CreateVertexArrays(1, &mut vao);
+            gl::CreateBuffers(1, &mut vbo);
+
+            // Upload vertices
+            gl::NamedBufferStorage(
+                vbo,
+                size_of_slice(&vertices) as isize,
+                vertices.as_ptr() as *const _,
                 0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                0,
-                std::ptr::null() as *const GLvoid,
             );
-            gl::EnableVertexAttribArray(0);
+
+            // Describe vertex buffer
+            gl::VertexArrayVertexBuffer(vao, 0, vbo, 0, (size_of::<f32>() * 3) as i32);
+            gl::VertexArrayAttribFormat(vao, 0, 3, gl::FLOAT, gl::FALSE, 0);
+            gl::EnableVertexArrayAttrib(vao, 0);
         }
-        vao.unbind();
 
         Ok(Skybox {
             id,
             shader,
             vao,
-            _vbo: vertex_buffer,
+            vbo,
         })
     }
 
@@ -165,14 +173,23 @@ impl Skybox {
             self.shader.set_mat4("proj", &proj)?;
             self.shader.set_mat4("view", &view)?;
         }
-        self.vao.bind();
 
         unsafe {
+            gl::BindVertexArray(self.vao);
             gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.id);
             gl::DrawArrays(gl::TRIANGLES, 0, 36);
             gl::DepthFunc(gl::LESS);
         }
 
         Ok(())
+    }
+}
+
+impl Drop for Skybox {
+    fn drop(&mut self) {
+        unsafe {
+            gl::DeleteBuffers(1, &self.vbo as *const _);
+            gl::DeleteVertexArrays(1, &self.vao as *const _);
+        }
     }
 }

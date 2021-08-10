@@ -1,18 +1,12 @@
-use std::error::Error;
+use std::mem::size_of;
 
 use egui::{epaint::ClippedShape, ClippedMesh, CtxRef, Output, RawInput};
 use epaint::Color32;
+use gl::types::*;
 use glam::Vec2;
 use memoffset::offset_of;
 
-use crate::{
-    opengl::{
-        buffers::{Buffer, VertexArray},
-        shader::Program,
-    },
-    texture::Texture,
-    Result,
-};
+use crate::{opengl::shader::Program, texture::Texture, utils::size_of_slice, Result};
 
 pub struct Gui {
     screen_size: Vec2,
@@ -22,9 +16,11 @@ pub struct Gui {
     egui_texture_version: Option<u64>,
 
     shader: Program,
-    vao: VertexArray,
-    vbo: Buffer,
-    ebo: Buffer,
+
+    // Trying without any abstractions
+    vao: GLuint,
+    vbo: GLuint,
+    ebo: GLuint,
 
     name: String,
 }
@@ -32,52 +28,55 @@ pub struct Gui {
 impl Gui {
     // Note: assuming non-resizable window for now
     pub fn new(screen_size: Vec2) -> Result<Gui> {
-        let vao = VertexArray::new();
-        vao.bind();
-        let vbo = Buffer::new();
-        vbo.bind_as(gl::ARRAY_BUFFER);
-        let ebo = Buffer::new();
-        ebo.bind_as(gl::ELEMENT_ARRAY_BUFFER);
-
+        let mut vao: GLuint = 0;
+        let mut vbo: GLuint = 0;
+        let mut ebo: GLuint = 0;
         unsafe {
-            use gl::types::*;
+            // Create objects
+            gl::CreateVertexArrays(1, &mut vao);
+            gl::CreateBuffers(1, &mut vbo);
+            gl::CreateBuffers(1, &mut ebo);
+
+            // Attach buffers to vao
+            gl::VertexArrayVertexBuffer(vao, 0, vbo, 0, size_of::<Vertex>() as i32);
+            gl::VertexArrayElementBuffer(vao, ebo);
+
             // Position
-            gl::VertexAttribPointer(
+            gl::VertexArrayAttribFormat(
+                vao,
                 0,
                 2,
                 gl::FLOAT,
                 gl::FALSE,
-                std::mem::size_of::<Vertex>() as i32,
-                offset_of!(Vertex, pos) as *const GLvoid,
+                offset_of!(Vertex, pos) as u32,
             );
-            gl::EnableVertexAttribArray(0);
+            gl::EnableVertexArrayAttrib(vao, 0);
 
             // UV
-            gl::VertexAttribPointer(
+            gl::VertexArrayAttribFormat(
+                vao,
                 1,
                 2,
                 gl::FLOAT,
                 gl::FALSE,
-                std::mem::size_of::<Vertex>() as i32,
-                offset_of!(Vertex, uv) as *const GLvoid,
+                offset_of!(Vertex, uv) as u32,
             );
-            gl::EnableVertexAttribArray(1);
+            gl::EnableVertexArrayAttrib(vao, 1);
 
             // Color
-            gl::VertexAttribPointer(
+            gl::VertexArrayAttribFormat(
+                vao,
                 2,
                 4,
                 gl::UNSIGNED_BYTE,
                 gl::FALSE,
-                std::mem::size_of::<Vertex>() as i32,
-                offset_of!(Vertex, srgba) as *const GLvoid,
+                offset_of!(Vertex, srgba) as u32,
             );
-            gl::EnableVertexAttribArray(2);
+            gl::EnableVertexArrayAttrib(vao, 2);
         }
 
         let egui_texture = Texture::new();
         unsafe {
-            use gl::types::*;
             gl::BindTexture(gl::TEXTURE_2D, egui_texture.id);
             gl::TexParameteri(
                 gl::TEXTURE_2D,
@@ -163,7 +162,6 @@ impl Gui {
 
         let clipped_meshes = self.ctx.tessellate(shapes);
 
-        self.vao.bind();
         self.shader.set_used();
         self.shader
             .set_vec2("u_screen_size", &screen_size_in_points)
@@ -172,7 +170,6 @@ impl Gui {
         self.egui_texture.bind_2d(0);
 
         for ClippedMesh(clip_rect, mesh) in clipped_meshes {
-            // Upload vertices
             let vertices = mesh
                 .vertices
                 .iter()
@@ -182,33 +179,27 @@ impl Gui {
                     srgba: v.color.to_array(),
                 })
                 .collect::<Vec<Vertex>>();
-            self.vbo.bind_as(gl::ARRAY_BUFFER);
-            Buffer::send_stream_data(gl::ARRAY_BUFFER, &vertices);
 
-            // Upload indices
-            self.ebo.bind_as(gl::ELEMENT_ARRAY_BUFFER);
-            Buffer::send_stream_data(gl::ELEMENT_ARRAY_BUFFER, &mesh.indices);
-
-            // // Calculate the scissor box
-            // let clip_min_x = pixels_per_point * clip_rect.min.x;
-            // let clip_min_y = pixels_per_point * clip_rect.min.y;
-            // let clip_max_x = pixels_per_point * clip_rect.max.x;
-            // let clip_max_y = pixels_per_point * clip_rect.max.y;
-
-            // let clip_max_x = clip_max_x.clamp(clip_min_x, self.screen_size.x).round() as i32;
-            // let clip_max_y = clip_max_y.clamp(clip_min_y, self.screen_size.y).round() as i32;
-            // let clip_min_x = clip_min_x.clamp(0.0, self.screen_size.x).round() as i32;
-            // let clip_min_y = clip_min_y.clamp(0.0, self.screen_size.y).round() as i32;
-
+            // Upload vertex and index data
             unsafe {
+                gl::NamedBufferData(
+                    self.vbo,
+                    size_of_slice(&vertices) as isize,
+                    vertices.as_ptr() as *const _,
+                    gl::STREAM_DRAW,
+                );
+                gl::NamedBufferData(
+                    self.vbo,
+                    size_of_slice(&mesh.indices) as isize,
+                    mesh.indices.as_ptr() as *const _,
+                    gl::STREAM_DRAW,
+                );
+            }
+
+            // Draw
+            unsafe {
+                gl::BindVertexArray(self.vao);
                 gl::Disable(gl::DEPTH_TEST);
-                // gl::Enable(gl::SCISSOR_TEST);
-                // gl::Scissor(
-                //     clip_min_x,
-                //     clip_min_y,
-                //     clip_max_x - clip_min_x,
-                //     clip_max_y - clip_min_y,
-                // );
                 gl::Enable(gl::BLEND);
                 gl::BlendFuncSeparate(
                     gl::ONE,
@@ -225,7 +216,6 @@ impl Gui {
                 );
 
                 gl::Disable(gl::BLEND);
-                // gl::Disable(gl::SCISSOR_TEST);
                 gl::Enable(gl::DEPTH_TEST);
             }
         }
@@ -258,6 +248,18 @@ impl Gui {
                 gl::UNSIGNED_BYTE,
                 pixels.as_ptr() as *const std::ffi::c_void,
             );
+        }
+    }
+}
+
+impl Drop for Gui {
+    fn drop(&mut self) {
+        unsafe {
+            let buffers = [self.vbo, self.ebo];
+            gl::DeleteBuffers(1, buffers.as_ptr());
+
+            let arrays = [self.vao];
+            gl::DeleteVertexArrays(1, arrays.as_ptr());
         }
     }
 }

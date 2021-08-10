@@ -5,7 +5,6 @@ use std::ffi::CStr;
 
 use gl::types::*;
 
-pub mod buffers;
 pub mod shader;
 
 pub fn gl_check_error(file: &str, line: u32) {

@@ -1,20 +1,10 @@
-use std::error::Error;
-
 use gl::types::*;
 use glam::{Vec2, Vec3};
-use memoffset::offset_of;
 use opengl_lib::types::GLvoid;
 use stb_image::image::{Image, LoadResult};
 
 use crate::{
-    camera::Camera,
-    editor::Brush,
-    opengl::{
-        buffers::{Buffer, VertexArray},
-        shader::Program,
-    },
-    texture::Texture,
-    utils::vec3_infinity,
+    camera::Camera, editor::Brush, opengl::shader::Program, texture::Texture, utils::vec3_infinity,
     Result,
 };
 
@@ -117,7 +107,7 @@ impl Heightmap {
 pub struct Terrain {
     center: Vec2,
 
-    vao: VertexArray,
+    vao: GLuint,
     shader: Program,
     pub tess_level: f32,
 
@@ -129,9 +119,10 @@ pub struct Terrain {
 
 impl Terrain {
     pub fn new(center: Vec2) -> Result<Self> {
-        let vao = VertexArray::new();
-        vao.bind();
+        let mut vao: GLuint = 0;
         unsafe {
+            gl::CreateVertexArrays(1, &mut vao);
+
             gl::PatchParameteri(gl::PATCH_VERTICES, 4);
         }
 
@@ -183,8 +174,6 @@ impl Terrain {
             self.shader.set_mat4("mvp", &mvp)?;
         }
 
-        self.vao.bind();
-
         // @try moving outsize of the draw
         self.texture.bind_2d(0);
         self.shader.set_texture_unit("terrain_texture", 0)?;
@@ -192,6 +181,7 @@ impl Terrain {
         self.shader.set_texture_unit("heightmap", 1)?;
 
         unsafe {
+            gl::BindVertexArray(self.vao);
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
