@@ -1,11 +1,18 @@
 TODO:
 
 - Ray/heightmap intersection
-    - Read some more on ray/heightmap intersection
-    - Add a picking buffer (most likely)
-    - Get a point of intersection
+    + Read some more on ray/heightmap intersection
+    - Implement ray marching to get intersection point
+        - Get terrain AABB
+        - Cast a ray through pixel
+        - Get the closest/farthest intersection points with AABB
+        - If the first intersection point is below terrain, stop
+        - Ray march from closest to farthest point
+            - Use fixed step advancement
+            - When an intersection is found between points, use binary search to find the spot
 - Shape the heightmap using the simple brush
     - Check what are the options on modifying the buffer directly on the GPU
+    - Consider splitting the terrain into smaller chunks so that we have smaller heightmaps
 - Use a proper brush
     - Use my own version of stb_image (do when loading brushes)
 - Optimise the terrain tessellation
@@ -17,6 +24,9 @@ TODO:
 - Steal code from the egui integration
 
 DONE:
+
+11 Aug 2021, Wed
+- Add AABB
 
 10 Aug 2021, Tue
 - Rewrite buffers and buffer attributes using OpenGL 4.5
