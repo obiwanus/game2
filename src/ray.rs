@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 use glam::Vec3;
 
 const EPSILON: f32 = 0.00001;
@@ -52,11 +54,49 @@ impl Ray {
         }
     }
 
-    // pub fn hits_aabb()
+    pub fn hits_aabb(&self, aabb: &AABB) -> Option<AabbHit> {
+        let mut ray_min = (aabb[self.sign_x].x - self.origin.x) * self.inv_direction.x;
+        let mut ray_max = (aabb[1 - self.sign_x].x - self.origin.x) * self.inv_direction.x;
+
+        let y_min = (aabb[self.sign_y].y - self.origin.y) * self.inv_direction.y;
+        let y_max = (aabb[1 - self.sign_y].y - self.origin.y) * self.inv_direction.y;
+
+        if (ray_min > y_max) || (y_min > ray_max) {
+            return None;
+        }
+        if y_min > ray_min {
+            ray_min = y_min;
+        }
+        if y_max < ray_max {
+            ray_max = y_max;
+        }
+        let z_min = (aabb[self.sign_z].z - self.origin.z) * self.inv_direction.z;
+        let z_max = (aabb[1 - self.sign_z].z - self.origin.z) * self.inv_direction.z;
+
+        if (ray_min > z_max) || (z_min > ray_max) {
+            return None;
+        }
+        if z_max < ray_max {
+            ray_max = z_max;
+        }
+        if ray_max <= 0.0 {
+            return None;
+        }
+
+        Some(AabbHit {
+            t_min: ray_min,
+            t_max: ray_max,
+        })
+    }
 
     pub fn get_point_at(&self, t: f32) -> Vec3 {
         self.origin + self.direction * t
     }
+}
+
+pub struct AabbHit {
+    pub t_min: f32,
+    pub t_max: f32,
 }
 
 pub struct TriangleHit {
@@ -97,6 +137,18 @@ impl AABB {
             && p.y <= self.max.y
             && p.z >= self.min.z
             && p.z <= self.max.z
+    }
+}
+
+impl Index<usize> for AABB {
+    type Output = Vec3;
+
+    fn index(&self, index: usize) -> &Vec3 {
+        if index == 0 {
+            &self.min
+        } else {
+            &self.max
+        }
     }
 }
 

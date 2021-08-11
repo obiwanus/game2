@@ -27,6 +27,7 @@ DONE:
 
 11 Aug 2021, Wed
 - Add AABB
+- Check intersection of cursor vs terrain's AABB
 
 10 Aug 2021, Tue
 - Rewrite buffers and buffer attributes using OpenGL 4.5

@@ -3,8 +3,9 @@
 layout(quads, fractional_odd_spacing) in;
 
 uniform sampler2D heightmap;
-
 uniform mat4 mvp;
+
+const float MAX_HEIGHT = 200.0;
 
 in TCS_OUT { vec2 tile_uv; }
 tes_in[];
@@ -25,7 +26,7 @@ void main() {
     vec4 p = mix(p2, p1, gl_TessCoord.y);
 
     // TODO: add displacement
-    p.y += texture(heightmap, tile_uv).r * 200.0;
+    p.y += texture(heightmap, tile_uv).r * MAX_HEIGHT;
     gl_Position = mvp * p;
     tes_out.tile_uv = tile_uv;
     tes_out.frag_pos = p.xyz;

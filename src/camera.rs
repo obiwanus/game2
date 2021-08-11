@@ -163,7 +163,6 @@ impl Camera {
             top_left_corner + self.right * pixel_width * pixel.x - self.up * pixel_height * pixel.y;
         let direction = pixel - self.position;
 
-        // TODO
         Ray::new(self.position, direction)
     }
 

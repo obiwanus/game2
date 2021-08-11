@@ -459,6 +459,12 @@ impl Game {
             }
 
             if self.input.pointer_moved || self.input.camera_moved {
+                let ray = self.camera.get_ray_through_pixel(self.input.pointer);
+                let hits_terrain = ray.hits_aabb(&self.terrain.aabb).is_some();
+                // self.windowed_context
+                //     .window()
+                //     .set_cursor_visible(!hits_terrain);
+
                 // TODO: proper terrain picking
                 // let cursor = {
                 //     let ray = self.camera.get_ray_through_pixel(self.input.pointer);

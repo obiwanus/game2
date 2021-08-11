@@ -4,8 +4,8 @@ use opengl_lib::types::GLvoid;
 use stb_image::image::{Image, LoadResult};
 
 use crate::{
-    camera::Camera, editor::Brush, opengl::shader::Program, texture::Texture, utils::vec3_infinity,
-    Result,
+    camera::Camera, editor::Brush, opengl::shader::Program, ray::AABB, texture::Texture,
+    utils::vec3_infinity, Result,
 };
 
 struct Heightmap {
@@ -106,6 +106,8 @@ impl Heightmap {
 
 pub struct Terrain {
     center: Vec2,
+    max_height: f32,
+    pub aabb: AABB,
 
     vao: GLuint,
     shader: Program,
@@ -119,6 +121,19 @@ pub struct Terrain {
 
 impl Terrain {
     pub fn new(center: Vec2) -> Result<Self> {
+        // TODO: support centers other than 0, 0
+        // (currently hard-coded in terrain.vert.glsl)
+        assert_eq!(center, Vec2::new(0.0, 0.0));
+        const NUM_PATCHES: f32 = 64.0;
+        const PATCH_SIZE: f32 = 4.0;
+        let max_height = 200.0;
+        let aabb = {
+            let size = PATCH_SIZE * NUM_PATCHES / 2.0;
+            let min = Vec3::new(-size, 0.0, -size);
+            let max = Vec3::new(size, max_height, size);
+            AABB::new(min, max)
+        };
+
         let mut vao: GLuint = 0;
         unsafe {
             gl::CreateVertexArrays(1, &mut vao);
@@ -146,6 +161,8 @@ impl Terrain {
 
         Ok(Terrain {
             center,
+            max_height,
+            aabb,
 
             vao,
             shader,
