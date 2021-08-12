@@ -4,6 +4,7 @@ use glam::Vec3;
 
 const EPSILON: f32 = 0.00001;
 
+#[derive(Debug)]
 pub struct Ray {
     origin: Vec3,
     direction: Vec3,
@@ -82,6 +83,9 @@ impl Ray {
         if ray_max <= 0.0 {
             return None;
         }
+        if z_min > ray_min {
+            ray_min = z_min;
+        }
 
         Some(AabbHit {
             t_min: ray_min,
@@ -94,6 +98,7 @@ impl Ray {
     }
 }
 
+#[derive(Debug)]
 pub struct AabbHit {
     pub t_min: f32,
     pub t_max: f32,
@@ -120,6 +125,7 @@ pub struct AABB {
 
 impl AABB {
     pub fn new(min: Vec3, max: Vec3) -> AABB {
+        debug_assert!(min.x < max.x && min.y < max.y && min.z < max.z);
         AABB { min, max }
     }
 

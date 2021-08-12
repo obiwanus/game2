@@ -458,9 +458,16 @@ impl Game {
                 }
             }
 
-            if self.input.pointer_moved || self.input.camera_moved {
+            if (self.input.pointer_moved || self.input.camera_moved)
+                && self.input.mouse_buttons.primary
+            {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
-                let hits_terrain = ray.hits_aabb(&self.terrain.aabb).is_some();
+                if let Some(hit) = ray.hits_aabb(&self.terrain.aabb) {
+                    dbg!(self.terrain.aabb);
+                    dbg!(ray.get_point_at(hit.t_min));
+                    dbg!(ray);
+                    dbg!(hit);
+                }
                 // self.windowed_context
                 //     .window()
                 //     .set_cursor_visible(!hits_terrain);

@@ -3,9 +3,11 @@ TODO:
 - Ray/heightmap intersection
     + Read some more on ray/heightmap intersection
     - Implement ray marching to get intersection point
-        - Get terrain AABB
-        - Cast a ray through pixel
-        - Get the closest/farthest intersection points with AABB
+        + Get terrain AABB
+        + Cast a ray through pixel
+        + Get the closest/farthest intersection points with AABB
+            + Understand the ray/aabb intersection algorithm
+            + Get the required points
         - If the first intersection point is below terrain, stop
         - Ray march from closest to farthest point
             - Use fixed step advancement
@@ -24,6 +26,12 @@ TODO:
 - Steal code from the egui integration
 
 DONE:
+
+13 Aug 2021, Fri
+- Get the closest/farthest points of ray/aabb
+
+12 Aug 2021, Thu
+- Understand the ray/aabb intersection algorithm
 
 11 Aug 2021, Wed
 - Add AABB
