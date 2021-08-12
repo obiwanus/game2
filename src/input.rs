@@ -15,6 +15,7 @@ pub struct Input {
     pub back: bool,
     pub left: bool,
     pub right: bool,
+    pub time: f32,
 
     // Processed
     pub should_exit: bool,

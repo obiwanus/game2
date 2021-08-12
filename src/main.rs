@@ -401,6 +401,9 @@ impl Game {
         let now = Instant::now();
         let delta_time = now.duration_since(self.frame_start).as_secs_f32();
         self.frame_start = now;
+        let time = now.duration_since(self.game_start).as_secs_f64();
+        self.gui_input.time = Some(time);
+        self.input.time = time as f32;
 
         let new_mode = match self.mode.clone() {
             GameMode::Menu => unimplemented!("Menu is not implemented"),
@@ -507,7 +510,8 @@ impl Game {
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
-        self.terrain.draw(&self.camera, self.input.camera_moved)?;
+        self.terrain
+            .draw(&self.camera, self.input.camera_moved, self.input.time)?;
         self.skybox.draw(&self.camera, self.input.camera_moved)?;
 
         self.gui.draw(gui_shapes);

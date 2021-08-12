@@ -117,6 +117,9 @@ pub struct Terrain {
     heightmap: Heightmap,
     pub cursor: Vec3,
     pub brush: Brush,
+
+    // debug
+    aabb_shader: Program,
 }
 
 impl Terrain {
@@ -159,6 +162,14 @@ impl Terrain {
             .fragment_shader(include_str!("shaders/editor/terrain.frag.glsl"))?
             .link()?;
 
+        let aabb_shader = Program::new()
+            .vertex_shader(include_str!("shaders/debug/aabb.vert"))?
+            .fragment_shader(include_str!("shaders/debug/aabb.frag"))?
+            .link()?;
+        aabb_shader.set_used();
+        aabb_shader.set_vec3("aabb_min", &aabb.min)?;
+        aabb_shader.set_vec3("aabb_max", &aabb.max)?;
+
         Ok(Terrain {
             center,
             max_height,
@@ -173,15 +184,17 @@ impl Terrain {
 
             cursor,
             brush,
+
+            aabb_shader,
         })
     }
 
     // @tmp: remove camera and move to renderer
-    pub fn draw(&self, camera: &Camera, camera_moved: bool) -> Result<()> {
+    pub fn draw(&self, camera: &Camera, camera_moved: bool, time: f32) -> Result<()> {
         self.shader.set_used();
         // self.shader.set_vec3("cursor", &self.cursor)?;
         // self.shader.set_float("brush_size", self.brush.size)?;
-        self.shader.set_float("tess_level", self.tess_level)?;
+        self.shader.set_f32("tess_level", self.tess_level)?;
 
         // @tmp
         if camera_moved {
@@ -202,6 +215,23 @@ impl Terrain {
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+        }
+
+        // Draw AABB
+        self.aabb_shader.set_used();
+        self.aabb_shader.set_f32("time", time)?;
+        // @tmp
+        if camera_moved {
+            let proj = camera.get_projection_matrix();
+            let view = camera.get_view_matrix();
+            let mvp = proj * view;
+            self.aabb_shader.set_mat4("mvp", &mvp)?;
+        }
+
+        unsafe {
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            gl::DrawArrays(gl::TRIANGLES, 0, 6 * 2 * 3);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
         Ok(())

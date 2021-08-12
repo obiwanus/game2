@@ -150,7 +150,7 @@ impl Program {
     }
 
     /// Sets a float uniform
-    pub fn set_float(&self, name: &str, value: f32) -> Result<()> {
+    pub fn set_f32(&self, name: &str, value: f32) -> Result<()> {
         let location = self.get_uniform_location(name)?;
         unsafe {
             gl::Uniform1fv(location, 1, &value as *const f32);
