@@ -50,7 +50,6 @@ impl Gui {
                 gl::FALSE,
                 offset_of!(Vertex, pos) as u32,
             );
-            gl::EnableVertexArrayAttrib(vao, 0);
 
             // UV
             gl::VertexArrayAttribFormat(
@@ -61,7 +60,6 @@ impl Gui {
                 gl::FALSE,
                 offset_of!(Vertex, uv) as u32,
             );
-            gl::EnableVertexArrayAttrib(vao, 1);
 
             // Color
             gl::VertexArrayAttribFormat(
@@ -72,7 +70,14 @@ impl Gui {
                 gl::FALSE,
                 offset_of!(Vertex, srgba) as u32,
             );
+
+            gl::EnableVertexArrayAttrib(vao, 0);
+            gl::EnableVertexArrayAttrib(vao, 1);
             gl::EnableVertexArrayAttrib(vao, 2);
+
+            gl::VertexArrayAttribBinding(vao, 0, 0);
+            gl::VertexArrayAttribBinding(vao, 1, 0);
+            gl::VertexArrayAttribBinding(vao, 2, 0);
         }
 
         let egui_texture = Texture::new();
@@ -189,7 +194,7 @@ impl Gui {
                     gl::STREAM_DRAW,
                 );
                 gl::NamedBufferData(
-                    self.vbo,
+                    self.ebo,
                     size_of_slice(&mesh.indices) as isize,
                     mesh.indices.as_ptr() as *const _,
                     gl::STREAM_DRAW,

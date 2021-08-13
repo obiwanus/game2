@@ -128,7 +128,7 @@ impl Terrain {
         // (currently hard-coded in terrain.vert.glsl)
         assert_eq!(center, Vec2::new(0.0, 0.0));
         const NUM_PATCHES: f32 = 64.0;
-        const PATCH_SIZE: f32 = 4.0;
+        const PATCH_SIZE: f32 = 8.0;
         let max_height = 200.0;
         let aabb = {
             let size = PATCH_SIZE * NUM_PATCHES / 2.0;
