@@ -100,7 +100,7 @@ impl Camera {
     /// Move the camera
     pub fn go(&mut self, direction: Movement, delta_time: f32) {
         let speed = if self.speed_boost {
-            self.movement_speed * 2.0
+            self.movement_speed * 10.0
         } else {
             self.movement_speed
         };

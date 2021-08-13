@@ -3,7 +3,7 @@
 const vec2 terrain_center = vec2(0.0);
 const float PATCH_SIZE = 4.0;  // so that one terrain tile is 1000x1000 units?
 
-const vec2 VERTICES[] = vec2[](vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(-0.5, 0.5), vec2(0.5, 0.5));
+const vec2 VERTICES[] = vec2[](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0));
 
 out VS_OUT { vec2 tile_uv; }
 vs_out;

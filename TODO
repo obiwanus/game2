@@ -12,6 +12,7 @@ TODO:
         - Ray march from closest to farthest point
             - Use fixed step advancement
             - When an intersection is found between points, use binary search to find the spot
+- Where did the gui go?
 - Shape the heightmap using the simple brush
     - Check what are the options on modifying the buffer directly on the GPU
     - Consider splitting the terrain into smaller chunks so that we have smaller heightmaps
@@ -29,6 +30,7 @@ DONE:
 
 13 Aug 2021, Fri
 - Get the closest/farthest points of ray/aabb
+- Find out why the AABB doesn't match the terrain precisely
 
 12 Aug 2021, Thu
 - Understand the ray/aabb intersection algorithm
