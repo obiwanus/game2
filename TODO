@@ -8,6 +8,7 @@ TODO:
         + Get the closest/farthest intersection points with AABB
             + Understand the ray/aabb intersection algorithm
             + Get the required points
+        - Find where a point is in the texture
         - If the first intersection point is below terrain, stop
         - Ray march from closest to farthest point
             - Use fixed step advancement
@@ -26,6 +27,8 @@ TODO:
 - Steal code from the egui integration
 
 DONE:
+
+14 Aug 2021, Sat
 
 13 Aug 2021, Fri
 - Get the closest/farthest points of ray/aabb

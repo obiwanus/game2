@@ -30,12 +30,12 @@ fs_in;
 
 out vec4 Color;
 
-// uniform vec3 cursor;
+uniform vec2 cursor;
 // uniform float brush_size;
 uniform sampler2D terrain_texture;
 
-const vec2 cursor = vec2(100.0, 100.0);
-const float brush_size = 10.0;
+// const vec2 cursor = vec2(100.0, 100.0);
+const float brush_size = 30.0;
 
 // uniform Material material;
 // uniform DirectionalLight directional_light;

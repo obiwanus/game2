@@ -32,7 +32,7 @@ use editor::gui::Gui;
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
 use skybox::Skybox;
 use terrain::Terrain;
-use utils::vec3_infinity;
+use utils::vec2_infinity;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -426,7 +426,7 @@ impl Game {
 
         if self.gui.wants_input() {
             // Pointer over UI or currently interacting with it
-            self.terrain.cursor = vec3_infinity(); // hide terrain cursor
+            self.terrain.cursor = vec2_infinity(); // hide terrain cursor
             self.windowed_context.window().set_cursor_visible(true); // we always want cursor with UI
         } else {
             // Process input
@@ -466,14 +466,12 @@ impl Game {
             {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
                 if let Some(hit) = ray.hits_aabb(&self.terrain.aabb) {
-                    dbg!(self.terrain.aabb);
-                    dbg!(ray.get_point_at(hit.t_min));
-                    dbg!(ray);
-                    dbg!(hit);
+                    // Ray march the terrain to get the intersection point
+                    let hit_point = ray.get_point_at(hit.t_min);
+                    let is_above = self.terrain.is_point_above_surface(&hit_point);
+                    self.terrain.set_cursor(&hit_point);
+                    dbg!(is_above);
                 }
-                // self.windowed_context
-                //     .window()
-                //     .set_cursor_visible(!hits_terrain);
 
                 // TODO: proper terrain picking
                 // let cursor = {

@@ -4,8 +4,13 @@ use opengl_lib::types::GLvoid;
 use stb_image::image::{Image, LoadResult};
 
 use crate::{
-    camera::Camera, editor::Brush, opengl::shader::Program, ray::AABB, texture::Texture,
-    utils::vec3_infinity, Result,
+    camera::Camera,
+    editor::Brush,
+    opengl::shader::Program,
+    ray::AABB,
+    texture::Texture,
+    utils::{vec2_infinity, vec3_infinity},
+    Result,
 };
 
 struct Heightmap {
@@ -72,6 +77,13 @@ impl Heightmap {
         }
     }
 
+    fn sample_height(&self, point: Vec2) -> f32 {
+        let x = (point.x as usize).clamp(0, self.size);
+        let y = (point.y as usize).clamp(0, self.size);
+
+        self.pixels[y * self.size + x]
+    }
+
     // @duplicate
     fn bind_2d(&self, unit: i32) {
         unsafe {
@@ -115,7 +127,7 @@ pub struct Terrain {
 
     texture: Texture,
     heightmap: Heightmap,
-    pub cursor: Vec3,
+    pub cursor: Vec2,
     pub brush: Brush,
 
     // debug
@@ -151,7 +163,7 @@ impl Terrain {
 
         let heightmap = Heightmap::new("textures/heightmaps/valley.png");
 
-        let cursor = vec3_infinity();
+        let cursor = vec2_infinity();
 
         let brush = Brush::new("src/editor/brushes/brush1.png");
 
@@ -192,7 +204,7 @@ impl Terrain {
     // @tmp: remove camera and move to renderer
     pub fn draw(&self, camera: &Camera, camera_moved: bool, time: f32) -> Result<()> {
         self.shader.set_used();
-        // self.shader.set_vec3("cursor", &self.cursor)?;
+        self.shader.set_vec2("cursor", &self.cursor)?;
         // self.shader.set_float("brush_size", self.brush.size)?;
         self.shader.set_f32("tess_level", self.tess_level)?;
 
@@ -241,7 +253,7 @@ impl Terrain {
         let size = 1000.0; // @todo: variable size or put in a proper const
                            // Find where the cursor is on the texture (relative to center)
         let cursor =
-            Vec2::new(0.5, 0.5) + (Vec2::new(self.cursor.x, self.cursor.z) - self.center) / size;
+            Vec2::new(0.5, 0.5) + (Vec2::new(self.cursor.x, self.cursor.y) - self.center) / size;
 
         // Get brush size in terms of underlying texture
         let brush_size = self.brush.size / size;
@@ -266,6 +278,20 @@ impl Terrain {
 
         // Update the texture
         self.heightmap.upload_texture();
+    }
+
+    pub fn is_point_above_surface(&self, point: &Vec3) -> bool {
+        if !self.aabb.contains(point) {
+            return true;
+        }
+        return false;
+    }
+
+    pub fn set_cursor(&mut self, point: &Vec3) {
+        // Get cursor relative position
+        let point = Vec2::new(point.x, point.z); // - Vec2::new(self.aabb.min.x, self.aabb.min.z);
+        self.cursor = point;
+        println!("setting cursor to {:?}", point);
     }
 }
 
