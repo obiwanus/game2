@@ -86,6 +86,9 @@ impl Ray {
         if z_min > ray_min {
             ray_min = z_min;
         }
+        if ray_min < 0.0 {
+            ray_min = 0.0;
+        }
 
         Some(AabbHit {
             t_min: ray_min,

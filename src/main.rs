@@ -461,16 +461,10 @@ impl Game {
                 }
             }
 
-            if (self.input.pointer_moved || self.input.camera_moved)
-                && self.input.mouse_buttons.primary
-            {
+            if self.input.pointer_moved || self.input.camera_moved {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
-                if let Some(hit) = ray.hits_aabb(&self.terrain.aabb) {
-                    // Ray march the terrain to get the intersection point
-                    let hit_point = ray.get_point_at(hit.t_min);
-                    let is_above = self.terrain.is_point_above_surface(&hit_point);
-                    self.terrain.set_cursor(&hit_point);
-                    dbg!(is_above);
+                if let Some(point) = self.terrain.intersect_with_ray(&ray) {
+                    self.terrain.cursor = Vec2::new(point.x, point.z);
                 }
 
                 // TODO: proper terrain picking

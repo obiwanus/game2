@@ -1,4 +1,5 @@
 use gl::types::*;
+use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
 use opengl_lib::types::GLvoid;
 use stb_image::image::{Image, LoadResult};
@@ -7,7 +8,7 @@ use crate::{
     camera::Camera,
     editor::Brush,
     opengl::shader::Program,
-    ray::AABB,
+    ray::{Ray, AABB},
     texture::Texture,
     utils::{vec2_infinity, vec3_infinity},
     Result,
@@ -161,7 +162,7 @@ impl Terrain {
             .set_image_2d("textures/checkerboard.png")
             .expect("Coudn't load texture");
 
-        let heightmap = Heightmap::new("textures/heightmaps/valley.png");
+        let heightmap = Heightmap::new("textures/heightmaps/ruapehu.png");
 
         let cursor = vec2_infinity();
 
@@ -284,14 +285,30 @@ impl Terrain {
         if !self.aabb.contains(point) {
             return true;
         }
-        return false;
+        let height = self.heightmap.sample_height(point.xz()) * self.max_height;
+
+        height < point.y
     }
 
-    pub fn set_cursor(&mut self, point: &Vec3) {
-        // Get cursor relative position
-        let point = Vec2::new(point.x, point.z); // - Vec2::new(self.aabb.min.x, self.aabb.min.z);
-        self.cursor = point;
-        println!("setting cursor to {:?}", point);
+    pub fn intersect_with_ray(&self, ray: &Ray) -> Option<Vec3> {
+        if let Some(hit) = ray.hits_aabb(&self.aabb) {
+            if !self.is_point_above_surface(&ray.get_point_at(hit.t_min)) {
+                // Definitely not intersecting, at least from above
+                return None;
+            }
+            // March the ray to get the intersection point
+            let step = 0.001f32.max((hit.t_max - hit.t_min) / 100.0);
+            let mut t = hit.t_min;
+            while t < hit.t_max {
+                t += step;
+                let point = ray.get_point_at(t);
+                if !self.is_point_above_surface(&point) {
+                    // TODO: binary search inside and reduce the initial step count
+                    return Some(point);
+                }
+            }
+        }
+        None
     }
 }
 
