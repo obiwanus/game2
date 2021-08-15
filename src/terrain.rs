@@ -444,16 +444,15 @@ impl Terrain {
             self.debug.buffer_changed = true;
             assert!(self.debug.lines.len() < self.debug.lines_max);
             assert!(self.debug.points.len() < self.debug.points_max);
-            self.debug.lines.push(ray.get_point_at(hit.t_min));
-            self.debug.lines.push(ray.get_point_at(hit.t_max));
 
             let point = ray.get_point_at(hit.t_min);
-            self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             self.debug.points.push(point);
+            self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             if !self.is_point_above_surface(&point) {
                 // Definitely not intersecting, at least from above
                 return None;
             }
+            self.debug.lines.push(ray.get_point_at(hit.t_min));
             // March the ray to get the intersection point
             let step = 0.001f32.max((hit.t_max - hit.t_min) / 100.0);
             let mut t = hit.t_min;
@@ -465,10 +464,12 @@ impl Terrain {
                 if !self.is_point_above_surface(&point) {
                     // TODO: binary search inside and reduce the initial step count
                     self.debug.points.push(Vec3::new(0.0, 1.0, 0.0)); // green
+                    self.debug.lines.push(point);
                     return Some(point);
                 }
                 self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             }
+            self.debug.lines.push(ray.get_point_at(hit.t_max));
         }
         None
     }
