@@ -131,8 +131,34 @@ pub struct Terrain {
     pub cursor: Vec2,
     pub brush: Brush,
 
-    // debug
+    debug: TerrainDebug,
+}
+
+struct TerrainDebug {
     aabb_shader: Program,
+    line_shader: Program,
+    point_shader: Program,
+
+    lines: Vec<Vec3>,
+    lines_max: usize,
+
+    points: Vec<Vec3>,
+    points_max: usize,
+
+    lines_vao: GLuint,
+    points_vao: GLuint,
+    vbo: GLuint,
+    buffer_changed: bool,
+}
+
+impl Drop for TerrainDebug {
+    fn drop(&mut self) {
+        let vaos = [self.lines_vao, self.points_vao];
+        unsafe {
+            gl::DeleteVertexArrays(2, vaos.as_ptr() as *const _);
+            gl::DeleteBuffers(1, &self.vbo);
+        }
+    }
 }
 
 impl Terrain {
@@ -175,13 +201,91 @@ impl Terrain {
             .fragment_shader(include_str!("shaders/editor/terrain.frag.glsl"))?
             .link()?;
 
-        let aabb_shader = Program::new()
-            .vertex_shader(include_str!("shaders/debug/aabb.vert"))?
-            .fragment_shader(include_str!("shaders/debug/aabb.frag"))?
-            .link()?;
-        aabb_shader.set_used();
-        aabb_shader.set_vec3("aabb_min", &aabb.min)?;
-        aabb_shader.set_vec3("aabb_max", &aabb.max)?;
+        let debug = {
+            let aabb_shader = Program::new()
+                .vertex_shader(include_str!("shaders/debug/aabb.vert"))?
+                .fragment_shader(include_str!("shaders/debug/aabb.frag"))?
+                .link()?;
+            aabb_shader.set_used();
+            aabb_shader.set_vec3("aabb_min", &aabb.min)?;
+            aabb_shader.set_vec3("aabb_max", &aabb.max)?;
+
+            let line_shader = Program::new()
+                .vertex_shader(include_str!("shaders/debug/terrain/line.vert"))?
+                .fragment_shader(include_str!("shaders/debug/terrain/line.frag"))?
+                .link()?;
+
+            let point_shader = Program::new()
+                .vertex_shader(include_str!("shaders/debug/terrain/point.vert"))?
+                .fragment_shader(include_str!("shaders/debug/terrain/point.frag"))?
+                .link()?;
+
+            let lines_max = 50;
+            let lines = Vec::with_capacity(lines_max * 2); // coord1, coord2
+
+            let points_max = 1000;
+            let points = Vec::with_capacity(points_max); // coord, color
+
+            let mut lines_vao: GLuint = 0;
+            let mut points_vao: GLuint = 0;
+            let mut vbo: GLuint = 0;
+            unsafe {
+                gl::CreateVertexArrays(1, &mut lines_vao);
+                gl::CreateVertexArrays(1, &mut points_vao);
+
+                // Single buffer for lines and points
+                gl::CreateBuffers(1, &mut vbo);
+                let vec3_size = std::mem::size_of::<Vec3>();
+                gl::VertexArrayVertexBuffer(lines_vao, 0, vbo, 0, vec3_size as i32);
+                gl::VertexArrayAttribFormat(lines_vao, 0, 3, gl::FLOAT, gl::FALSE, 0);
+                gl::VertexArrayAttribBinding(lines_vao, 0, 0);
+                gl::EnableVertexArrayAttrib(lines_vao, 0);
+
+                gl::VertexArrayVertexBuffer(
+                    points_vao,
+                    0,
+                    vbo,
+                    (vec3_size * lines_max * 2) as isize,
+                    2 * vec3_size as i32,
+                );
+                gl::VertexArrayAttribFormat(points_vao, 0, 3, gl::FLOAT, gl::FALSE, 0);
+                gl::VertexArrayAttribFormat(
+                    points_vao,
+                    1,
+                    3,
+                    gl::FLOAT,
+                    gl::FALSE,
+                    vec3_size as u32,
+                );
+                gl::VertexArrayAttribBinding(points_vao, 0, 0);
+                gl::VertexArrayAttribBinding(points_vao, 1, 0);
+                gl::EnableVertexArrayAttrib(points_vao, 0);
+                gl::EnableVertexArrayAttrib(points_vao, 1);
+
+                // Allocate memory
+                let buffer_size = vec3_size * lines_max * 2 * points_max * 2;
+                gl::NamedBufferStorage(
+                    vbo,
+                    buffer_size as isize,
+                    std::ptr::null() as *const _,
+                    gl::DYNAMIC_STORAGE_BIT,
+                );
+            }
+
+            TerrainDebug {
+                aabb_shader,
+                line_shader,
+                point_shader,
+                lines,
+                lines_max,
+                points,
+                points_max,
+                lines_vao,
+                points_vao,
+                vbo,
+                buffer_changed: false,
+            }
+        };
 
         Ok(Terrain {
             center,
@@ -198,12 +302,12 @@ impl Terrain {
             cursor,
             brush,
 
-            aabb_shader,
+            debug,
         })
     }
 
     // @tmp: remove camera and move to renderer
-    pub fn draw(&self, camera: &Camera, camera_moved: bool, time: f32) -> Result<()> {
+    pub fn draw(&mut self, camera: &Camera, camera_moved: bool, time: f32) -> Result<()> {
         self.shader.set_used();
         self.shader.set_vec2("cursor", &self.cursor)?;
         // self.shader.set_float("brush_size", self.brush.size)?;
@@ -230,21 +334,65 @@ impl Terrain {
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
-        // Draw AABB
-        self.aabb_shader.set_used();
-        self.aabb_shader.set_f32("time", time)?;
-        // @tmp
-        if camera_moved {
-            let proj = camera.get_projection_matrix();
-            let view = camera.get_view_matrix();
-            let mvp = proj * view;
-            self.aabb_shader.set_mat4("mvp", &mvp)?;
-        }
+        // Draw debug stuff
+        {
+            // Draw AABB
+            let debug = &mut self.debug;
+            debug.aabb_shader.set_used();
+            debug.aabb_shader.set_f32("time", time)?;
+            // @tmp
+            if camera_moved {
+                let proj = camera.get_projection_matrix();
+                let view = camera.get_view_matrix();
+                let mvp = proj * view;
+                debug.aabb_shader.set_mat4("mvp", &mvp)?;
+                debug.line_shader.set_used();
+                debug.line_shader.set_mat4("mvp", &mvp)?;
+                debug.point_shader.set_used();
+                debug.point_shader.set_mat4("mvp", &mvp)?;
+            }
 
-        unsafe {
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-            gl::DrawArrays(gl::TRIANGLES, 0, 6 * 2 * 3);
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            debug.aabb_shader.set_used();
+            unsafe {
+                gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+                gl::DrawArrays(gl::TRIANGLES, 0, 6 * 2 * 3);
+                gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            }
+
+            if debug.buffer_changed {
+                eprintln!("Uploading buffer");
+                dbg!(&debug.lines);
+                unsafe {
+                    gl::PointSize(3.0);
+                    // Upload lines
+                    gl::NamedBufferSubData(
+                        debug.vbo,
+                        0,
+                        (std::mem::size_of::<Vec3>() * debug.lines.len()) as isize,
+                        debug.lines.as_ptr() as *const _,
+                    );
+                    // Upload points
+                    gl::NamedBufferSubData(
+                        debug.vbo,
+                        (std::mem::size_of::<Vec3>() * debug.lines_max * 2) as isize,
+                        (std::mem::size_of::<Vec3>() * debug.points.len()) as isize,
+                        debug.points.as_ptr() as *const _,
+                    );
+                }
+                debug.buffer_changed = false;
+            }
+
+            debug.line_shader.set_used();
+            unsafe {
+                gl::BindVertexArray(debug.lines_vao);
+                gl::DrawArrays(gl::LINES, 0, debug.lines.len() as i32);
+            }
+
+            debug.point_shader.set_used();
+            unsafe {
+                gl::BindVertexArray(debug.points_vao);
+                gl::DrawArrays(gl::POINTS, 0, debug.points.len() as i32);
+            }
         }
 
         Ok(())
@@ -252,7 +400,8 @@ impl Terrain {
 
     pub fn raise_terrain(&mut self, delta_time: f32) {
         let size = 1000.0; // @todo: variable size or put in a proper const
-                           // Find where the cursor is on the texture (relative to center)
+
+        // Find where the cursor is on the texture (relative to center)
         let cursor =
             Vec2::new(0.5, 0.5) + (Vec2::new(self.cursor.x, self.cursor.y) - self.center) / size;
 
@@ -290,22 +439,35 @@ impl Terrain {
         height < point.y
     }
 
-    pub fn intersect_with_ray(&self, ray: &Ray) -> Option<Vec3> {
+    pub fn intersect_with_ray(&mut self, ray: &Ray) -> Option<Vec3> {
         if let Some(hit) = ray.hits_aabb(&self.aabb) {
-            if !self.is_point_above_surface(&ray.get_point_at(hit.t_min)) {
+            self.debug.buffer_changed = true;
+            assert!(self.debug.lines.len() < self.debug.lines_max);
+            assert!(self.debug.points.len() < self.debug.points_max);
+            self.debug.lines.push(ray.get_point_at(hit.t_min));
+            self.debug.lines.push(ray.get_point_at(hit.t_max));
+
+            let point = ray.get_point_at(hit.t_min);
+            self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
+            self.debug.points.push(point);
+            if !self.is_point_above_surface(&point) {
                 // Definitely not intersecting, at least from above
                 return None;
             }
             // March the ray to get the intersection point
             let step = 0.001f32.max((hit.t_max - hit.t_min) / 100.0);
             let mut t = hit.t_min;
+
             while t < hit.t_max {
                 t += step;
                 let point = ray.get_point_at(t);
+                self.debug.points.push(point);
                 if !self.is_point_above_surface(&point) {
                     // TODO: binary search inside and reduce the initial step count
+                    self.debug.points.push(Vec3::new(0.0, 1.0, 0.0)); // green
                     return Some(point);
                 }
+                self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             }
         }
         None

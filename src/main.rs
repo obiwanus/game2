@@ -99,6 +99,7 @@ struct Game {
     screen_size: Vec2, // in logical pixels
     scale_factor: f32,
 
+    old_input: Input,
     input: Input,
 
     gui_input: EguiInput,
@@ -240,6 +241,7 @@ impl Game {
             screen_size: screen_size_logical,
             scale_factor,
 
+            old_input: Input::default(),
             input,
 
             gui_input,
@@ -461,7 +463,8 @@ impl Game {
                 }
             }
 
-            if self.input.pointer_moved || self.input.camera_moved {
+            // if (self.input.pointer_moved || self.input.camera_moved)
+            if self.input.mouse_buttons.primary && !self.old_input.mouse_buttons.primary {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
                 if let Some(point) = self.terrain.intersect_with_ray(&ray) {
                     self.terrain.cursor = Vec2::new(point.x, point.z);
@@ -512,7 +515,7 @@ impl Game {
 
         // Clear old input
         // Should we save it for future reference?
-        self.input.renew();
+        self.old_input = self.input.renew();
 
         Ok(GameMode::Editor { state, mode })
     }

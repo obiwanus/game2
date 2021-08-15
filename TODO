@@ -19,7 +19,8 @@ TODO:
 DONE:
 
 15 Aug 2021, Sun
-- A first attempt at ray marching
++ A first attempt at ray marching
++ Draw a debug ray (with differently coloured points)
 
 14 Aug 2021, Sat
 - Find where a point is in the texture

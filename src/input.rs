@@ -1,7 +1,7 @@
 use glam::Vec2;
 use glutin::event::VirtualKeyCode;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Input {
     // Raw
     pub pointer: Vec2,
@@ -24,7 +24,8 @@ pub struct Input {
 
 impl Input {
     /// Clear volatiles, persist everything else
-    pub fn renew(&mut self) {
+    pub fn renew(&mut self) -> Input {
+        let old_input = self.clone();
         *self = Input {
             pointer: self.pointer,
             mouse_buttons: self.mouse_buttons,
@@ -35,6 +36,7 @@ impl Input {
             modifiers: self.modifiers,
             ..Default::default()
         };
+        old_input
     }
 }
 
