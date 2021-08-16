@@ -18,6 +18,11 @@ TODO:
 
 DONE:
 
+16 Aug 2021, Mon
+- Check why the heightmap sampling is wrong
+    + Remove unnnecessary debug lines
+    + Draw a set of sampled points over the terrain
+
 15 Aug 2021, Sun
 + A first attempt at ray marching
 + Draw a debug ray (with differently coloured points)
