@@ -19,7 +19,7 @@ void main() {
     vec2 offset = vec2(x, y);
 
     // Texture coords
-    vs_out.tile_uv = (vertex + offset + vec2(0.5)) / 64.0;
+    vs_out.tile_uv = (vertex + offset) / 64.0;
 
     // Position
     vec2 position = (vertex + vec2(offset.x - 32.0, offset.y - 32.0)) * PATCH_SIZE + terrain_center;

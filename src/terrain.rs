@@ -236,7 +236,7 @@ impl Terrain {
             let mut vbo: GLuint = 0;
             unsafe {
                 gl::CreateVertexArrays(1, &mut points_vao);
-                gl::PointSize(3.0);
+                gl::PointSize(7.0);
 
                 // Single buffer for lines and points
                 gl::CreateBuffers(1, &mut vbo);

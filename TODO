@@ -18,8 +18,12 @@ TODO:
 
 DONE:
 
+17 Aug 2021, Tue
++ Check points near the edge to find discrepancies
++ Make sure terrain uses the right texture coordinates
+
 16 Aug 2021, Mon
-- Check why the heightmap sampling is wrong
++ Check why the heightmap sampling is wrong
     + Remove unnnecessary debug lines
     + Draw a set of sampled points over the terrain
 

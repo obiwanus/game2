@@ -507,7 +507,7 @@ impl Game {
         }
         self.terrain
             .draw(&self.camera, self.input.camera_moved, self.input.time)?;
-        self.skybox.draw(&self.camera, self.input.camera_moved)?;
+        // self.skybox.draw(&self.camera, self.input.camera_moved)?;
 
         self.gui.draw(gui_shapes);
 
