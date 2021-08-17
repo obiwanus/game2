@@ -212,45 +212,37 @@ impl Terrain {
                 .fragment_shader(include_str!("shaders/debug/terrain/point.frag"))?
                 .link()?;
 
-            let points = {
-                let mut points = vec![];
-                let terrain_size = aabb.max.x - aabb.min.x;
-                for y in 0..heightmap.size {
-                    for x in 0..heightmap.size {
-                        let (x, y) = (
-                            x as f32 / heightmap.size as f32,
-                            y as f32 / heightmap.size as f32,
-                        );
-                        let height = heightmap.sample_height(Vec2::new(x, y));
-                        points.push(Vec3::new(
-                            aabb.min.x + x * terrain_size,
-                            height * max_height,
-                            aabb.min.z + y * terrain_size,
-                        ));
-                    }
-                }
-                points
-            };
-
+            let points_max = 1000;
+            let points = Vec::with_capacity(points_max * 2);
             let mut points_vao: GLuint = 0;
             let mut vbo: GLuint = 0;
             unsafe {
                 gl::CreateVertexArrays(1, &mut points_vao);
-                gl::PointSize(7.0);
+                gl::PointSize(5.0);
 
                 // Single buffer for lines and points
                 gl::CreateBuffers(1, &mut vbo);
                 let vec3_size = std::mem::size_of::<Vec3>();
-                gl::VertexArrayVertexBuffer(points_vao, 0, vbo, 0, vec3_size as i32);
+                gl::VertexArrayVertexBuffer(points_vao, 0, vbo, 0, 2 * vec3_size as i32);
                 gl::VertexArrayAttribFormat(points_vao, 0, 3, gl::FLOAT, gl::FALSE, 0);
+                gl::VertexArrayAttribFormat(
+                    points_vao,
+                    1,
+                    3,
+                    gl::FLOAT,
+                    gl::FALSE,
+                    vec3_size as u32,
+                );
                 gl::VertexArrayAttribBinding(points_vao, 0, 0);
+                gl::VertexArrayAttribBinding(points_vao, 1, 0);
                 gl::EnableVertexArrayAttrib(points_vao, 0);
+                gl::EnableVertexArrayAttrib(points_vao, 1);
 
-                let buffer_size = vec3_size * points.len();
+                let buffer_size = vec3_size * 2 * points_max;
                 gl::NamedBufferStorage(
                     vbo,
                     buffer_size as isize,
-                    points.as_ptr() as *const _,
+                    std::ptr::null() as *const _,
                     gl::DYNAMIC_STORAGE_BIT,
                 );
             }
@@ -328,6 +320,18 @@ impl Terrain {
                 debug.point_shader.set_mat4("mvp", &mvp)?;
             }
 
+            if debug.buffer_changed {
+                unsafe {
+                    gl::NamedBufferSubData(
+                        debug.vbo,
+                        0,
+                        (debug.points.len() * std::mem::size_of::<Vec3>()) as isize,
+                        debug.points.as_ptr() as *const _,
+                    );
+                }
+                debug.buffer_changed = false;
+            }
+
             debug.aabb_shader.set_used();
             unsafe {
                 gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
@@ -338,7 +342,7 @@ impl Terrain {
             debug.point_shader.set_used();
             unsafe {
                 gl::BindVertexArray(debug.points_vao);
-                gl::DrawArrays(gl::POINTS, 0, debug.points.len() as i32);
+                gl::DrawArrays(gl::POINTS, 0, (debug.points.len() / 2) as i32);
             }
         }
 
@@ -388,9 +392,13 @@ impl Terrain {
         height < point_height
     }
 
-    pub fn intersect_with_ray(&self, ray: &Ray) -> Option<Vec3> {
+    pub fn intersect_with_ray(&mut self, ray: &Ray) -> Option<Vec3> {
         if let Some(hit) = ray.hits_aabb(&self.aabb) {
             let point = ray.get_point_at(hit.t_min);
+            self.debug.buffer_changed = true;
+            self.debug.points.clear();
+            self.debug.points.push(point);
+            self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             if !self.is_point_above_surface(&point) {
                 // Definitely not intersecting, at least from above
                 return None;
@@ -402,10 +410,13 @@ impl Terrain {
             while t < hit.t_max {
                 t += step;
                 let point = ray.get_point_at(t);
+                self.debug.points.push(point);
                 if !self.is_point_above_surface(&point) {
                     // TODO: binary search inside and reduce the initial step count
+                    self.debug.points.push(Vec3::new(0.0, 1.0, 0.0)); // green
                     return Some(point);
                 }
+                self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             }
         }
         None

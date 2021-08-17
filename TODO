@@ -18,6 +18,10 @@ TODO:
 
 DONE:
 
+18 Aug 2021, Wed
+- Finish ray/heightmap intersection
+    + Draw points alongside ray again
+
 17 Aug 2021, Tue
 + Check points near the edge to find discrepancies
 + Make sure terrain uses the right texture coordinates
