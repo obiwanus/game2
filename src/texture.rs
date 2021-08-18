@@ -64,11 +64,7 @@ impl Texture {
                 gl::TEXTURE_MIN_FILTER,
                 gl::LINEAR_MIPMAP_LINEAR as GLint,
             );
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_MAG_FILTER,
-                gl::LINEAR_MIPMAP_LINEAR as GLint,
-            );
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
 
             let anisotropy = {
                 let mut value: f32 = 0.0;
