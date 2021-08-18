@@ -59,8 +59,16 @@ impl Texture {
             gl::BindTexture(gl::TEXTURE_2D, self.id);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_MIN_FILTER,
+                gl::LINEAR_MIPMAP_LINEAR as GLint,
+            );
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_MAG_FILTER,
+                gl::LINEAR_MIPMAP_LINEAR as GLint,
+            );
 
             let anisotropy = {
                 let mut value: f32 = 0.0;
@@ -95,7 +103,7 @@ impl Texture {
                 gl::UNSIGNED_BYTE,
                 img.data.as_ptr() as *const std::ffi::c_void,
             );
-            // gl::GenerateMipmap(gl::TEXTURE_2D);
+            gl::GenerateMipmap(gl::TEXTURE_2D);
         }
 
         Ok(self)
