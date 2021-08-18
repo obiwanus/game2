@@ -64,7 +64,7 @@ impl Texture {
 
             let anisotropy = {
                 let mut value: f32 = 0.0;
-                gl::GetFloatv(gl::MAX_TEXTURE_MAX_ANISOTROPY_EXT, &mut value);
+                gl::GetFloatv(gl::MAX_TEXTURE_MAX_ANISOTROPY, &mut value);
                 if value < MAX_ANISOTROPY {
                     value
                 } else {
@@ -72,7 +72,7 @@ impl Texture {
                 }
             };
             // println!("Using anisotropic filtering: {:?}", anisotropy);
-            gl::TexParameterf(gl::TEXTURE_2D, gl::TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+            gl::TexParameterf(gl::TEXTURE_2D, gl::TEXTURE_MAX_ANISOTROPY, anisotropy);
         }
         self
     }

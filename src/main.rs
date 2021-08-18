@@ -192,7 +192,7 @@ impl Game {
 
         // Set up camera
         let camera = Camera::new(
-            Vec3::new(20.0, 150.0, 100.0),
+            Vec3::new(520.0, 250.0, 100.0),
             Vec3::new(0.0, 130.0, 0.0),
             window_size.width,
             window_size.height,
@@ -463,8 +463,7 @@ impl Game {
                 }
             }
 
-            // if (self.input.pointer_moved || self.input.camera_moved)
-            if self.input.mouse_buttons.primary && !self.old_input.mouse_buttons.primary {
+            if self.input.pointer_moved || self.input.camera_moved {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
                 if let Some(point) = self.terrain.intersect_with_ray(&ray) {
                     self.terrain.cursor = Vec2::new(point.x, point.z);
@@ -492,7 +491,7 @@ impl Game {
             if self.input.scrolled {
                 let y = self.input.scroll_delta.y;
                 self.terrain.brush.size = (self.terrain.brush.size - y * 0.5).clamp(0.1, 20.0);
-                self.terrain.tess_level = (self.terrain.tess_level - y * 0.2).clamp(1.0, 16.0);
+                // self.terrain.tess_level = (self.terrain.tess_level - y * 0.2).clamp(1.0, 16.0);
             }
 
             // Shape the terrain
@@ -514,7 +513,6 @@ impl Game {
         self.windowed_context.swap_buffers()?;
 
         // Clear old input
-        // Should we save it for future reference?
         self.old_input = self.input.renew();
 
         Ok(GameMode::Editor { state, mode })

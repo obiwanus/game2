@@ -1,8 +1,5 @@
 TODO:
 
-- Ray/heightmap intersection
-    - Implement ray marching to get intersection point
-        - When an intersection is found between points, use binary search to find the spot
 - Shape the heightmap using the simple brush
     - Check what are the options on modifying the buffer directly on the GPU
     - Consider splitting the terrain into smaller chunks so that we have smaller heightmaps
@@ -23,6 +20,7 @@ DONE:
     + Draw points alongside ray again
     + Fix the sampling of the points
     + Make sure the sampling doesn't crash
+- Stop drawing rays and aabb
 
 17 Aug 2021, Tue
 + Check points near the edge to find discrepancies

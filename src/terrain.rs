@@ -166,7 +166,7 @@ impl Terrain {
         // (currently hard-coded in terrain.vert.glsl)
         assert_eq!(center, Vec2::new(0.0, 0.0));
         const NUM_PATCHES: f32 = 64.0;
-        const PATCH_SIZE: f32 = 8.0;
+        const PATCH_SIZE: f32 = 16.0;
         let max_height = 200.0;
         let aabb = {
             let size = PATCH_SIZE * NUM_PATCHES / 2.0;
@@ -183,9 +183,9 @@ impl Terrain {
         }
 
         let texture = Texture::new()
-            .set_default_parameters()
             .set_image_2d("textures/checkerboard.png")
-            .expect("Coudn't load texture");
+            .expect("Coudn't load texture")
+            .set_default_parameters();
 
         let heightmap = Heightmap::new("textures/heightmaps/ruapehu.png");
 
@@ -306,47 +306,47 @@ impl Terrain {
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
-        // Draw debug stuff
-        {
-            // Draw AABB
-            let debug = &mut self.debug;
-            debug.aabb_shader.set_used();
-            debug.aabb_shader.set_f32("time", time)?;
-            // @tmp
-            if camera_moved {
-                let proj = camera.get_projection_matrix();
-                let view = camera.get_view_matrix();
-                let mvp = proj * view;
-                debug.aabb_shader.set_mat4("mvp", &mvp)?;
-                debug.point_shader.set_used();
-                debug.point_shader.set_mat4("mvp", &mvp)?;
-            }
+        // // Draw debug stuff
+        // {
+        //     // Draw AABB
+        //     let debug = &mut self.debug;
+        //     debug.aabb_shader.set_used();
+        //     debug.aabb_shader.set_f32("time", time)?;
+        //     // @tmp
+        //     if camera_moved {
+        //         let proj = camera.get_projection_matrix();
+        //         let view = camera.get_view_matrix();
+        //         let mvp = proj * view;
+        //         debug.aabb_shader.set_mat4("mvp", &mvp)?;
+        //         debug.point_shader.set_used();
+        //         debug.point_shader.set_mat4("mvp", &mvp)?;
+        //     }
 
-            if debug.buffer_changed {
-                unsafe {
-                    gl::NamedBufferSubData(
-                        debug.vbo,
-                        0,
-                        (debug.points.len() * std::mem::size_of::<Vec3>()) as isize,
-                        debug.points.as_ptr() as *const _,
-                    );
-                }
-                debug.buffer_changed = false;
-            }
+        //     if debug.buffer_changed {
+        //         unsafe {
+        //             gl::NamedBufferSubData(
+        //                 debug.vbo,
+        //                 0,
+        //                 (debug.points.len() * std::mem::size_of::<Vec3>()) as isize,
+        //                 debug.points.as_ptr() as *const _,
+        //             );
+        //         }
+        //         debug.buffer_changed = false;
+        //     }
 
-            debug.aabb_shader.set_used();
-            unsafe {
-                gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-                gl::DrawArrays(gl::TRIANGLES, 0, 6 * 2 * 3);
-                gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-            }
+        //     debug.aabb_shader.set_used();
+        //     unsafe {
+        //         gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+        //         gl::DrawArrays(gl::TRIANGLES, 0, 6 * 2 * 3);
+        //         gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+        //     }
 
-            debug.point_shader.set_used();
-            unsafe {
-                gl::BindVertexArray(debug.points_vao);
-                gl::DrawArrays(gl::POINTS, 0, (debug.points.len() / 2) as i32);
-            }
-        }
+        //     debug.point_shader.set_used();
+        //     unsafe {
+        //         gl::BindVertexArray(debug.points_vao);
+        //         gl::DrawArrays(gl::POINTS, 0, (debug.points.len() / 2) as i32);
+        //     }
+        // }
 
         Ok(())
     }
@@ -395,13 +395,40 @@ impl Terrain {
         height < point_height
     }
 
-    pub fn intersect_with_ray(&mut self, ray: &Ray) -> Option<Vec3> {
+    // // Debug version - keeping for now
+    // pub fn intersect_with_ray(&mut self, ray: &Ray) -> Option<Vec3> {
+    //     if let Some(hit) = ray.hits_aabb(&self.aabb) {
+    //         let point = ray.get_point_at(hit.t_min);
+    //         self.debug.buffer_changed = true;
+    //         self.debug.points.clear();
+    //         self.debug.points.push(point);
+    //         self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
+    //         if !self.is_point_above_surface(&point) {
+    //             // Definitely not intersecting, at least from above
+    //             return None;
+    //         }
+    //         // March the ray to get the intersection point
+    //         let step = 0.001f32.max((hit.t_max - hit.t_min) / 100.0);
+    //         let mut t = hit.t_min;
+
+    //         while t < hit.t_max {
+    //             t += step;
+    //             let point = ray.get_point_at(t);
+    //             self.debug.points.push(point);
+    //             if !self.is_point_above_surface(&point) {
+    //                 // TODO: binary search inside and reduce the initial step count
+    //                 self.debug.points.push(Vec3::new(0.0, 1.0, 0.0)); // green
+    //                 return Some(point);
+    //             }
+    //             self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
+    //         }
+    //     }
+    //     None
+    // }
+
+    pub fn intersect_with_ray(&self, ray: &Ray) -> Option<Vec3> {
         if let Some(hit) = ray.hits_aabb(&self.aabb) {
             let point = ray.get_point_at(hit.t_min);
-            self.debug.buffer_changed = true;
-            self.debug.points.clear();
-            self.debug.points.push(point);
-            self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             if !self.is_point_above_surface(&point) {
                 // Definitely not intersecting, at least from above
                 return None;
@@ -413,13 +440,10 @@ impl Terrain {
             while t < hit.t_max {
                 t += step;
                 let point = ray.get_point_at(t);
-                self.debug.points.push(point);
                 if !self.is_point_above_surface(&point) {
-                    // TODO: binary search inside and reduce the initial step count
-                    self.debug.points.push(Vec3::new(0.0, 1.0, 0.0)); // green
+                    // TODO: maybe binary search inside and reduce the initial step count
                     return Some(point);
                 }
-                self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
             }
         }
         None
