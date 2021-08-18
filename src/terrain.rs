@@ -79,11 +79,13 @@ impl Heightmap {
     }
 
     fn sample_height(&self, point: Vec2) -> f32 {
-        debug_assert!(point.x <= 1.0 && point.x >= 0.0);
-        debug_assert!(point.y <= 1.0 && point.y >= 0.0);
         let size = self.size as f32;
-        let x = (point.x * size) as usize;
-        let y = (point.y * size) as usize;
+
+        // @speed/@correctness: 0.99999 is chosen arbitrarily and may not be very precise.
+        // Also, I'm not sure how fast the clamping is (and it's not precise at all for heightmaps).
+        // Still, it should be ok for picking (but probably not OK for anything else)
+        let x = (point.x.clamp(0.0, 0.99999) * size) as usize;
+        let y = (point.y.clamp(0.0, 0.99999) * size) as usize;
 
         self.pixels[y * self.size + x]
     }
@@ -386,7 +388,8 @@ impl Terrain {
             return true;
         }
         let point_height = point.y;
-        let sample_point = (point.xz() - self.aabb.min.xz()) / (self.heightmap.size as f32);
+        let terrain_size = self.aabb.max.x - self.aabb.min.x;
+        let sample_point = (point.xz() - self.aabb.min.xz()) / terrain_size;
         let height = self.heightmap.sample_height(sample_point) * self.max_height;
 
         height < point_height

@@ -21,6 +21,8 @@ DONE:
 18 Aug 2021, Wed
 - Finish ray/heightmap intersection
     + Draw points alongside ray again
+    + Fix the sampling of the points
+    + Make sure the sampling doesn't crash
 
 17 Aug 2021, Tue
 + Check points near the edge to find discrepancies
