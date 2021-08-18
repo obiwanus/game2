@@ -279,19 +279,11 @@ impl Terrain {
     }
 
     // @tmp: remove camera and move to renderer
-    pub fn draw(&mut self, camera: &Camera, camera_moved: bool, time: f32) -> Result<()> {
+    pub fn draw(&mut self, time: f32) -> Result<()> {
         self.shader.set_used();
         self.shader.set_vec2("cursor", &self.cursor)?;
         // self.shader.set_float("brush_size", self.brush.size)?;
         self.shader.set_f32("tess_level", self.tess_level)?;
-
-        // @tmp
-        if camera_moved {
-            let proj = camera.get_projection_matrix();
-            let view = camera.get_view_matrix();
-            let mvp = proj * view;
-            self.shader.set_mat4("mvp", &mvp)?;
-        }
 
         // @try moving outsize of the draw
         self.texture.bind_2d(0);

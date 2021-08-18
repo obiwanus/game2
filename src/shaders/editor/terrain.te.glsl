@@ -2,8 +2,15 @@
 
 layout(quads, fractional_odd_spacing) in;
 
+layout(std140, binding = 1) uniform UTransforms {
+    mat4 mvp;
+    mat4 proj;
+    mat4 view;
+    mat4 model;
+}
+uTransforms;
+
 uniform sampler2D heightmap;
-uniform mat4 mvp;
 
 const float MAX_HEIGHT = 200.0;
 
@@ -27,7 +34,7 @@ void main() {
 
     // TODO: add displacement
     p.y += texture(heightmap, tile_uv).r * MAX_HEIGHT;
-    gl_Position = mvp * p;
+    gl_Position = uTransforms.mvp * p;
     tes_out.tile_uv = tile_uv;
     tes_out.frag_pos = p.xyz;
 }

@@ -8,15 +8,22 @@ tcs_in[];
 out TCS_OUT { vec2 tile_uv; }
 tcs_out[];
 
-uniform mat4 mvp;
+layout(std140, binding = 1) uniform UTransforms {
+    mat4 mvp;
+    mat4 proj;
+    mat4 view;
+    mat4 model;
+}
+uTransforms;
+
 uniform float tess_level;
 
 void main() {
     if (gl_InvocationID == 0) {
-        vec4 p0 = mvp * gl_in[0].gl_Position;
-        vec4 p1 = mvp * gl_in[1].gl_Position;
-        vec4 p2 = mvp * gl_in[2].gl_Position;
-        vec4 p3 = mvp * gl_in[3].gl_Position;
+        vec4 p0 = uTransforms.mvp * gl_in[0].gl_Position;
+        vec4 p1 = uTransforms.mvp * gl_in[1].gl_Position;
+        vec4 p2 = uTransforms.mvp * gl_in[2].gl_Position;
+        vec4 p3 = uTransforms.mvp * gl_in[3].gl_Position;
 
         if (p0.z <= 0.0 && p1.z <= 0.0 && p2.z <= 0.0 && p3.z <= 0.0) {
             // Patch is behind the camera - cull

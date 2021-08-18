@@ -8,8 +8,6 @@ const vec2 VERTICES[] = vec2[](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), v
 out VS_OUT { vec2 tile_uv; }
 vs_out;
 
-uniform mat4 mvp;
-
 void main() {
     vec2 vertex = VERTICES[gl_VertexID];
 

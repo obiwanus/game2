@@ -15,6 +15,8 @@ pub enum ShaderError {
     LinkError(String),
     #[error("Couldn't get uniform location for '{name}'")]
     UniformLocationNotFound { name: String },
+    #[error("Couldn't get uniform block index for '{name}'")]
+    UniformBlockIndexNotFound { name: String },
 }
 
 pub type Result<T> = std::result::Result<T, ShaderError>;
@@ -102,6 +104,25 @@ impl Program {
             });
         }
         Ok(location)
+    }
+
+    fn get_uniform_block_index(&self, name: &str) -> Result<GLuint> {
+        let name_cstr = CString::new(name).unwrap();
+        let index = unsafe { gl::GetUniformBlockIndex(self.id, name_cstr.as_ptr() as *const _) };
+        if index == gl::INVALID_INDEX {
+            return Err(ShaderError::UniformBlockIndexNotFound {
+                name: name.to_owned(),
+            });
+        }
+        Ok(index)
+    }
+
+    pub fn bind_uniform_block(&self, name: &str, binding: u32) -> Result<()> {
+        let index = self.get_uniform_block_index(name)?;
+        unsafe {
+            gl::UniformBlockBinding(self.id, index, binding);
+        }
+        Ok(())
     }
 
     /// Assigns a name from the shader to a texture unit

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::f32::consts::PI;
 
 use glam::{const_vec3, Mat4, Vec2, Vec3};
@@ -23,6 +21,15 @@ pub enum Movement {
     Backward,
     Left,
     Right,
+}
+
+// NOTE: no need to worry about std140 because Mat4's are aligned properly and with no gaps
+#[repr(C)]
+pub struct TransformsUBO {
+    mvp: Mat4,
+    proj: Mat4,
+    view: Mat4,
+    model: Mat4, // still unsure whether it belongs here
 }
 
 #[derive(Debug, Default)]
@@ -183,5 +190,18 @@ impl Camera {
         // Mat4::perspective_rh(self.v_fov, self.aspect_ratio, 0.5, 400.0)
         // @explore: try setting different clip planes every frame based on z-buffer (glReadPixels)?
         Mat4::perspective_infinite_rh(self.v_fov, self.aspect_ratio, 0.5)
+    }
+
+    pub fn get_transforms_ubo(&self) -> TransformsUBO {
+        let proj = self.get_projection_matrix();
+        let view = self.get_view_matrix();
+        let model = Mat4::IDENTITY;
+
+        TransformsUBO {
+            mvp: proj * view * model,
+            proj,
+            view,
+            model,
+        }
     }
 }

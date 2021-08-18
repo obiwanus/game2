@@ -27,9 +27,10 @@ use glutin::window::WindowBuilder;
 use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
-use camera::Camera;
+use camera::{Camera, TransformsUBO};
 use editor::gui::Gui;
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
+use opengl_lib::types::GLuint;
 use skybox::Skybox;
 use terrain::Terrain;
 use utils::vec2_infinity;
@@ -111,6 +112,9 @@ struct Game {
     skybox: Skybox,
 
     mode: GameMode,
+
+    // tmp
+    transforms_ubo: GLuint,
 }
 
 impl Game {
@@ -198,6 +202,19 @@ impl Game {
             window_size.height,
         );
 
+        // Set up camera transforms uniform buffer
+        let mut transforms_ubo: GLuint = 0;
+        unsafe {
+            gl::CreateBuffers(1, &mut transforms_ubo);
+            gl::NamedBufferStorage(
+                transforms_ubo,
+                std::mem::size_of::<TransformsUBO>() as isize,
+                std::ptr::null(),
+                gl::DYNAMIC_STORAGE_BIT,
+            );
+            gl::BindBufferBase(gl::UNIFORM_BUFFER, 1, transforms_ubo);
+        }
+
         let terrain = Terrain::new(Vec2::new(0.0, 0.0))?;
 
         let skybox = Skybox::from([
@@ -259,6 +276,8 @@ impl Game {
                     tool: TerrainTool::Sculpt,
                 },
             },
+
+            transforms_ubo,
         })
     }
 
@@ -463,6 +482,19 @@ impl Game {
                 }
             }
 
+            if self.input.camera_moved {
+                // Update camera tranforms uniform buffer
+                let data = [self.camera.get_transforms_ubo()];
+                unsafe {
+                    gl::NamedBufferSubData(
+                        self.transforms_ubo,
+                        0,
+                        std::mem::size_of::<TransformsUBO>() as isize,
+                        data.as_ptr() as *const _,
+                    )
+                }
+            }
+
             if self.input.pointer_moved || self.input.camera_moved {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
                 if let Some(point) = self.terrain.intersect_with_ray(&ray) {
@@ -504,9 +536,8 @@ impl Game {
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
-        self.terrain
-            .draw(&self.camera, self.input.camera_moved, self.input.time)?;
-        self.skybox.draw(&self.camera, self.input.camera_moved)?;
+        self.terrain.draw(self.input.time)?;
+        self.skybox.draw()?;
 
         self.gui.draw(gui_shapes);
 
