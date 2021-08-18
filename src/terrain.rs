@@ -441,7 +441,23 @@ impl Terrain {
                 t += step;
                 let point = ray.get_point_at(t);
                 if !self.is_point_above_surface(&point) {
-                    // TODO: maybe binary search inside and reduce the initial step count
+                    // Use binary search to get a more precise intersection point
+                    let point = {
+                        const EPSILON: f32 = 0.001;
+                        let mut new_point = point;
+                        let mut low = t - step;
+                        let mut high = t;
+                        while (high - low).abs() > EPSILON {
+                            let new_t = low + (high - low) / 2.0;
+                            new_point = ray.get_point_at(new_t);
+                            if self.is_point_above_surface(&new_point) {
+                                low = new_t;
+                            } else {
+                                high = new_t;
+                            }
+                        }
+                        new_point
+                    };
                     return Some(point);
                 }
             }
