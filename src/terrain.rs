@@ -298,47 +298,36 @@ impl Terrain {
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
-        // // Draw debug stuff
-        // {
-        //     // Draw AABB
-        //     let debug = &mut self.debug;
-        //     debug.aabb_shader.set_used();
-        //     debug.aabb_shader.set_f32("time", time)?;
-        //     // @tmp
-        //     if camera_moved {
-        //         let proj = camera.get_projection_matrix();
-        //         let view = camera.get_view_matrix();
-        //         let mvp = proj * view;
-        //         debug.aabb_shader.set_mat4("mvp", &mvp)?;
-        //         debug.point_shader.set_used();
-        //         debug.point_shader.set_mat4("mvp", &mvp)?;
-        //     }
+        // Draw debug stuff
+        {
+            // Draw AABB
+            let debug = &mut self.debug;
+            debug.aabb_shader.set_used();
+            debug.aabb_shader.set_f32("time", time)?;
 
-        //     if debug.buffer_changed {
-        //         unsafe {
-        //             gl::NamedBufferSubData(
-        //                 debug.vbo,
-        //                 0,
-        //                 (debug.points.len() * std::mem::size_of::<Vec3>()) as isize,
-        //                 debug.points.as_ptr() as *const _,
-        //             );
-        //         }
-        //         debug.buffer_changed = false;
-        //     }
+            // if debug.buffer_changed {
+            //     unsafe {
+            //         gl::NamedBufferSubData(
+            //             debug.vbo,
+            //             0,
+            //             (debug.points.len() * std::mem::size_of::<Vec3>()) as isize,
+            //             debug.points.as_ptr() as *const _,
+            //         );
+            //     }
+            //     debug.buffer_changed = false;
+            // }
 
-        //     debug.aabb_shader.set_used();
-        //     unsafe {
-        //         gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-        //         gl::DrawArrays(gl::TRIANGLES, 0, 6 * 2 * 3);
-        //         gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-        //     }
+            debug.aabb_shader.set_used();
+            unsafe {
+                gl::DrawArrays(gl::LINE_STRIP, 0, 16);
+            }
 
-        //     debug.point_shader.set_used();
-        //     unsafe {
-        //         gl::BindVertexArray(debug.points_vao);
-        //         gl::DrawArrays(gl::POINTS, 0, (debug.points.len() / 2) as i32);
-        //     }
-        // }
+            // debug.point_shader.set_used();
+            // unsafe {
+            //     gl::BindVertexArray(debug.points_vao);
+            //     gl::DrawArrays(gl::POINTS, 0, (debug.points.len() / 2) as i32);
+            // }
+        }
 
         Ok(())
     }

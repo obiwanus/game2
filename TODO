@@ -15,7 +15,7 @@ DONE:
     + Print the maximum numbers of uniform blocks in each stage
     + Review all the shaders and rewrite them using the common uniform block
     + Send data to the uniform buffer each frame (if changed)
-- Draw AABB like a proper box
++ Draw AABB like a proper box
 - Load the heightmap with a 16 bit precision
 - Raise and lower the terrain
     - Load a brush
