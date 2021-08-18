@@ -2,7 +2,7 @@ use gl::types::*;
 use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
 use opengl_lib::types::GLvoid;
-use stb_image::image::{Image, LoadResult};
+use stb_image::{Image, LoadResult};
 
 use crate::{
     camera::Camera,
@@ -454,9 +454,9 @@ impl Terrain {
 pub fn load_image(path: &str, flip: bool) -> Image<u8> {
     let flip = if flip { 1 } else { 0 };
     unsafe {
-        stb_image::stb_image::bindgen::stbi_set_flip_vertically_on_load(flip);
+        stb_image::bindings::stbi_set_flip_vertically_on_load(flip);
     }
-    match stb_image::image::load_with_depth(path, 1, false) {
+    match stb_image::load_with_depth(path, 1, false) {
         LoadResult::ImageU8(image) => image,
         LoadResult::ImageF32(_) => panic!(
             "Couldn't load brush {}. Only U8 grayscale brush images are supported.",

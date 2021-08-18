@@ -1,5 +1,5 @@
 use gl::types::*;
-use stb_image::image::{self, Image, LoadResult};
+use stb_image::{self, Image, LoadResult};
 use thiserror::Error;
 
 const MAX_ANISOTROPY: f32 = 8.0;
@@ -109,9 +109,9 @@ impl Texture {
 pub fn load_image(path: &str, flip: bool) -> Result<Image<u8>, TextureError> {
     let flip = if flip { 1 } else { 0 };
     unsafe {
-        stb_image::stb_image::bindgen::stbi_set_flip_vertically_on_load(flip);
+        stb_image::bindings::stbi_set_flip_vertically_on_load(flip);
     }
-    match image::load_with_depth(path, 3, false) {
+    match stb_image::load_with_depth(path, 3, false) {
         LoadResult::ImageU8(image) => Ok(image),
         LoadResult::ImageF32(_) => Err(TextureError::FormatNotSupported),
         LoadResult::Error(msg) => Err(TextureError::LoadError(msg)),

@@ -3,24 +3,24 @@ TODO:
 - Shape the heightmap using the simple brush
     - Check what are the options on modifying the buffer directly on the GPU
     - Consider splitting the terrain into smaller chunks so that we have smaller heightmaps
-- Use a proper brush
-    - Use my own version of stb_image (do when loading brushes)
 - Optimise the terrain tessellation
 - Add lighting and shadows
-- Add an acceleration structure for faster picking
-    - Not sure if still needed
-    - Maybe we need to be able to select different heightmap tiles when we have them
 - Figure out the next steps (splatmap etc)
 - Steal code from the egui integration
 
 DONE:
 
 18 Aug 2021, Wed
-- Finish ray/heightmap intersection
++ Finish ray/heightmap intersection
     + Draw points alongside ray again
     + Fix the sampling of the points
     + Make sure the sampling doesn't crash
-- Stop drawing rays and aabb
++ Stop drawing rays and aabb
++ Use my own version of stb_image (do when loading brushes)
+- Raise and lower the terrain
+    - Load the heightmap with a 16 bit precision
+    - Load a brush
+    - Show the brush in the cursor
 
 17 Aug 2021, Tue
 + Check points near the edge to find discrepancies
