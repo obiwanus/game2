@@ -14,7 +14,7 @@ use crate::{
 };
 
 struct Heightmap {
-    id: GLuint, // @tmp_public
+    id: GLuint,
     size: usize,
     pixels: Vec<f32>, // @speed: store efficiently?
 }
@@ -26,7 +26,20 @@ impl Heightmap {
             gl::GenTextures(1, &mut id);
         }
 
-        let image = load_image(path, false);
+        // let image = load_image(path, false);
+        let image = {
+            unsafe {
+                stb_image::bindings::stbi_set_flip_vertically_on_load(0);
+            }
+            match stb_image::load_with_depth(path, 1, false) {
+                LoadResult::ImageU8(image) => image,
+                LoadResult::ImageF32(_) => panic!(
+                    "Couldn't load brush {}. Only U8 grayscale brush images are supported.",
+                    path
+                ),
+                LoadResult::Error(msg) => panic!("Couldn't load brush {}: {}", path, msg),
+            }
+        };
         let (pixels, size) = Heightmap::get_pixels_from_u8_grayscale_image(image);
 
         unsafe {
@@ -169,7 +182,7 @@ impl Terrain {
             .expect("Coudn't load texture")
             .set_default_parameters();
 
-        let heightmap = Heightmap::new("textures/heightmaps/ruapehu.png");
+        let heightmap = Heightmap::new("textures/heightmaps/valley16.png");
 
         let cursor = vec2_infinity();
 
@@ -201,7 +214,7 @@ impl Terrain {
 
             vao,
             shader,
-            tess_level: 1.0,
+            tess_level: 10.0,
 
             texture,
             heightmap,
@@ -283,7 +296,7 @@ impl Terrain {
 
     pub fn is_point_above_surface(&self, point: &Vec3) -> bool {
         if !self.aabb.contains(point) {
-            return true;
+            return false;
         }
         let point_height = point.y;
         let terrain_size = self.aabb.max.x - self.aabb.min.x;

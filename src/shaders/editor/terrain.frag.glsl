@@ -93,9 +93,11 @@ void main() {
 
     vec4 base_color = mix(vec4(1.0, 0.5, 0.5, 1.0), terrain_color, distance_to_cursor);
 
+    // NOTE: hard-coded here and in tess-evaluation
+    const float MAX_HEIGHT = 200.0;
     if (distance_to_cursor < 1.0) {
-        Color = base_color * clamp(0.1 * fs_in.frag_pos.y, 0.7, 1.0);
+        Color = base_color * clamp(fs_in.frag_pos.y / MAX_HEIGHT, 0.7, 1.0);
     } else {
-        Color = base_color * clamp(0.1 * fs_in.frag_pos.y, 0.2, 1.0);
+        Color = base_color * clamp(fs_in.frag_pos.y / MAX_HEIGHT, 0.0, 1.0);
     }
 }
