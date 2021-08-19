@@ -3,7 +3,6 @@ use std::mem::size_of;
 use gl::types::*;
 use thiserror::Error;
 
-use crate::camera::Camera;
 use crate::opengl::shader::{Program, ShaderError};
 use crate::texture::{load_image, TextureError};
 use crate::utils::size_of_slice;

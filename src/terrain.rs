@@ -5,12 +5,11 @@ use opengl_lib::types::GLvoid;
 use stb_image::{Image, LoadResult};
 
 use crate::{
-    camera::Camera,
     editor::Brush,
     opengl::shader::Program,
     ray::{Ray, AABB},
     texture::Texture,
-    utils::{vec2_infinity, vec3_infinity},
+    utils::vec2_infinity,
     Result,
 };
 
@@ -141,23 +140,6 @@ pub struct Terrain {
 
 struct TerrainDebug {
     aabb_shader: Program,
-    point_shader: Program,
-
-    points: Vec<Vec3>,
-
-    points_vao: GLuint,
-    vbo: GLuint,
-    buffer_changed: bool,
-}
-
-impl Drop for TerrainDebug {
-    fn drop(&mut self) {
-        let vaos = [self.points_vao];
-        unsafe {
-            gl::DeleteVertexArrays(1, vaos.as_ptr() as *const _);
-            gl::DeleteBuffers(1, &self.vbo);
-        }
-    }
 }
 
 impl Terrain {
@@ -209,54 +191,7 @@ impl Terrain {
             aabb_shader.set_vec3("aabb_min", &aabb.min)?;
             aabb_shader.set_vec3("aabb_max", &aabb.max)?;
 
-            let point_shader = Program::new()
-                .vertex_shader(include_str!("shaders/debug/terrain/point.vert"))?
-                .fragment_shader(include_str!("shaders/debug/terrain/point.frag"))?
-                .link()?;
-
-            let points_max = 1000;
-            let points = Vec::with_capacity(points_max * 2);
-            let mut points_vao: GLuint = 0;
-            let mut vbo: GLuint = 0;
-            unsafe {
-                gl::CreateVertexArrays(1, &mut points_vao);
-                gl::PointSize(5.0);
-
-                // Single buffer for lines and points
-                gl::CreateBuffers(1, &mut vbo);
-                let vec3_size = std::mem::size_of::<Vec3>();
-                gl::VertexArrayVertexBuffer(points_vao, 0, vbo, 0, 2 * vec3_size as i32);
-                gl::VertexArrayAttribFormat(points_vao, 0, 3, gl::FLOAT, gl::FALSE, 0);
-                gl::VertexArrayAttribFormat(
-                    points_vao,
-                    1,
-                    3,
-                    gl::FLOAT,
-                    gl::FALSE,
-                    vec3_size as u32,
-                );
-                gl::VertexArrayAttribBinding(points_vao, 0, 0);
-                gl::VertexArrayAttribBinding(points_vao, 1, 0);
-                gl::EnableVertexArrayAttrib(points_vao, 0);
-                gl::EnableVertexArrayAttrib(points_vao, 1);
-
-                let buffer_size = vec3_size * 2 * points_max;
-                gl::NamedBufferStorage(
-                    vbo,
-                    buffer_size as isize,
-                    std::ptr::null() as *const _,
-                    gl::DYNAMIC_STORAGE_BIT,
-                );
-            }
-
-            TerrainDebug {
-                aabb_shader,
-                point_shader,
-                points,
-                points_vao,
-                vbo,
-                buffer_changed: false,
-            }
+            TerrainDebug { aabb_shader }
         };
 
         Ok(Terrain {
@@ -305,28 +240,10 @@ impl Terrain {
             debug.aabb_shader.set_used();
             debug.aabb_shader.set_f32("time", time)?;
 
-            // if debug.buffer_changed {
-            //     unsafe {
-            //         gl::NamedBufferSubData(
-            //             debug.vbo,
-            //             0,
-            //             (debug.points.len() * std::mem::size_of::<Vec3>()) as isize,
-            //             debug.points.as_ptr() as *const _,
-            //         );
-            //     }
-            //     debug.buffer_changed = false;
-            // }
-
             debug.aabb_shader.set_used();
             unsafe {
                 gl::DrawArrays(gl::LINE_STRIP, 0, 16);
             }
-
-            // debug.point_shader.set_used();
-            // unsafe {
-            //     gl::BindVertexArray(debug.points_vao);
-            //     gl::DrawArrays(gl::POINTS, 0, (debug.points.len() / 2) as i32);
-            // }
         }
 
         Ok(())
@@ -376,37 +293,6 @@ impl Terrain {
         height < point_height
     }
 
-    // // Debug version - keeping for now
-    // pub fn intersect_with_ray(&mut self, ray: &Ray) -> Option<Vec3> {
-    //     if let Some(hit) = ray.hits_aabb(&self.aabb) {
-    //         let point = ray.get_point_at(hit.t_min);
-    //         self.debug.buffer_changed = true;
-    //         self.debug.points.clear();
-    //         self.debug.points.push(point);
-    //         self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
-    //         if !self.is_point_above_surface(&point) {
-    //             // Definitely not intersecting, at least from above
-    //             return None;
-    //         }
-    //         // March the ray to get the intersection point
-    //         let step = 0.001f32.max((hit.t_max - hit.t_min) / 100.0);
-    //         let mut t = hit.t_min;
-
-    //         while t < hit.t_max {
-    //             t += step;
-    //             let point = ray.get_point_at(t);
-    //             self.debug.points.push(point);
-    //             if !self.is_point_above_surface(&point) {
-    //                 // TODO: binary search inside and reduce the initial step count
-    //                 self.debug.points.push(Vec3::new(0.0, 1.0, 0.0)); // green
-    //                 return Some(point);
-    //             }
-    //             self.debug.points.push(Vec3::new(1.0, 0.0, 0.0)); // red
-    //         }
-    //     }
-    //     None
-    // }
-
     pub fn intersect_with_ray(&self, ray: &Ray) -> Option<Vec3> {
         if let Some(hit) = ray.hits_aabb(&self.aabb) {
             let point = ray.get_point_at(hit.t_min);
@@ -428,7 +314,7 @@ impl Terrain {
                         let mut new_point = point;
                         let mut low = t - step;
                         let mut high = t;
-                        while (high - low).abs() > EPSILON {
+                        while (high - low) > EPSILON {
                             let new_t = low + (high - low) / 2.0;
                             new_point = ray.get_point_at(new_t);
                             if self.is_point_above_surface(&new_point) {
