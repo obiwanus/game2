@@ -10,14 +10,16 @@ TODO:
 
 DONE:
 
-20 Aug 2021, Fri
-+ Simplify the stb_image lib
-- Load the heightmap with a 16 bit precision
-    - Write the usage code
-    - Write the library code
+21 Aug 2021, Sat
++ Load the heightmap with a 16 bit precision
+    + Write the usage code
+    + Write the library code
 - Raise and lower the terrain
     - Load a brush
     - Show the brush in the cursor
+
+20 Aug 2021, Fri
++ Simplify the stb_image lib
 
 19 Aug 2021, Thu
 + Use a uniform block for common transformations in all shaders

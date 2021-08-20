@@ -26,8 +26,7 @@ impl Heightmap {
             gl::GenTextures(1, &mut id);
         }
 
-        let image = stb_image::load_u8(path, 1, false).unwrap();
-        let (pixels, size) = Heightmap::get_pixels_from_u8_grayscale_image(image);
+        let image = stb_image::load_f32(path, 1, false).unwrap();
 
         unsafe {
             gl::BindTexture(gl::TEXTURE_2D, id);
@@ -45,19 +44,14 @@ impl Heightmap {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
         }
 
-        let heightmap = Heightmap { id, size, pixels };
+        let heightmap = Heightmap {
+            id,
+            size: image.width,
+            pixels: image.data,
+        };
         heightmap.upload_texture();
 
         heightmap
-    }
-
-    // TODO: is there a way to decompose a struct so that we don't have to do this?
-    fn get_pixels_from_u8_grayscale_image(image: Image<u8>) -> (Vec<f32>, usize) {
-        assert_eq!(image.width, image.height);
-        let size = image.width;
-        let pixels = image.data.into_iter().map(|p| (p as f32) / 256.0).collect();
-
-        (pixels, size)
     }
 
     fn upload_texture(&self) {
@@ -168,7 +162,7 @@ impl Terrain {
             .set_image_2d("textures/checkerboard.png")
             .set_default_parameters();
 
-        let heightmap = Heightmap::new("textures/heightmaps/valley16.png");
+        let heightmap = Heightmap::new("textures/heightmaps/valley.png");
 
         let cursor = vec2_infinity();
 
