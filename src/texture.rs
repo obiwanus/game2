@@ -1,16 +1,6 @@
 use gl::types::*;
-use stb_image::{self, Image, LoadResult};
-use thiserror::Error;
 
 const MAX_ANISOTROPY: f32 = 8.0;
-
-#[derive(Debug, Error)]
-pub enum TextureError {
-    #[error("Image format F32 is not supported")]
-    FormatNotSupported,
-    #[error("Cannot load texture image: {0}")]
-    LoadError(String),
-}
 
 pub struct Texture {
     pub id: GLuint, // @tmp_public
@@ -81,9 +71,9 @@ impl Texture {
         self
     }
 
-    pub fn set_image_2d(self, path: &str) -> Result<Self, TextureError> {
-        // Load image from disk
-        let img = load_image(path, true)?;
+    pub fn set_image_2d(self, path: &str) -> Self {
+        // TODO: proper error handling?
+        let image = stb_image::load_u8(path, 3, true).unwrap();
 
         // Send pixels to GPU
         unsafe {
@@ -92,28 +82,16 @@ impl Texture {
                 gl::TEXTURE_2D,
                 0,
                 gl::SRGB8 as GLint,
-                img.width as GLint,
-                img.height as GLint,
+                image.width as GLint,
+                image.height as GLint,
                 0,
                 gl::RGB,
                 gl::UNSIGNED_BYTE,
-                img.data.as_ptr() as *const std::ffi::c_void,
+                image.data.as_ptr() as *const std::ffi::c_void,
             );
             gl::GenerateMipmap(gl::TEXTURE_2D);
         }
 
-        Ok(self)
-    }
-}
-
-pub fn load_image(path: &str, flip: bool) -> Result<Image<u8>, TextureError> {
-    let flip = if flip { 1 } else { 0 };
-    unsafe {
-        stb_image::bindings::stbi_set_flip_vertically_on_load(flip);
-    }
-    match stb_image::load_with_depth(path, 3, false) {
-        LoadResult::ImageU8(image) => Ok(image),
-        LoadResult::ImageF32(_) => Err(TextureError::FormatNotSupported),
-        LoadResult::Error(msg) => Err(TextureError::LoadError(msg)),
+        self
     }
 }

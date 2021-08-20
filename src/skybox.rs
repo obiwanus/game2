@@ -4,13 +4,10 @@ use gl::types::*;
 use thiserror::Error;
 
 use crate::opengl::shader::{Program, ShaderError};
-use crate::texture::{load_image, TextureError};
 use crate::utils::size_of_slice;
 
 #[derive(Debug, Error)]
 pub enum SkyboxError {
-    #[error("Skybox texture error: {0}")]
-    Texture(#[from] TextureError),
     #[error("Skybox shader error: {0}")]
     Shader(#[from] ShaderError),
 }
@@ -60,19 +57,19 @@ impl Skybox {
 
         // Load images
         for (i, path) in paths.iter().enumerate() {
-            let img = load_image(path, false)?;
+            let image = stb_image::load_u8(path, 3, false).unwrap();
             unsafe {
                 // Send to GPU
                 gl::TexImage2D(
                     gl::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
                     0,
                     gl::SRGB8 as GLint,
-                    img.width as GLint,
-                    img.height as GLint,
+                    image.width as GLint,
+                    image.height as GLint,
                     0,
                     gl::RGB,
                     gl::UNSIGNED_BYTE,
-                    img.data.as_ptr() as *const std::ffi::c_void,
+                    image.data.as_ptr() as *const std::ffi::c_void,
                 );
             }
         }

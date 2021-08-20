@@ -2,7 +2,7 @@ use gl::types::*;
 use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
 use opengl_lib::types::GLvoid;
-use stb_image::{Image, LoadResult};
+use stb_image::Image;
 
 use crate::{
     editor::Brush,
@@ -26,20 +26,7 @@ impl Heightmap {
             gl::GenTextures(1, &mut id);
         }
 
-        // let image = load_image(path, false);
-        let image = {
-            unsafe {
-                stb_image::bindings::stbi_set_flip_vertically_on_load(0);
-            }
-            match stb_image::load_with_depth(path, 1, false) {
-                LoadResult::ImageU8(image) => image,
-                LoadResult::ImageF32(_) => panic!(
-                    "Couldn't load brush {}. Only U8 grayscale brush images are supported.",
-                    path
-                ),
-                LoadResult::Error(msg) => panic!("Couldn't load brush {}: {}", path, msg),
-            }
-        };
+        let image = stb_image::load_u8(path, 1, false).unwrap();
         let (pixels, size) = Heightmap::get_pixels_from_u8_grayscale_image(image);
 
         unsafe {
@@ -179,7 +166,6 @@ impl Terrain {
 
         let texture = Texture::new()
             .set_image_2d("textures/checkerboard.png")
-            .expect("Coudn't load texture")
             .set_default_parameters();
 
         let heightmap = Heightmap::new("textures/heightmaps/valley16.png");
@@ -296,7 +282,7 @@ impl Terrain {
 
     pub fn is_point_above_surface(&self, point: &Vec3) -> bool {
         if !self.aabb.contains(point) {
-            return false;
+            return true;
         }
         let point_height = point.y;
         let terrain_size = self.aabb.max.x - self.aabb.min.x;
@@ -343,21 +329,5 @@ impl Terrain {
             }
         }
         None
-    }
-}
-
-// @duplication: merge with texture.rs/load_image?
-pub fn load_image(path: &str, flip: bool) -> Image<u8> {
-    let flip = if flip { 1 } else { 0 };
-    unsafe {
-        stb_image::bindings::stbi_set_flip_vertically_on_load(flip);
-    }
-    match stb_image::load_with_depth(path, 1, false) {
-        LoadResult::ImageU8(image) => image,
-        LoadResult::ImageF32(_) => panic!(
-            "Couldn't load brush {}. Only U8 grayscale brush images are supported.",
-            path
-        ),
-        LoadResult::Error(msg) => panic!("Couldn't load brush {}: {}", path, msg),
     }
 }

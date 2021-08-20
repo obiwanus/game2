@@ -10,16 +10,21 @@ TODO:
 
 DONE:
 
+20 Aug 2021, Fri
++ Simplify the stb_image lib
+- Load the heightmap with a 16 bit precision
+    - Write the usage code
+    - Write the library code
+- Raise and lower the terrain
+    - Load a brush
+    - Show the brush in the cursor
+
 19 Aug 2021, Thu
 + Use a uniform block for common transformations in all shaders
     + Print the maximum numbers of uniform blocks in each stage
     + Review all the shaders and rewrite them using the common uniform block
     + Send data to the uniform buffer each frame (if changed)
 + Draw AABB like a proper box
-- Load the heightmap with a 16 bit precision
-- Raise and lower the terrain
-    - Load a brush
-    - Show the brush in the cursor
 
 18 Aug 2021, Wed
 + Finish ray/heightmap intersection
