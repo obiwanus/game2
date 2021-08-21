@@ -4,19 +4,23 @@ TODO:
     - Check what are the options on modifying the buffer directly on the GPU
     - Consider splitting the terrain into smaller chunks so that we have smaller heightmaps
 - Optimise the terrain tessellation
-- Add lighting and shadows
 - Figure out the next steps (splatmap etc)
 - Steal code from the egui integration
 
 DONE:
 
+22 Aug 2021, Sun
+- Raise and lower the terrain
+    + Show brush in the cursor
+    - Draw on the heightmap
+- Add shadows
+- Add ambient occlusion?
+
 21 Aug 2021, Sat
 + Load the heightmap with a 16 bit precision
     + Write the usage code
     + Write the library code
-- Raise and lower the terrain
-    - Load a brush
-    - Show the brush in the cursor
++ Load a brush
 
 20 Aug 2021, Fri
 + Simplify the stb_image lib

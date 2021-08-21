@@ -17,30 +17,8 @@ impl Texture {
 
     pub fn bind_2d(&self, unit: i32) {
         unsafe {
-            gl::ActiveTexture(Texture::unit_to_gl_const(unit));
+            gl::ActiveTexture(unit_to_gl_const(unit));
             gl::BindTexture(gl::TEXTURE_2D, self.id);
-        }
-    }
-
-    fn unit_to_gl_const(unit: i32) -> GLenum {
-        match unit {
-            0 => gl::TEXTURE0,
-            1 => gl::TEXTURE1,
-            2 => gl::TEXTURE2,
-            3 => gl::TEXTURE3,
-            4 => gl::TEXTURE4,
-            5 => gl::TEXTURE5,
-            6 => gl::TEXTURE6,
-            7 => gl::TEXTURE7,
-            8 => gl::TEXTURE8,
-            9 => gl::TEXTURE9,
-            10 => gl::TEXTURE10,
-            11 => gl::TEXTURE11,
-            12 => gl::TEXTURE12,
-            13 => gl::TEXTURE13,
-            14 => gl::TEXTURE14,
-            15 => gl::TEXTURE15,
-            _ => panic!("Unsupported texture unit"),
         }
     }
 
@@ -93,5 +71,27 @@ impl Texture {
         }
 
         self
+    }
+}
+
+pub fn unit_to_gl_const(unit: i32) -> GLenum {
+    match unit {
+        0 => gl::TEXTURE0,
+        1 => gl::TEXTURE1,
+        2 => gl::TEXTURE2,
+        3 => gl::TEXTURE3,
+        4 => gl::TEXTURE4,
+        5 => gl::TEXTURE5,
+        6 => gl::TEXTURE6,
+        7 => gl::TEXTURE7,
+        8 => gl::TEXTURE8,
+        9 => gl::TEXTURE9,
+        10 => gl::TEXTURE10,
+        11 => gl::TEXTURE11,
+        12 => gl::TEXTURE12,
+        13 => gl::TEXTURE13,
+        14 => gl::TEXTURE14,
+        15 => gl::TEXTURE15,
+        _ => panic!("Unsupported texture unit"),
     }
 }

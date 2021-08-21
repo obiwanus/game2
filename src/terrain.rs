@@ -2,10 +2,9 @@ use gl::types::*;
 use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
 use opengl_lib::types::GLvoid;
-use stb_image::Image;
 
+use crate::texture::unit_to_gl_const;
 use crate::{
-    editor::Brush,
     opengl::shader::Program,
     ray::{Ray, AABB},
     texture::Texture,
@@ -14,22 +13,17 @@ use crate::{
 };
 
 struct Heightmap {
-    id: GLuint,
+    texture: GLuint,
     size: usize,
     pixels: Vec<f32>, // @speed: store efficiently?
 }
 
 impl Heightmap {
     fn new(path: &str) -> Self {
-        let mut id: GLuint = 0;
+        let mut texture: GLuint = 0;
         unsafe {
-            gl::GenTextures(1, &mut id);
-        }
-
-        let image = stb_image::load_f32(path, 1, false).unwrap();
-
-        unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, id);
+            gl::GenTextures(1, &mut texture);
+            gl::BindTexture(gl::TEXTURE_2D, texture);
             gl::TexParameteri(
                 gl::TEXTURE_2D,
                 gl::TEXTURE_WRAP_S,
@@ -44,8 +38,10 @@ impl Heightmap {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
         }
 
+        let image = stb_image::load_f32(path, 1, false).unwrap();
+
         let heightmap = Heightmap {
-            id,
+            texture,
             size: image.width,
             pixels: image.data,
         };
@@ -56,7 +52,7 @@ impl Heightmap {
 
     fn upload_texture(&self) {
         unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, self.id);
+            gl::BindTexture(gl::TEXTURE_2D, self.texture);
             gl::TexImage2D(
                 gl::TEXTURE_2D,
                 0,
@@ -82,35 +78,65 @@ impl Heightmap {
 
         self.pixels[y * self.size + x]
     }
+}
 
-    // @duplicate
-    fn bind_2d(&self, unit: i32) {
+pub struct Brush {
+    texture: GLuint,
+    pub size: f32,
+    pixels: Vec<f32>, // @speed: swizzle?
+    width: usize,
+    height: usize,
+}
+
+impl Brush {
+    pub fn new(path: &str, size: f32) -> Self {
+        let mut texture: GLuint = 0;
         unsafe {
-            gl::ActiveTexture(Heightmap::unit_to_gl_const(unit));
-            gl::BindTexture(gl::TEXTURE_2D, self.id);
+            gl::GenTextures(1, &mut texture);
+            gl::BindTexture(gl::TEXTURE_2D, texture);
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_WRAP_S,
+                gl::CLAMP_TO_BORDER as GLint,
+            );
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_WRAP_T,
+                gl::CLAMP_TO_BORDER as GLint,
+            );
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
         }
+
+        let image = stb_image::load_f32(path, 1, false).unwrap();
+
+        let brush = Brush {
+            texture,
+            size,
+            pixels: image.data,
+            width: image.width,
+            height: image.height,
+        };
+        brush.upload_texture();
+
+        brush
     }
 
     // @duplicate
-    fn unit_to_gl_const(unit: i32) -> GLenum {
-        match unit {
-            0 => gl::TEXTURE0,
-            1 => gl::TEXTURE1,
-            2 => gl::TEXTURE2,
-            3 => gl::TEXTURE3,
-            4 => gl::TEXTURE4,
-            5 => gl::TEXTURE5,
-            6 => gl::TEXTURE6,
-            7 => gl::TEXTURE7,
-            8 => gl::TEXTURE8,
-            9 => gl::TEXTURE9,
-            10 => gl::TEXTURE10,
-            11 => gl::TEXTURE11,
-            12 => gl::TEXTURE12,
-            13 => gl::TEXTURE13,
-            14 => gl::TEXTURE14,
-            15 => gl::TEXTURE15,
-            _ => panic!("Unsupported texture unit"),
+    fn upload_texture(&self) {
+        unsafe {
+            gl::BindTexture(gl::TEXTURE_2D, self.texture);
+            gl::TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::R16 as i32,
+                self.width as i32,
+                self.height as i32,
+                0,
+                gl::RED,
+                gl::FLOAT,
+                self.pixels.as_ptr() as *const GLvoid,
+            );
         }
     }
 }
@@ -154,8 +180,6 @@ impl Terrain {
         let mut vao: GLuint = 0;
         unsafe {
             gl::CreateVertexArrays(1, &mut vao);
-
-            gl::PatchParameteri(gl::PATCH_VERTICES, 4);
         }
 
         let texture = Texture::new()
@@ -166,7 +190,7 @@ impl Terrain {
 
         let cursor = vec2_infinity();
 
-        let brush = Brush::new("src/editor/brushes/brush1.png");
+        let brush = Brush::new("textures/brushes/mountain04.png", 100.0);
 
         let shader = Program::new()
             .vertex_shader(include_str!("shaders/editor/terrain.vert.glsl"))?
@@ -210,16 +234,27 @@ impl Terrain {
     pub fn draw(&mut self, time: f32) -> Result<()> {
         self.shader.set_used();
         self.shader.set_vec2("cursor", &self.cursor)?;
-        // self.shader.set_float("brush_size", self.brush.size)?;
+        self.shader.set_f32("brush_size", self.brush.size)?;
         self.shader.set_f32("tess_level", self.tess_level)?;
 
-        // @try moving outsize of the draw
+        // Default texture
         self.texture.bind_2d(0);
         self.shader.set_texture_unit("terrain_texture", 0)?;
-        self.heightmap.bind_2d(1);
+        // Heightmap
+        unsafe {
+            gl::ActiveTexture(unit_to_gl_const(1));
+            gl::BindTexture(gl::TEXTURE_2D, self.heightmap.texture);
+        }
         self.shader.set_texture_unit("heightmap", 1)?;
+        // // Brush
+        unsafe {
+            gl::ActiveTexture(unit_to_gl_const(2));
+            gl::BindTexture(gl::TEXTURE_2D, self.brush.texture);
+        }
+        self.shader.set_texture_unit("brush_texture", 2)?;
 
         unsafe {
+            gl::PatchParameteri(gl::PATCH_VERTICES, 4);
             gl::BindVertexArray(self.vao);
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
