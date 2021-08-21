@@ -20,7 +20,7 @@ void main() {
     vec2 brush_uv = vec2(0.5, 0.5) + (fs_in.frag_pos.xz - cursor) / brush_size;
     const vec4 brush_color = vec4(0.75, 0.45, 0.92, 1.0);
     const vec4 brush_highlight = vec4(0.69, 0.67, 0.91, 1.0);
-    float brush_value = texture(brush_texture, brush_uv).r;
+    float brush_value = sqrt(texture(brush_texture, brush_uv).r);
 
     vec4 base_color = mix(terrain_color, brush_color, brush_value);
 
