@@ -154,7 +154,6 @@ impl Gui {
         self.shader
             .set_vec2("u_screen_size", &screen_size_in_points)
             .unwrap();
-        self.shader.set_texture_unit("u_sampler", 0).unwrap();
         unsafe {
             gl::ActiveTexture(unit_to_gl_const(0));
             gl::BindTexture(gl::TEXTURE_2D, self.egui_texture);

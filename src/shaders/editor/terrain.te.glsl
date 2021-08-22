@@ -10,7 +10,7 @@ layout(std140, binding = 1) uniform UTransforms {
 }
 uTransforms;
 
-uniform sampler2D heightmap;
+layout(binding = 1) uniform sampler2D heightmap;
 
 const float MAX_HEIGHT = 200.0;
 

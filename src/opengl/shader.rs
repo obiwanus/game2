@@ -125,15 +125,6 @@ impl Program {
         Ok(())
     }
 
-    /// Assigns a name from the shader to a texture unit
-    pub fn set_texture_unit(&self, name: &str, unit: i32) -> Result<()> {
-        let location = self.get_uniform_location(name)?;
-        unsafe {
-            gl::Uniform1i(location, unit);
-        }
-        Ok(())
-    }
-
     /// Sets a vec2 uniform
     pub fn set_vec2(&self, name: &str, vec: &Vec2) -> Result<()> {
         let location = self.get_uniform_location(name)?;

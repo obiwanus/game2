@@ -10,8 +10,9 @@ TODO:
 DONE:
 
 23 Aug 2021, Mon
-- Use modern OpenGL calls for textures
++ Use modern OpenGL calls for textures
     + gui
++ Get rid of unnnecessary calls to set texture unit for shaders
 - Draw on the heightmap
 - Remove cursor when not over terrain
 - Add shadows

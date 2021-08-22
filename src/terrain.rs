@@ -262,24 +262,19 @@ impl Terrain {
         self.shader.set_f32("brush_size", self.brush.size)?;
         self.shader.set_f32("tess_level", self.tess_level)?;
 
-        // Default texture
         unsafe {
+            // Default texture
             gl::ActiveTexture(unit_to_gl_const(0));
             gl::BindTexture(gl::TEXTURE_2D, self.texture);
-        }
-        self.shader.set_texture_unit("terrain_texture", 0)?;
-        // Heightmap
-        unsafe {
+
+            // Heightmap
             gl::ActiveTexture(unit_to_gl_const(1));
             gl::BindTexture(gl::TEXTURE_2D, self.heightmap.texture);
-        }
-        self.shader.set_texture_unit("heightmap", 1)?;
-        // // Brush
-        unsafe {
+
+            // Brush
             gl::ActiveTexture(unit_to_gl_const(2));
             gl::BindTexture(gl::TEXTURE_2D, self.brush.texture);
         }
-        self.shader.set_texture_unit("brush_texture", 2)?;
 
         unsafe {
             gl::PatchParameteri(gl::PATCH_VERTICES, 4);

@@ -80,7 +80,6 @@ impl Skybox {
             .fragment_shader(include_str!("shaders/skybox/skybox.frag"))?
             .link()?;
         shader.set_used();
-        shader.set_texture_unit("skybox", 0)?;
 
         #[rustfmt::skip]
         let vertices = [

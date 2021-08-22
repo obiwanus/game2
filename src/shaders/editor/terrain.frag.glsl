@@ -10,8 +10,9 @@ out vec4 Color;
 
 uniform vec2 cursor;
 uniform float brush_size;
-uniform sampler2D terrain_texture;
-uniform sampler2D brush_texture;
+
+layout(binding = 0) uniform sampler2D terrain_texture;
+layout(binding = 2) uniform sampler2D brush_texture;
 
 void main() {
     vec2 patch_uv = fs_in.tile_uv * 64.0;
