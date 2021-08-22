@@ -9,12 +9,20 @@ TODO:
 
 DONE:
 
-22 Aug 2021, Sun
-- Raise and lower the terrain
-    + Show brush in the cursor
-    - Draw on the heightmap
+23 Aug 2021, Mon
+- Use modern OpenGL calls for textures
+    + gui
+- Draw on the heightmap
+- Remove cursor when not over terrain
 - Add shadows
 - Add ambient occlusion?
+
+22 Aug 2021, Sun
++ Show brush in the cursor
++ Use modern OpenGL calls for textures
+    + heightmap
+    + brush
+    + terrain
 
 21 Aug 2021, Sat
 + Load the heightmap with a 16 bit precision

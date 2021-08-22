@@ -25,5 +25,5 @@ void main() {
     vec4 base_color = mix(terrain_color, brush_color, brush_value);
 
     float t = smoothstep(0.1, 0.11, brush_value) - smoothstep(0.11, 0.12, brush_value);
-    Color = mix(base_color, brush_highlight, 0.7 * t);
+    Color = mix(base_color, brush_highlight, 0.5 * t);
 }

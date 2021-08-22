@@ -6,13 +6,13 @@ use gl::types::*;
 use glam::Vec2;
 use memoffset::offset_of;
 
-use crate::{opengl::shader::Program, texture::Texture, utils::size_of_slice, Result};
+use crate::{opengl::shader::Program, texture::unit_to_gl_const, utils::size_of_slice, Result};
 
 pub struct Gui {
     screen_size: Vec2,
 
     ctx: CtxRef,
-    egui_texture: Texture,
+    egui_texture: GLuint,
     egui_texture_version: Option<u64>,
 
     shader: Program,
@@ -80,23 +80,6 @@ impl Gui {
             gl::VertexArrayAttribBinding(vao, 2, 0);
         }
 
-        let egui_texture = Texture::new();
-        unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, egui_texture.id);
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_S,
-                gl::CLAMP_TO_EDGE as GLint,
-            );
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_T,
-                gl::CLAMP_TO_EDGE as GLint,
-            );
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
-        }
-
         let shader = Program::new()
             .vertex_shader(include_str!("../shaders/editor/gui.vert"))?
             .fragment_shader(include_str!("../shaders/editor/gui.frag"))?
@@ -106,7 +89,7 @@ impl Gui {
             screen_size,
 
             ctx: CtxRef::default(),
-            egui_texture,
+            egui_texture: 0, // will be created before draw
             egui_texture_version: None,
 
             shader,
@@ -172,7 +155,10 @@ impl Gui {
             .set_vec2("u_screen_size", &screen_size_in_points)
             .unwrap();
         self.shader.set_texture_unit("u_sampler", 0).unwrap();
-        self.egui_texture.bind_2d(0);
+        unsafe {
+            gl::ActiveTexture(unit_to_gl_const(0));
+            gl::BindTexture(gl::TEXTURE_2D, self.egui_texture);
+        }
 
         for ClippedMesh(clip_rect, mesh) in clipped_meshes {
             let vertices = mesh
@@ -239,21 +225,37 @@ impl Gui {
             .map(|&a| Color32::from_white_alpha(a).to_tuple())
             .collect();
 
+        let mut new_texture: GLuint = 0;
         unsafe {
-            use gl::types::*;
-            gl::BindTexture(gl::TEXTURE_2D, self.egui_texture.id);
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                gl::SRGB8_ALPHA8 as GLint,
+            if self.egui_texture != 0 {
+                // Delete old texture
+                gl::DeleteTextures(1, &self.egui_texture);
+            }
+            gl::CreateTextures(gl::TEXTURE_2D, 1, &mut new_texture);
+            gl::TextureParameteri(new_texture, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as GLint);
+            gl::TextureParameteri(new_texture, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as GLint);
+            gl::TextureParameteri(new_texture, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
+            gl::TextureParameteri(new_texture, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
+            gl::TextureStorage2D(
+                new_texture,
+                1,
+                gl::SRGB8_ALPHA8,
                 texture.width as GLint,
                 texture.height as GLint,
+            );
+            gl::TextureSubImage2D(
+                new_texture,
                 0,
+                0,
+                0,
+                texture.width as i32,
+                texture.height as i32,
                 gl::RGBA,
                 gl::UNSIGNED_BYTE,
-                pixels.as_ptr() as *const std::ffi::c_void,
+                pixels.as_ptr() as *const _,
             );
         }
+        self.egui_texture = new_texture;
     }
 }
 

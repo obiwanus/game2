@@ -1,48 +1,50 @@
 use gl::types::*;
 use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
-use opengl_lib::types::GLvoid;
 
-use crate::texture::unit_to_gl_const;
+use crate::texture::{calculate_mip_levels, get_max_anisotropy, unit_to_gl_const};
 use crate::{
     opengl::shader::Program,
     ray::{Ray, AABB},
-    texture::Texture,
     utils::vec2_infinity,
     Result,
 };
 
 struct Heightmap {
     texture: GLuint,
-    size: usize,
+    texture_size: usize,
     pixels: Vec<f32>, // @speed: store efficiently?
 }
 
 impl Heightmap {
     fn new(path: &str) -> Self {
+        let image = stb_image::load_f32(path, 1, false).unwrap();
+        assert_eq!(
+            image.width, image.height,
+            "Only square heightmaps are supported"
+        );
+        let texture_size = image.width;
+
         let mut texture: GLuint = 0;
         unsafe {
-            gl::GenTextures(1, &mut texture);
+            gl::CreateTextures(gl::TEXTURE_2D, 1, &mut texture);
             gl::BindTexture(gl::TEXTURE_2D, texture);
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_S,
-                gl::CLAMP_TO_EDGE as GLint,
+            gl::TextureParameteri(texture, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as GLint);
+            gl::TextureParameteri(texture, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as GLint);
+            gl::TextureParameteri(texture, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
+            gl::TextureParameteri(texture, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
+            gl::TextureStorage2D(
+                texture,
+                1,
+                gl::R16F,
+                texture_size as i32,
+                texture_size as i32,
             );
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_T,
-                gl::CLAMP_TO_EDGE as GLint,
-            );
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
         }
-
-        let image = stb_image::load_f32(path, 1, false).unwrap();
 
         let heightmap = Heightmap {
             texture,
-            size: image.width,
+            texture_size,
             pixels: image.data,
         };
         heightmap.upload_texture();
@@ -52,23 +54,22 @@ impl Heightmap {
 
     fn upload_texture(&self) {
         unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, self.texture);
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
+            gl::TextureSubImage2D(
+                self.texture,
                 0,
-                gl::R16 as i32,
-                self.size as i32,
-                self.size as i32,
                 0,
+                0,
+                self.texture_size as i32,
+                self.texture_size as i32,
                 gl::RED,
                 gl::FLOAT,
-                self.pixels.as_ptr() as *const GLvoid,
+                self.pixels.as_ptr() as *const _,
             );
         }
     }
 
     fn sample_height(&self, point: Vec2) -> f32 {
-        let size = self.size as f32;
+        let size = self.texture_size as f32;
 
         // @speed/@correctness: 0.99999 is chosen arbitrarily and may not be very precise.
         // Also, I'm not sure how fast the clamping is (and it's not precise at all for heightmaps).
@@ -76,7 +77,7 @@ impl Heightmap {
         let x = (point.x.clamp(0.0, 0.99999) * size) as usize;
         let y = (point.y.clamp(0.0, 0.99999) * size) as usize;
 
-        self.pixels[y * self.size + x]
+        self.pixels[y * self.texture_size + x]
     }
 }
 
@@ -90,53 +91,41 @@ pub struct Brush {
 
 impl Brush {
     pub fn new(path: &str, size: f32) -> Self {
-        let mut texture: GLuint = 0;
-        unsafe {
-            gl::GenTextures(1, &mut texture);
-            gl::BindTexture(gl::TEXTURE_2D, texture);
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_S,
-                gl::CLAMP_TO_BORDER as GLint,
-            );
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_T,
-                gl::CLAMP_TO_BORDER as GLint,
-            );
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
-        }
-
         let image = stb_image::load_f32(path, 1, false).unwrap();
 
-        let brush = Brush {
+        let mut texture: GLuint = 0;
+        unsafe {
+            gl::CreateTextures(gl::TEXTURE_2D, 1, &mut texture);
+            gl::TextureParameteri(texture, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_BORDER as GLint);
+            gl::TextureParameteri(texture, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_BORDER as GLint);
+            gl::TextureParameteri(texture, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
+            gl::TextureParameteri(texture, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
+            gl::TextureStorage2D(
+                texture,
+                1,
+                gl::R16F,
+                image.width as i32,
+                image.height as i32,
+            );
+            gl::TextureSubImage2D(
+                texture,
+                0,
+                0,
+                0,
+                image.width as i32,
+                image.height as i32,
+                gl::RED,
+                gl::FLOAT,
+                image.data.as_ptr() as *const _,
+            );
+        }
+
+        Brush {
             texture,
             size,
             pixels: image.data,
             width: image.width,
             height: image.height,
-        };
-        brush.upload_texture();
-
-        brush
-    }
-
-    // @duplicate
-    fn upload_texture(&self) {
-        unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, self.texture);
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                gl::R16 as i32,
-                self.width as i32,
-                self.height as i32,
-                0,
-                gl::RED,
-                gl::FLOAT,
-                self.pixels.as_ptr() as *const GLvoid,
-            );
         }
     }
 }
@@ -150,7 +139,7 @@ pub struct Terrain {
     shader: Program,
     pub tess_level: f32,
 
-    texture: Texture,
+    texture: GLuint,
     heightmap: Heightmap,
     pub cursor: Vec2,
     pub brush: Brush,
@@ -182,9 +171,45 @@ impl Terrain {
             gl::CreateVertexArrays(1, &mut vao);
         }
 
-        let texture = Texture::new()
-            .set_image_2d("textures/checkerboard.png")
-            .set_default_parameters();
+        let (texture, texture_image) = {
+            let image = stb_image::load_u8("textures/checkerboard.png", 3, true).unwrap();
+            assert_eq!(image.width, image.height);
+
+            let mut texture: GLuint = 0;
+            unsafe {
+                gl::CreateTextures(gl::TEXTURE_2D, 1, &mut texture);
+                gl::TextureParameteri(texture, gl::TEXTURE_WRAP_S, gl::REPEAT as GLint);
+                gl::TextureParameteri(texture, gl::TEXTURE_WRAP_T, gl::REPEAT as GLint);
+                gl::TextureParameteri(
+                    texture,
+                    gl::TEXTURE_MIN_FILTER,
+                    gl::LINEAR_MIPMAP_LINEAR as GLint,
+                );
+                gl::TextureParameteri(texture, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
+                gl::TextureParameterf(texture, gl::TEXTURE_MAX_ANISOTROPY, get_max_anisotropy());
+                gl::TextureStorage2D(
+                    texture,
+                    calculate_mip_levels(image.width, image.height),
+                    gl::SRGB8,
+                    image.width as i32,
+                    image.height as i32,
+                );
+                gl::TextureSubImage2D(
+                    texture,
+                    0,
+                    0,
+                    0,
+                    image.width as i32,
+                    image.height as i32,
+                    gl::RGB,
+                    gl::UNSIGNED_BYTE,
+                    image.data.as_ptr() as *const _,
+                );
+                gl::GenerateTextureMipmap(texture);
+            }
+
+            (texture, image)
+        };
 
         let heightmap = Heightmap::new("textures/heightmaps/valley.png");
 
@@ -238,7 +263,10 @@ impl Terrain {
         self.shader.set_f32("tess_level", self.tess_level)?;
 
         // Default texture
-        self.texture.bind_2d(0);
+        unsafe {
+            gl::ActiveTexture(unit_to_gl_const(0));
+            gl::BindTexture(gl::TEXTURE_2D, self.texture);
+        }
         self.shader.set_texture_unit("terrain_texture", 0)?;
         // Heightmap
         unsafe {
@@ -292,14 +320,14 @@ impl Terrain {
 
         // Change the values around the cursor
         // @speed: brute force (no need to step through the whole terrain)
-        for z in 0..self.heightmap.size {
-            for x in 0..self.heightmap.size {
+        for z in 0..self.heightmap.texture_size {
+            for x in 0..self.heightmap.texture_size {
                 // Position of pixel in texture coordinates
                 // @speed: no need to calculate every time
-                let pos = Vec2::new(x as f32, z as f32) / self.heightmap.size as f32;
+                let pos = Vec2::new(x as f32, z as f32) / self.heightmap.texture_size as f32;
                 let dist_sq = (pos - cursor).length_squared();
                 if dist_sq < brush_size_sq {
-                    let index = z * self.heightmap.size + x;
+                    let index = z * self.heightmap.texture_size + x;
                     self.heightmap.pixels[index] += delta_time * sensitivity;
                 }
             }
