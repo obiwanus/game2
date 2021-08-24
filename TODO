@@ -1,10 +1,16 @@
 TODO:
 
-- Shape the heightmap using the simple brush
-    - Check what are the options on modifying the buffer directly on the GPU
-    - Consider splitting the terrain into smaller chunks so that we have smaller heightmaps
+- Terrain shaping
+    - Rotate and scale brushes
+    - Select brushes in gui
+    - Brush sensitivity
+    - Brush frequency
+    - New tools:
+        - Set height
+        - Stamp terrain (maybe)
 - Optimise the terrain tessellation
-- Figure out the next steps (splatmap etc)
+    - Non-uniform patches?
+    - Tessellate based on LOD
 - Steal code from the egui integration
 
 DONE:
@@ -13,9 +19,13 @@ DONE:
 + Draw on the heightmap
 + Sort of lower terrain
 + Properly raise and lower terrain
-- Remove cursor when not over terrain
++ Remove cursor when not over terrain
++ Use mipmaps for brush
 - Add shadows
 - Add ambient occlusion?
+- Fix terrain picking
+    - Read pixels back, or
+    - Add a picking buffer and draw to it (and use a persistent map?)
 
 23 Aug 2021, Mon
 + Use modern OpenGL calls for textures

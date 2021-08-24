@@ -135,7 +135,7 @@ impl Heightmap {
             });
 
             gl::DrawArrays(gl::TRIANGLE_FAN, 0, 4);
-            gl::MemoryBarrier(gl::FRAMEBUFFER_BARRIER_BIT);
+            // gl::MemoryBarrier(gl::FRAMEBUFFER_BARRIER_BIT);
 
             // Reset everything back
             gl::Disable(gl::BLEND);
@@ -168,11 +168,15 @@ impl Brush {
             gl::CreateTextures(gl::TEXTURE_2D, 1, &mut texture);
             gl::TextureParameteri(texture, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_BORDER as GLint);
             gl::TextureParameteri(texture, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_BORDER as GLint);
-            gl::TextureParameteri(texture, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
+            gl::TextureParameteri(
+                texture,
+                gl::TEXTURE_MIN_FILTER,
+                gl::LINEAR_MIPMAP_LINEAR as GLint,
+            );
             gl::TextureParameteri(texture, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
             gl::TextureStorage2D(
                 texture,
-                1,
+                calculate_mip_levels(texture_size, texture_size),
                 gl::R16,
                 texture_size as i32,
                 texture_size as i32,
@@ -188,6 +192,7 @@ impl Brush {
                 gl::FLOAT,
                 image.data.as_ptr() as *const _,
             );
+            gl::GenerateTextureMipmap(texture);
         }
 
         Brush {
