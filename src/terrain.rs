@@ -42,7 +42,7 @@ impl Heightmap {
             gl::TextureStorage2D(
                 texture,
                 1,
-                gl::R16F,
+                gl::R16,
                 texture_size as i32,
                 texture_size as i32,
             );
@@ -173,7 +173,7 @@ impl Brush {
             gl::TextureStorage2D(
                 texture,
                 1,
-                gl::R16F,
+                gl::R16,
                 texture_size as i32,
                 texture_size as i32,
             );
@@ -379,34 +379,6 @@ impl Terrain {
         let cursor = (self.cursor - self.aabb.min.xz()) / terrain_size;
         self.heightmap
             .draw_on_heightmap(cursor, &self.brush, terrain_size, delta_time, raise);
-        // let size = 1000.0; // @todo: variable size or put in a proper const
-
-        // // Find where the cursor is on the texture (relative to center)
-        // let cursor =
-        //     Vec2::new(0.5, 0.5) + (Vec2::new(self.cursor.x, self.cursor.y) - self.center) / size;
-
-        // // Get brush size in terms of underlying texture
-        // let brush_size = self.brush.size / size;
-        // let brush_size_sq = brush_size * brush_size;
-
-        // let sensitivity = 0.3;
-
-        // // Change the values around the cursor
-        // // @speed: brute force (no need to step through the whole terrain)
-        // for z in 0..self.heightmap.texture_size {
-        //     for x in 0..self.heightmap.texture_size {
-        //         // Position of pixel in texture coordinates
-        //         // @speed: no need to calculate every time
-        //         let pos = Vec2::new(x as f32, z as f32) / self.heightmap.texture_size as f32;
-        //         let dist_sq = (pos - cursor).length_squared();
-        //         if dist_sq < brush_size_sq {
-        //             let index = z * self.heightmap.texture_size + x;
-        //             self.heightmap.pixels[index] += delta_time * sensitivity;
-        //         }
-        //     }
-        // }
-
-        // // Update the texture
     }
 
     pub fn is_point_above_surface(&self, point: &Vec3) -> bool {

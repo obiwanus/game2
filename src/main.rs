@@ -506,6 +506,8 @@ impl Game {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
                 if let Some(point) = self.terrain.intersect_with_ray(&ray) {
                     self.terrain.cursor = Vec2::new(point.x, point.z);
+                } else {
+                    self.terrain.cursor = vec2_infinity();
                 }
 
                 // TODO: proper terrain picking
@@ -533,7 +535,7 @@ impl Game {
                 // self.terrain.tess_level = (self.terrain.tess_level - y * 0.2).clamp(1.0, 16.0);
             }
 
-            if self.input.mouse_buttons.primary {
+            if self.input.mouse_buttons.primary && self.terrain.cursor.is_finite() {
                 self.terrain
                     .shape_terrain(delta_time, !self.input.modifiers.ctrl);
             }
