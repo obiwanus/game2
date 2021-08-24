@@ -13,6 +13,7 @@ layout(std140, binding = 1) uniform UTransforms {
     mat4 proj;
     mat4 view;
     mat4 model;
+    mat4 sun_vp;
 }
 uTransforms;
 

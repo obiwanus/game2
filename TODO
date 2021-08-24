@@ -8,6 +8,8 @@ TODO:
     - New tools:
         - Set height
         - Stamp terrain (maybe)
+- Draw textures on terrain
+    - Use a fixed number of layers first
 - Optimise the terrain tessellation
     - Non-uniform patches?
     - Tessellate based on LOD
@@ -15,17 +17,22 @@ TODO:
 
 DONE:
 
+25 Aug 2021, Wed
+- Add shadows
+    + Add simplified shaders for shadow mapping
+    + Add sun space transform to the ubo
+    - Render the shadow map and check it in renderdoc
+- Add ambient occlusion?
+- Fix terrain picking
+    - Read pixels back, or
+    - Add a picking buffer and draw to it (and use a persistent map?)
+
 24 Aug 2021, Tue
 + Draw on the heightmap
 + Sort of lower terrain
 + Properly raise and lower terrain
 + Remove cursor when not over terrain
 + Use mipmaps for brush
-- Add shadows
-- Add ambient occlusion?
-- Fix terrain picking
-    - Read pixels back, or
-    - Add a picking buffer and draw to it (and use a persistent map?)
 
 23 Aug 2021, Mon
 + Use modern OpenGL calls for textures

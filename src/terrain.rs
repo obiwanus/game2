@@ -1,7 +1,8 @@
 use gl::types::*;
-use glam::Vec3Swizzles;
+use glam::{Mat4, Vec3Swizzles};
 use glam::{Vec2, Vec3};
 
+use crate::opengl::get_framebuffer_status_str;
 use crate::texture::{calculate_mip_levels, get_max_anisotropy, unit_to_gl_const};
 use crate::{
     opengl::shader::Program,
@@ -74,8 +75,8 @@ impl Heightmap {
         }
 
         let shader = Program::new()
-            .vertex_shader(include_str!("shaders/editor/heightmap.vert"))?
-            .fragment_shader(include_str!("shaders/editor/heightmap.frag"))?
+            .vertex_shader(include_str!("shaders/editor/terrain/heightmap.vert"))?
+            .fragment_shader(include_str!("shaders/editor/terrain/heightmap.frag"))?
             .link()?;
 
         Ok(Heightmap {
@@ -135,7 +136,7 @@ impl Heightmap {
             });
 
             gl::DrawArrays(gl::TRIANGLE_FAN, 0, 4);
-            // gl::MemoryBarrier(gl::FRAMEBUFFER_BARRIER_BIT);
+            gl::MemoryBarrier(gl::FRAMEBUFFER_BARRIER_BIT); // not critical
 
             // Reset everything back
             gl::Disable(gl::BLEND);
@@ -219,6 +220,12 @@ pub struct Terrain {
     pub cursor: Vec2,
     pub brush: Brush,
 
+    shadow_map_fbo: GLuint,
+    shadow_map: GLuint,
+    shadow_map_width: i32,
+    shadow_map_height: i32,
+    shadow_map_shader: Program,
+
     debug: TerrainDebug,
 }
 
@@ -286,17 +293,50 @@ impl Terrain {
             texture
         };
 
-        let heightmap = Heightmap::new("textures/heightmaps/valley.png")?;
-
         let cursor = vec2_infinity();
-
+        let heightmap = Heightmap::new("textures/heightmaps/valley.png")?;
         let brush = Brush::new("textures/brushes/mountain04.png", 100.0);
 
         let shader = Program::new()
-            .vertex_shader(include_str!("shaders/editor/terrain.vert.glsl"))?
-            .tess_control_shader(include_str!("shaders/editor/terrain.tc.glsl"))?
-            .tess_evaluation_shader(include_str!("shaders/editor/terrain.te.glsl"))?
-            .fragment_shader(include_str!("shaders/editor/terrain.frag.glsl"))?
+            .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
+            .tess_control_shader(include_str!("shaders/editor/terrain/terrain.tc.glsl"))?
+            .tess_evaluation_shader(include_str!("shaders/editor/terrain/terrain.te.glsl"))?
+            .fragment_shader(include_str!("shaders/editor/terrain/terrain.frag.glsl"))?
+            .link()?;
+
+        // Shadow map
+        let mut shadow_map_fbo: GLuint = 0;
+        let mut shadow_map: GLuint = 0;
+        let (shadow_map_width, shadow_map_height) = (1024, 1024);
+        unsafe {
+            gl::CreateFramebuffers(1, &mut shadow_map_fbo);
+            gl::CreateTextures(gl::TEXTURE_2D, 1, &mut shadow_map);
+            gl::TextureParameteri(shadow_map, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+            gl::TextureParameteri(shadow_map, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
+            gl::TextureParameteri(shadow_map, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
+            gl::TextureParameteri(shadow_map, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+            gl::TextureStorage2D(
+                shadow_map,
+                1,
+                gl::DEPTH_COMPONENT16,
+                shadow_map_width,
+                shadow_map_height,
+            );
+            gl::NamedFramebufferTexture(shadow_map_fbo, gl::DEPTH_ATTACHMENT, shadow_map, 0);
+            gl::NamedFramebufferDrawBuffer(shadow_map_fbo, gl::NONE);
+            gl::NamedFramebufferReadBuffer(shadow_map_fbo, gl::NONE);
+
+            assert_eq!(
+                gl::CheckNamedFramebufferStatus(shadow_map_fbo, gl::FRAMEBUFFER),
+                gl::FRAMEBUFFER_COMPLETE,
+                "Shadow map framebuffer is incomplete",
+            );
+        }
+        let shadow_map_shader = Program::new()
+            .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
+            .tess_control_shader(include_str!("shaders/editor/terrain/terrain.tc.glsl"))?
+            .tess_evaluation_shader(include_str!("shaders/editor/terrain/shadow.te.glsl"))?
+            .fragment_shader(include_str!("shaders/editor/terrain/shadow.frag.glsl"))?
             .link()?;
 
         let debug = {
@@ -326,12 +366,31 @@ impl Terrain {
             cursor,
             brush,
 
+            shadow_map_fbo,
+            shadow_map,
+            shadow_map_width,
+            shadow_map_height,
+            shadow_map_shader,
+
             debug,
         })
     }
 
-    // @tmp: remove camera and move to renderer
+    // TODO: use a renderer
     pub fn draw(&mut self, time: f32) -> Result<()> {
+        // Draw into shadow map
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.shadow_map_fbo);
+            gl::Viewport(0, 0, self.shadow_map_width, self.shadow_map_height);
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
+        }
+
+        unsafe {
+            gl::Viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+        }
+
+        // Draw the scene
         self.shader.set_used();
         self.shader.set_vec2("cursor", &self.cursor)?;
         self.shader.set_f32("brush_size", self.brush.size)?;

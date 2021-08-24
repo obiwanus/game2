@@ -17,7 +17,7 @@ use std::error::Error;
 use std::time::Instant;
 
 use egui::{Event as GuiEvent, Pos2, RawInput as EguiInput, Rect};
-use glam::{Vec2, Vec3};
+use glam::{Mat4, Vec2, Vec3};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
     WindowEvent,
@@ -27,7 +27,7 @@ use glutin::window::WindowBuilder;
 use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
-use camera::{Camera, TransformsUBO};
+use camera::Camera;
 use editor::gui::Gui;
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
 use opengl_lib::types::GLuint;
@@ -93,6 +93,16 @@ enum TerrainTool {
     PaintVegetation,
 }
 
+// NOTE: no need to worry about std140 because Mat4's are aligned properly and with no gaps
+#[repr(C)]
+pub struct TransformsUBO {
+    mvp: Mat4,
+    proj: Mat4,
+    view: Mat4,
+    model: Mat4, // still unsure whether it belongs here
+    sun_vp: Mat4,
+}
+
 struct Game {
     windowed_context: WindowedContext<PossiblyCurrent>,
     in_focus: bool,
@@ -118,6 +128,7 @@ struct Game {
 
     // tmp
     transforms_ubo: GLuint,
+    transforms_data: TransformsUBO,
 }
 
 impl Game {
@@ -221,6 +232,25 @@ impl Game {
             );
             gl::BindBufferBase(gl::UNIFORM_BUFFER, 1, transforms_ubo);
         }
+        let transforms_data = {
+            let proj = camera.get_projection_matrix();
+            let view = camera.get_view_matrix();
+            let model = Mat4::IDENTITY;
+            let sun_proj = Mat4::orthographic_rh(-500.0, 500.0, -500.0, 500.0, 1.0, 1000.0);
+            let sun_view = Mat4::look_at_rh(
+                Vec3::new(0.0, -500.0, 100.0),
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(0.0, 1.0, 0.0),
+            );
+
+            TransformsUBO {
+                mvp: proj * view * model,
+                proj,
+                view,
+                model,
+                sun_vp: sun_proj * sun_view,
+            }
+        };
 
         let terrain = Terrain::new(Vec2::new(0.0, 0.0))?;
 
@@ -285,6 +315,7 @@ impl Game {
             },
 
             transforms_ubo,
+            transforms_data,
         })
     }
 
@@ -491,13 +522,18 @@ impl Game {
 
             if self.input.camera_moved {
                 // Update camera tranforms uniform buffer
-                let data = [self.camera.get_transforms_ubo()];
+                self.transforms_data.view = self.camera.get_view_matrix();
+                self.transforms_data.proj = self.camera.get_projection_matrix();
+                self.transforms_data.mvp = self.transforms_data.proj
+                    * self.transforms_data.view
+                    * self.transforms_data.model;
+                let data = &self.transforms_data as *const TransformsUBO;
                 unsafe {
                     gl::NamedBufferSubData(
                         self.transforms_ubo,
                         0,
                         std::mem::size_of::<TransformsUBO>() as isize,
-                        data.as_ptr() as *const _,
+                        data as *const _,
                     )
                 }
             }
@@ -509,24 +545,6 @@ impl Game {
                 } else {
                     self.terrain.cursor = vec2_infinity();
                 }
-
-                // TODO: proper terrain picking
-                // let cursor = {
-                //     let ray = self.camera.get_ray_through_pixel(self.input.pointer);
-                //     let mut hit = f32::INFINITY;
-                //     for (a, b, c) in self.terrain.triangles() {
-                //         let new_hit = ray.hits_triangle(a, b, c);
-                //         if new_hit.t < hit {
-                //             hit = new_hit.t;
-                //         }
-                //     }
-                //     self.windowed_context
-                //         .window()
-                //         .set_cursor_visible(hit == f32::INFINITY);
-                //     ray.get_point_at(hit)
-                // };
-
-                // self.terrain.cursor = cursor;
             }
 
             if self.input.scrolled {
