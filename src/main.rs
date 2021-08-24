@@ -56,6 +56,9 @@ fn main() {
 
 // ==================================== Game ======================================================
 
+static mut WINDOW_WIDTH: usize = 0;
+static mut WINDOW_HEIGHT: usize = 0;
+
 struct DirectionalLight {
     color: Vec3,
     direction: Vec3,
@@ -171,6 +174,10 @@ impl Game {
         // window.set_cursor_visible(false);
         let window_size = window.inner_size();
         unsafe {
+            // Remember window dimensions for further viewport adjustments
+            WINDOW_WIDTH = window_size.width as usize;
+            WINDOW_HEIGHT = window_size.height as usize;
+
             gl::Viewport(0, 0, window_size.width as i32, window_size.height as i32);
             gl::ClearColor(0.05, 0.05, 0.05, 1.0);
             gl::Enable(gl::DEPTH_TEST);
@@ -526,9 +533,8 @@ impl Game {
                 // self.terrain.tess_level = (self.terrain.tess_level - y * 0.2).clamp(1.0, 16.0);
             }
 
-            // Shape the terrain
             if self.input.mouse_buttons.primary {
-                // self.terrain.raise_terrain(delta_time);
+                self.terrain.shape_terrain(delta_time);
             }
         }
 

@@ -9,15 +9,21 @@ use crate::{
     utils::vec2_infinity,
     Result,
 };
+use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
 struct Heightmap {
     texture: GLuint,
     texture_size: usize,
+
     pixels: Vec<f32>, // @speed: store efficiently?
+
+    // For drawing on heightmap
+    fbo: GLuint,
+    shader: Program,
 }
 
 impl Heightmap {
-    fn new(path: &str) -> Self {
+    fn new(path: &str) -> Result<Self> {
         let image = stb_image::load_f32(path, 1, false).unwrap();
         assert_eq!(
             image.width, image.height,
@@ -40,32 +46,47 @@ impl Heightmap {
                 texture_size as i32,
                 texture_size as i32,
             );
-        }
-
-        let heightmap = Heightmap {
-            texture,
-            texture_size,
-            pixels: image.data,
-        };
-        heightmap.upload_texture();
-
-        heightmap
-    }
-
-    fn upload_texture(&self) {
-        unsafe {
             gl::TextureSubImage2D(
-                self.texture,
+                texture,
                 0,
                 0,
                 0,
-                self.texture_size as i32,
-                self.texture_size as i32,
+                texture_size as i32,
+                texture_size as i32,
                 gl::RED,
                 gl::FLOAT,
-                self.pixels.as_ptr() as *const _,
+                image.data.as_ptr() as *const _,
             );
         }
+
+        // Framebuffer object for rendering to heightmap
+        let mut fbo: GLuint = 0;
+        unsafe {
+            gl::CreateFramebuffers(1, &mut fbo);
+            gl::NamedFramebufferTexture(fbo, gl::COLOR_ATTACHMENT0, texture, 0);
+            let draw_buffers = [gl::COLOR_ATTACHMENT0];
+            gl::NamedFramebufferDrawBuffers(fbo, 1, draw_buffers.as_ptr() as *const _);
+            assert_eq!(
+                gl::CheckNamedFramebufferStatus(fbo, gl::FRAMEBUFFER),
+                gl::FRAMEBUFFER_COMPLETE,
+                "Heightmap texture framebuffer is incomplete",
+            );
+        }
+
+        let shader = Program::new()
+            .vertex_shader(include_str!("shaders/editor/heightmap.vert"))?
+            .fragment_shader(include_str!("shaders/editor/heightmap.frag"))?
+            .link()?;
+
+        Ok(Heightmap {
+            texture,
+            texture_size,
+
+            pixels: image.data,
+
+            fbo,
+            shader,
+        })
     }
 
     fn sample_height(&self, point: Vec2) -> f32 {
@@ -79,19 +100,68 @@ impl Heightmap {
 
         self.pixels[y * self.texture_size + x]
     }
+
+    fn draw_on_heightmap(
+        &self,
+        cursor: Vec2,
+        brush: &Brush,
+        terrain_size: f32,
+        delta_time: f32,
+        raise: bool,
+    ) {
+        self.shader.set_used();
+        debug_assert!(cursor.x <= 1.0 && cursor.x >= 0.0);
+        debug_assert!(cursor.y <= 1.0 && cursor.y >= 0.0);
+        self.shader.set_vec2("cursor", &cursor).unwrap();
+        let brush_size = brush.size as f32 / terrain_size;
+        self.shader.set_f32("brush_size", brush_size).unwrap();
+        self.shader.set_f32("delta_time", delta_time).unwrap();
+
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.fbo);
+            gl::Viewport(0, 0, self.texture_size as i32, self.texture_size as i32);
+
+            gl::ActiveTexture(unit_to_gl_const(0));
+            gl::BindTexture(gl::TEXTURE_2D, brush.texture);
+
+            gl::Enable(gl::BLEND);
+            gl::Disable(gl::DEPTH_TEST);
+
+            gl::BlendFunc(gl::ONE, gl::ONE);
+            gl::BlendEquation(if raise {
+                gl::FUNC_ADD
+            } else {
+                gl::FUNC_SUBTRACT
+            });
+
+            gl::DrawArrays(gl::TRIANGLE_FAN, 0, 4);
+            gl::MemoryBarrier(gl::FRAMEBUFFER_BARRIER_BIT);
+
+            gl::Disable(gl::BLEND);
+            gl::Enable(gl::DEPTH_TEST);
+
+            // Reset framebuffer
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+            gl::Viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
+        }
+    }
 }
 
 pub struct Brush {
     texture: GLuint,
-    pub size: f32,
+    texture_size: usize,
     pixels: Vec<f32>, // @speed: swizzle?
-    width: usize,
-    height: usize,
+    pub size: f32,
 }
 
 impl Brush {
     pub fn new(path: &str, size: f32) -> Self {
         let image = stb_image::load_f32(path, 1, false).unwrap();
+        assert_eq!(
+            image.width, image.height,
+            "Only square brushes are supported"
+        );
+        let texture_size = image.width;
 
         let mut texture: GLuint = 0;
         unsafe {
@@ -104,16 +174,16 @@ impl Brush {
                 texture,
                 1,
                 gl::R16F,
-                image.width as i32,
-                image.height as i32,
+                texture_size as i32,
+                texture_size as i32,
             );
             gl::TextureSubImage2D(
                 texture,
                 0,
                 0,
                 0,
-                image.width as i32,
-                image.height as i32,
+                texture_size as i32,
+                texture_size as i32,
                 gl::RED,
                 gl::FLOAT,
                 image.data.as_ptr() as *const _,
@@ -124,8 +194,7 @@ impl Brush {
             texture,
             size,
             pixels: image.data,
-            width: image.width,
-            height: image.height,
+            texture_size,
         }
     }
 }
@@ -141,6 +210,7 @@ pub struct Terrain {
 
     texture: GLuint,
     heightmap: Heightmap,
+
     pub cursor: Vec2,
     pub brush: Brush,
 
@@ -171,7 +241,7 @@ impl Terrain {
             gl::CreateVertexArrays(1, &mut vao);
         }
 
-        let (texture, texture_image) = {
+        let texture = {
             let image = stb_image::load_u8("textures/checkerboard.png", 3, true).unwrap();
             assert_eq!(image.width, image.height);
 
@@ -208,10 +278,10 @@ impl Terrain {
                 gl::GenerateTextureMipmap(texture);
             }
 
-            (texture, image)
+            texture
         };
 
-        let heightmap = Heightmap::new("textures/heightmaps/valley.png");
+        let heightmap = Heightmap::new("textures/heightmaps/valley.png")?;
 
         let cursor = vec2_infinity();
 
@@ -300,36 +370,43 @@ impl Terrain {
         Ok(())
     }
 
-    pub fn raise_terrain(&mut self, delta_time: f32) {
-        let size = 1000.0; // @todo: variable size or put in a proper const
+    pub fn size(&self) -> f32 {
+        self.aabb.max.x - self.aabb.min.x
+    }
 
-        // Find where the cursor is on the texture (relative to center)
-        let cursor =
-            Vec2::new(0.5, 0.5) + (Vec2::new(self.cursor.x, self.cursor.y) - self.center) / size;
+    pub fn shape_terrain(&mut self, delta_time: f32) {
+        let terrain_size = self.size();
+        let cursor = (self.cursor - self.aabb.min.xz()) / terrain_size;
+        self.heightmap
+            .draw_on_heightmap(cursor, &self.brush, terrain_size, delta_time, true);
+        // let size = 1000.0; // @todo: variable size or put in a proper const
 
-        // Get brush size in terms of underlying texture
-        let brush_size = self.brush.size / size;
-        let brush_size_sq = brush_size * brush_size;
+        // // Find where the cursor is on the texture (relative to center)
+        // let cursor =
+        //     Vec2::new(0.5, 0.5) + (Vec2::new(self.cursor.x, self.cursor.y) - self.center) / size;
 
-        let sensitivity = 0.3;
+        // // Get brush size in terms of underlying texture
+        // let brush_size = self.brush.size / size;
+        // let brush_size_sq = brush_size * brush_size;
 
-        // Change the values around the cursor
-        // @speed: brute force (no need to step through the whole terrain)
-        for z in 0..self.heightmap.texture_size {
-            for x in 0..self.heightmap.texture_size {
-                // Position of pixel in texture coordinates
-                // @speed: no need to calculate every time
-                let pos = Vec2::new(x as f32, z as f32) / self.heightmap.texture_size as f32;
-                let dist_sq = (pos - cursor).length_squared();
-                if dist_sq < brush_size_sq {
-                    let index = z * self.heightmap.texture_size + x;
-                    self.heightmap.pixels[index] += delta_time * sensitivity;
-                }
-            }
-        }
+        // let sensitivity = 0.3;
 
-        // Update the texture
-        self.heightmap.upload_texture();
+        // // Change the values around the cursor
+        // // @speed: brute force (no need to step through the whole terrain)
+        // for z in 0..self.heightmap.texture_size {
+        //     for x in 0..self.heightmap.texture_size {
+        //         // Position of pixel in texture coordinates
+        //         // @speed: no need to calculate every time
+        //         let pos = Vec2::new(x as f32, z as f32) / self.heightmap.texture_size as f32;
+        //         let dist_sq = (pos - cursor).length_squared();
+        //         if dist_sq < brush_size_sq {
+        //             let index = z * self.heightmap.texture_size + x;
+        //             self.heightmap.pixels[index] += delta_time * sensitivity;
+        //         }
+        //     }
+        // }
+
+        // // Update the texture
     }
 
     pub fn is_point_above_surface(&self, point: &Vec3) -> bool {
@@ -381,5 +458,14 @@ impl Terrain {
             }
         }
         None
+    }
+}
+
+impl Drop for Terrain {
+    fn drop(&mut self) {
+        unsafe {
+            gl::DeleteVertexArrays(1, &self.vao);
+            gl::DeleteTextures(1, &self.texture);
+        }
     }
 }
