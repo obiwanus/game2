@@ -378,25 +378,11 @@ impl Terrain {
 
     // TODO: use a renderer
     pub fn draw(&mut self, time: f32) -> Result<()> {
-        // Draw into shadow map
+        // Set common stuff for shadow pass / render pass
         unsafe {
-            gl::BindFramebuffer(gl::FRAMEBUFFER, self.shadow_map_fbo);
-            gl::Viewport(0, 0, self.shadow_map_width, self.shadow_map_height);
-            gl::Clear(gl::DEPTH_BUFFER_BIT);
-        }
+            gl::PatchParameteri(gl::PATCH_VERTICES, 4);
+            gl::BindVertexArray(self.vao);
 
-        unsafe {
-            gl::Viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
-            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
-        }
-
-        // Draw the scene
-        self.shader.set_used();
-        self.shader.set_vec2("cursor", &self.cursor)?;
-        self.shader.set_f32("brush_size", self.brush.size)?;
-        self.shader.set_f32("tess_level", self.tess_level)?;
-
-        unsafe {
             // Default texture
             gl::ActiveTexture(unit_to_gl_const(0));
             gl::BindTexture(gl::TEXTURE_2D, self.texture);
@@ -410,9 +396,28 @@ impl Terrain {
             gl::BindTexture(gl::TEXTURE_2D, self.brush.texture);
         }
 
+        // Draw into shadow map
+        self.shadow_map_shader.set_used();
+        self.shadow_map_shader
+            .set_f32("tess_level", self.tess_level)?;
         unsafe {
-            gl::PatchParameteri(gl::PATCH_VERTICES, 4);
-            gl::BindVertexArray(self.vao);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.shadow_map_fbo);
+            gl::Viewport(0, 0, self.shadow_map_width, self.shadow_map_height);
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
+
+            gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
+
+            gl::Viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+        }
+
+        // Draw the scene
+        self.shader.set_used();
+        self.shader.set_vec2("cursor", &self.cursor)?;
+        self.shader.set_f32("brush_size", self.brush.size)?;
+        self.shader.set_f32("tess_level", self.tess_level)?;
+
+        unsafe {
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);

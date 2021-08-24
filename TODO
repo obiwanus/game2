@@ -21,7 +21,8 @@ DONE:
 - Add shadows
     + Add simplified shaders for shadow mapping
     + Add sun space transform to the ubo
-    - Render the shadow map and check it in renderdoc
+    + Render the shadow map and check it in renderdoc
+    - Use the shadow map to draw shadows
 - Add ambient occlusion?
 - Fix terrain picking
     - Read pixels back, or

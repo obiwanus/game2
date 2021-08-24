@@ -1,3 +1,5 @@
 #version 450 core
 
-void main() {}
+out vec4 color;
+
+void main() { color = gl_FragCoord.zzzz; }

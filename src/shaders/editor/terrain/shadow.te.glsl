@@ -18,12 +18,6 @@ uniform float terrain_max_height = 200.0;
 in TCS_OUT { vec2 tile_uv; }
 tes_in[];
 
-out TES_OUT {
-    vec2 tile_uv;
-    vec3 frag_pos;
-}
-tes_out;
-
 void main() {
     vec2 uv1 = mix(tes_in[0].tile_uv, tes_in[1].tile_uv, gl_TessCoord.x);
     vec2 uv2 = mix(tes_in[2].tile_uv, tes_in[3].tile_uv, gl_TessCoord.x);
@@ -34,7 +28,5 @@ void main() {
     vec4 p = mix(p2, p1, gl_TessCoord.y);
 
     p.y += texture(heightmap, tile_uv).r * terrain_max_height;
-    gl_Position = uTransforms.mvp * p;
-    tes_out.tile_uv = tile_uv;
-    tes_out.frag_pos = p.xyz;
+    gl_Position = uTransforms.sun_vp * uTransforms.model * p;
 }
