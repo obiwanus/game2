@@ -11,9 +11,14 @@ DONE:
 
 24 Aug 2021, Tue
 + Draw on the heightmap
++ Sort of lower terrain
 - Remove cursor when not over terrain
 - Add shadows
 - Add ambient occlusion?
+- Debug terrain shaping
+    - Draw on a flat terrain
+    - Why does the raising "level" at some point?
+    - Why does the lowering lower more than needed?
 
 23 Aug 2021, Mon
 + Use modern OpenGL calls for textures

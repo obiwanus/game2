@@ -534,7 +534,8 @@ impl Game {
             }
 
             if self.input.mouse_buttons.primary {
-                self.terrain.shape_terrain(delta_time);
+                self.terrain
+                    .shape_terrain(delta_time, !self.input.modifiers.ctrl);
             }
         }
 

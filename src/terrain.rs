@@ -131,16 +131,16 @@ impl Heightmap {
             gl::BlendEquation(if raise {
                 gl::FUNC_ADD
             } else {
-                gl::FUNC_SUBTRACT
+                gl::FUNC_REVERSE_SUBTRACT
             });
 
             gl::DrawArrays(gl::TRIANGLE_FAN, 0, 4);
             gl::MemoryBarrier(gl::FRAMEBUFFER_BARRIER_BIT);
 
+            // Reset everything back
             gl::Disable(gl::BLEND);
             gl::Enable(gl::DEPTH_TEST);
-
-            // Reset framebuffer
+            gl::BlendEquation(gl::FUNC_ADD);
             gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
             gl::Viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
         }
@@ -374,11 +374,11 @@ impl Terrain {
         self.aabb.max.x - self.aabb.min.x
     }
 
-    pub fn shape_terrain(&mut self, delta_time: f32) {
+    pub fn shape_terrain(&mut self, delta_time: f32, raise: bool) {
         let terrain_size = self.size();
         let cursor = (self.cursor - self.aabb.min.xz()) / terrain_size;
         self.heightmap
-            .draw_on_heightmap(cursor, &self.brush, terrain_size, delta_time, true);
+            .draw_on_heightmap(cursor, &self.brush, terrain_size, delta_time, raise);
         // let size = 1000.0; // @todo: variable size or put in a proper const
 
         // // Find where the cursor is on the texture (relative to center)
