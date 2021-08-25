@@ -394,6 +394,10 @@ impl Terrain {
             // Brush
             gl::ActiveTexture(unit_to_gl_const(2));
             gl::BindTexture(gl::TEXTURE_2D, self.brush.texture);
+
+            // Shadow map
+            gl::ActiveTexture(unit_to_gl_const(3));
+            gl::BindTexture(gl::TEXTURE_2D, self.shadow_map);
         }
 
         // Draw into shadow map
@@ -404,9 +408,11 @@ impl Terrain {
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.shadow_map_fbo);
             gl::Viewport(0, 0, self.shadow_map_width, self.shadow_map_height);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
+            gl::CullFace(gl::FRONT);
 
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
 
+            gl::CullFace(gl::BACK);
             gl::Viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
             gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
         }

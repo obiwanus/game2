@@ -19,8 +19,9 @@ in TCS_OUT { vec2 tile_uv; }
 tes_in[];
 
 out TES_OUT {
-    vec2 tile_uv;
+    vec4 frag_pos_sun_space;
     vec3 frag_pos;
+    vec2 tile_uv;
 }
 tes_out;
 
@@ -37,4 +38,5 @@ void main() {
     gl_Position = uTransforms.mvp * p;
     tes_out.tile_uv = tile_uv;
     tes_out.frag_pos = p.xyz;
+    tes_out.frag_pos_sun_space = uTransforms.sun_vp * vec4(tes_out.frag_pos, 1.0);
 }

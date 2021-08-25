@@ -22,7 +22,10 @@ DONE:
     + Add simplified shaders for shadow mapping
     + Add sun space transform to the ubo
     + Render the shadow map and check it in renderdoc
-    - Use the shadow map to draw shadows
+    + Use the shadow map to draw shadows
+    - Improve shadows
+    - Understand why front face culling doesn't work (and back face culling too)
+- Add diffuse lighting
 - Add ambient occlusion?
 - Fix terrain picking
     - Read pixels back, or
