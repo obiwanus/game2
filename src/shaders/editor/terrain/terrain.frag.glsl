@@ -19,11 +19,18 @@ layout(binding = 3) uniform sampler2D shadow_map;
 float calc_shadow(vec4 frag_pos) {
     vec3 proj_coords = frag_pos.xyz / frag_pos.w;
     proj_coords = proj_coords * 0.5 + 0.5;
-    float closest_depth = texture(shadow_map, proj_coords.xy).r;
     float frag_depth = proj_coords.z;
-    float bias = 0.003;
     // TODO: adjust bias based on the angle
-    return (frag_depth - bias) > closest_depth ? 1.0 : 0.0;
+    float bias = 0.003;
+    float shadow = 0.0;
+    vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcf_depth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texel_size).r;
+            shadow += (frag_depth - bias) > pcf_depth ? 1.0 : 0.0;
+        }
+    }
+    return shadow / 9.0;
 }
 
 void main() {

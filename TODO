@@ -24,7 +24,7 @@ DONE:
     + Render the shadow map and check it in renderdoc
     + Use the shadow map to draw shadows
     + Understand why front face culling doesn't work (and back face culling too)
-    - Improve shadows
+    + Improve shadows
 - Add diffuse lighting
 - Add ambient occlusion?
 - Fix terrain picking
