@@ -21,7 +21,7 @@ float calc_shadow(vec4 frag_pos) {
     proj_coords = proj_coords * 0.5 + 0.5;
     float closest_depth = texture(shadow_map, proj_coords.xy).r;
     float frag_depth = proj_coords.z;
-    float bias = 0.005;
+    float bias = 0.003;
     // TODO: adjust bias based on the angle
     return (frag_depth - bias) > closest_depth ? 1.0 : 0.0;
 }

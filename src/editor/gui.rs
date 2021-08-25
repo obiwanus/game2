@@ -190,6 +190,7 @@ impl Gui {
             unsafe {
                 gl::BindVertexArray(self.vao);
                 gl::Disable(gl::DEPTH_TEST);
+                gl::Disable(gl::CULL_FACE);
                 gl::Enable(gl::BLEND);
                 gl::BlendFuncSeparate(
                     gl::ONE,
@@ -207,6 +208,7 @@ impl Gui {
 
                 gl::Disable(gl::BLEND);
                 gl::Enable(gl::DEPTH_TEST);
+                gl::Enable(gl::CULL_FACE);
             }
         }
     }
