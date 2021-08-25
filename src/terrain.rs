@@ -307,7 +307,7 @@ impl Terrain {
         // Shadow map
         let mut shadow_map_fbo: GLuint = 0;
         let mut shadow_map: GLuint = 0;
-        let (shadow_map_width, shadow_map_height) = (1024, 1024);
+        let (shadow_map_width, shadow_map_height) = (2048, 2048);
         unsafe {
             gl::CreateFramebuffers(1, &mut shadow_map_fbo);
             gl::CreateTextures(gl::TEXTURE_2D, 1, &mut shadow_map);

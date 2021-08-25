@@ -236,7 +236,7 @@ impl Game {
             let proj = camera.get_projection_matrix();
             let view = camera.get_view_matrix();
             let model = Mat4::IDENTITY;
-            let sun_proj = Mat4::orthographic_rh(-500.0, 500.0, -500.0, 500.0, 1.0, 1000.0);
+            let sun_proj = Mat4::orthographic_rh_gl(-500.0, 500.0, -500.0, 500.0, 1.0, 1000.0);
             let sun_view = Mat4::look_at_rh(
                 Vec3::new(0.0, 200.0, 500.0),
                 Vec3::new(0.0, 0.0, 0.0),
