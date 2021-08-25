@@ -25,6 +25,7 @@ DONE:
     + Use the shadow map to draw shadows
     + Understand why front face culling doesn't work (and back face culling too)
     + Improve shadows
+- Understand why it stutters
 - Add diffuse lighting
 - Add ambient occlusion?
 - Fix terrain picking

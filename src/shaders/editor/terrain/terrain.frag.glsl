@@ -42,7 +42,7 @@ void main() {
     const vec3 brush_highlight = vec3(0.69, 0.67, 0.91);
     float brush_value = texture(brush_texture, brush_uv).r;
 
-    vec3 base_color = mix(terrain_color, brush_color, brush_value).xyz;
+    vec3 base_color = mix(terrain_color, brush_color, brush_value * 1.5).xyz;
     vec3 ambient = 0.35 * base_color;
 
     float t = smoothstep(0.1, 0.11, brush_value) - smoothstep(0.11, 0.12, brush_value);
