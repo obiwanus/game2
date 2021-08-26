@@ -14,8 +14,18 @@ TODO:
     - Non-uniform patches?
     - Tessellate based on LOD
 - Steal code from the egui integration
+- Understand why it stutters (if if stutters)
 
 DONE:
+
+26 Aug 2021, Thu
+- Add diffuse lighting
+    - Add normals to vertices in TES
+- Add ambient occlusion?
+- Fix terrain picking
+    - Read pixels back, or
+    - Add a picking buffer and draw to it (and use a persistent map?)
+- Add fog
 
 25 Aug 2021, Wed
 - Add shadows
@@ -25,12 +35,6 @@ DONE:
     + Use the shadow map to draw shadows
     + Understand why front face culling doesn't work (and back face culling too)
     + Improve shadows
-- Understand why it stutters
-- Add diffuse lighting
-- Add ambient occlusion?
-- Fix terrain picking
-    - Read pixels back, or
-    - Add a picking buffer and draw to it (and use a persistent map?)
 
 24 Aug 2021, Tue
 + Draw on the heightmap

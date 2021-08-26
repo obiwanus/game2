@@ -3,6 +3,7 @@
 in TES_OUT {
     vec4 frag_pos_sun_space;
     vec3 frag_pos;
+    vec3 normal;
     vec2 tile_uv;
 }
 fs_in;
@@ -39,15 +40,23 @@ void main() {
 
     vec2 brush_uv = vec2(0.5, 0.5) + (fs_in.frag_pos.xz - cursor) / brush_size;
     const vec4 brush_color = vec4(0.75, 0.45, 0.92, 1.0);
-    const vec3 brush_highlight = vec3(0.69, 0.67, 0.91);
+    const vec3 brush_border_color = vec3(0.69, 0.67, 0.91);
     float brush_value = texture(brush_texture, brush_uv).r;
-
     vec3 base_color = mix(terrain_color, brush_color, brush_value * 1.5).xyz;
-    vec3 ambient = 0.35 * base_color;
-
     float t = smoothstep(0.1, 0.11, brush_value) - smoothstep(0.11, 0.12, brush_value);
-    vec3 color = mix(base_color, brush_highlight, 0.5 * t);
+    base_color = mix(base_color, brush_border_color, 0.5 * t);
 
-    float shadow = calc_shadow(fs_in.frag_pos_sun_space);
-    Color = vec4(ambient + (1.0 - shadow) * (color * 0.65), 1.0);
+    vec3 ambient = 0.15 * base_color;
+    vec3 normal = normalize(fs_in.normal);
+    vec3 light_color = vec3(1.0);
+    vec3 light_dir = vec3(0.0, -200.0, -500.0);  // @hardcoded
+    float diff = max(dot(light_dir, normal), 0.0);
+    vec3 diffuse = diff * light_color;
+
+    // float shadow = calc_shadow(fs_in.frag_pos_sun_space);
+    float shadow = 0.0;
+
+    vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * base_color;
+
+    Color = vec4(lighting, 1.0);
 }
