@@ -15,17 +15,24 @@ TODO:
     - Tessellate based on LOD
 - Steal code from the egui integration
 - Understand why it stutters (if if stutters)
+- Add ambient occlusion?
 
 DONE:
 
-26 Aug 2021, Thu
+27 Aug 2021, Fri
 - Add diffuse lighting
-    - Add normals to vertices in TES
-- Add ambient occlusion?
+    + Improve lighting
+    - Debug normals
+    - Add basic lighting
+- Disable sRGB for drawing on heightmap?
 - Fix terrain picking
     - Read pixels back, or
     - Add a picking buffer and draw to it (and use a persistent map?)
 - Add fog
+
+26 Aug 2021, Thu
+- Add diffuse lighting
+    + (WIP) Add normals to vertices in TES
 
 25 Aug 2021, Wed
 - Add shadows

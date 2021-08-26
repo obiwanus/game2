@@ -41,7 +41,7 @@ vec3 calc_normal(vec2 uv) {
     // WARNING: hardcoded 1024
     vec2 texel_size_world = 1024.0 / heightmap_size;
     vec3 horizontal = vec3(2.0 * texel_size_world.x, R - L, 0.0);
-    vec3 vertical = vec3(0.0, B - T, 2.0 * texel_size_world.y);
+    vec3 vertical = vec3(0.0, T - B, 2.0 * texel_size_world.y);
 
     vec3 normal = normalize(cross(vertical, horizontal));
     return normal;
@@ -61,5 +61,7 @@ void main() {
     tes_out.tile_uv = tile_uv;
     tes_out.frag_pos = p.xyz;
     tes_out.frag_pos_sun_space = uTransforms.sun_vp * vec4(tes_out.frag_pos, 1.0);
+
+    // Note: we're assuming the model matrix is identity here
     tes_out.normal = calc_normal(tile_uv);
 }
