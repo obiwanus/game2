@@ -231,6 +231,7 @@ pub struct Terrain {
 
 struct TerrainDebug {
     aabb_shader: Program,
+    normal_shader: Program,
 }
 
 impl Terrain {
@@ -348,7 +349,19 @@ impl Terrain {
             aabb_shader.set_vec3("aabb_min", &aabb.min)?;
             aabb_shader.set_vec3("aabb_max", &aabb.max)?;
 
-            TerrainDebug { aabb_shader }
+            let normal_shader = Program::new()
+                .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
+                .tess_control_shader(include_str!("shaders/editor/terrain/terrain.tc.glsl"))?
+                .tess_evaluation_shader(include_str!("shaders/editor/terrain/terrain.te.glsl"))?
+                .geometry_shader(include_str!("shaders/debug/terrain/normals.geometry.glsl"))?
+                .fragment_shader(include_str!("shaders/debug/terrain/normals.frag.glsl"))?
+                .link()?;
+            normal_shader.set_used();
+
+            TerrainDebug {
+                aabb_shader,
+                normal_shader,
+            }
         };
 
         Ok(Terrain {
@@ -422,9 +435,9 @@ impl Terrain {
         self.shader.set_f32("tess_level", self.tess_level)?;
 
         unsafe {
-            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
-            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
         // Draw debug stuff
@@ -433,10 +446,14 @@ impl Terrain {
             let debug = &mut self.debug;
             debug.aabb_shader.set_used();
             debug.aabb_shader.set_f32("time", time)?;
-
-            debug.aabb_shader.set_used();
             unsafe {
                 gl::DrawArrays(gl::LINE_STRIP, 0, 16);
+            }
+
+            // Draw normals
+            debug.normal_shader.set_used();
+            unsafe {
+                gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
             }
         }
 

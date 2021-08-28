@@ -59,6 +59,11 @@ impl Program {
         Ok(self)
     }
 
+    pub fn geometry_shader(self, code: &str) -> Result<Self> {
+        self.attach_shader(code, gl::GEOMETRY_SHADER)?;
+        Ok(self)
+    }
+
     pub fn link(self) -> Result<Self> {
         unsafe {
             gl::LinkProgram(self.id);
@@ -209,7 +214,8 @@ impl Shader {
                 gl::FRAGMENT_SHADER => "fragment shader",
                 gl::TESS_CONTROL_SHADER => "tessellation control shader",
                 gl::TESS_EVALUATION_SHADER => "tessellation evaluation shader",
-                _ => panic!("Unknown shader type"),
+                gl::GEOMETRY_SHADER => "geometry shader",
+                _ => panic!("Unknown shader type, can't get error message"),
             };
             return Err(ShaderError::CompileError {
                 name: name.to_owned(),
