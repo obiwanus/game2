@@ -435,9 +435,9 @@ impl Terrain {
         self.shader.set_f32("tess_level", self.tess_level)?;
 
         unsafe {
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+            // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
         // Draw debug stuff
