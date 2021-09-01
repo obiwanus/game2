@@ -18,6 +18,10 @@ TODO:
 - Add ambient occlusion?
 
 DONE:
+
+2 Sep 2021, Thu
+- Disable sRGB for drawing on heightmap
+
 28 Aug 2021, Sat
 - WIP normals debugging
 
@@ -26,7 +30,6 @@ DONE:
     + Improve lighting
     - Debug normals
     - Add basic lighting
-- Disable sRGB for drawing on heightmap?
 - Fix terrain picking
     - Read pixels back, or
     - Add a picking buffer and draw to it (and use a persistent map?)

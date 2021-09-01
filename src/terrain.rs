@@ -120,6 +120,7 @@ impl Heightmap {
 
         unsafe {
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.fbo);
+            gl::Disable(gl::FRAMEBUFFER_SRGB);
             gl::Viewport(0, 0, self.texture_size as i32, self.texture_size as i32);
 
             gl::ActiveTexture(unit_to_gl_const(0));
@@ -142,6 +143,7 @@ impl Heightmap {
             gl::Disable(gl::BLEND);
             gl::Enable(gl::DEPTH_TEST);
             gl::BlendEquation(gl::FUNC_ADD);
+            gl::Enable(gl::FRAMEBUFFER_SRGB);
             gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
             gl::Viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
         }
