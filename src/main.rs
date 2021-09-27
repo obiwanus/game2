@@ -150,7 +150,7 @@ impl Game {
             );
 
             WindowBuilder::new()
-                .with_title("Game 2")
+                .with_title("Мёртвый трилистник")
                 .with_resizable(false)
                 .with_position(glutin::dpi::LogicalPosition::new(70, 10))
                 .with_inner_size(inner_size)
@@ -158,7 +158,7 @@ impl Game {
 
         #[cfg(not(windows))]
         let window_builder = WindowBuilder::new()
-            .with_title("Game 2")
+            .with_title("Мёртвый трилистник")
             .with_position(glutin::dpi::LogicalPosition::new(70, 10))
             // .with_fullscreen(Some(glutin::window::Fullscreen::Borderless(
             //     event_loop.primary_monitor(),

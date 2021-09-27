@@ -1,5 +1,14 @@
 TODO:
 
+
+- Start with a flat terrain
+- Diffuse lighting
+    - Debug normals
+        - Understand how normals should look like
+- Fix terrain picking
+    - Read pixels back, or
+    - Add a picking buffer and draw to it (and use a persistent map?)
+- Add fog
 - Terrain shaping
     - Rotate and scale brushes
     - Select brushes in gui
@@ -19,8 +28,11 @@ TODO:
 
 DONE:
 
+27 Sep 2021, Mon
+- Change game name
+
 2 Sep 2021, Thu
-- Disable sRGB for drawing on heightmap
++ Disable sRGB for drawing on heightmap
 
 28 Aug 2021, Sat
 - WIP normals debugging
@@ -28,12 +40,6 @@ DONE:
 27 Aug 2021, Fri
 - Add diffuse lighting
     + Improve lighting
-    - Debug normals
-    - Add basic lighting
-- Fix terrain picking
-    - Read pixels back, or
-    - Add a picking buffer and draw to it (and use a persistent map?)
-- Add fog
 
 26 Aug 2021, Thu
 - Add diffuse lighting
