@@ -1,7 +1,5 @@
 TODO:
 
-
-- Start with a flat terrain
 - Diffuse lighting
     - Debug normals
         - Understand how normals should look like
@@ -31,6 +29,7 @@ DONE:
 27 Sep 2021, Mon
 - Change game name
 - Process the quit button
+- Start with a flat terrain
 
 2 Sep 2021, Thu
 + Disable sRGB for drawing on heightmap

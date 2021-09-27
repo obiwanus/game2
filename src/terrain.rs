@@ -24,13 +24,34 @@ struct Heightmap {
 }
 
 impl Heightmap {
-    fn new(path: &str) -> Result<Self> {
-        let image = stb_image::load_f32(path, 1, false).unwrap();
-        assert_eq!(
-            image.width, image.height,
-            "Only square heightmaps are supported"
-        );
-        let texture_size = image.width;
+    pub fn new(texture_size: usize) -> Result<Self> {
+        Heightmap::create_heightmap(None, Some(texture_size))
+    }
+
+    pub fn from_image(path: &str) -> Result<Self> {
+        Heightmap::create_heightmap(Some(path), None)
+    }
+
+    fn create_heightmap(path: Option<&str>, texture_size: Option<usize>) -> Result<Self> {
+        debug_assert!(!(path.is_some() && texture_size.is_some()));
+        debug_assert!(!(path.is_none() && texture_size.is_none()));
+
+        let (image, texture_size) = if let Some(path) = path {
+            let image = stb_image::load_f32(path, 1, false).unwrap();
+            assert_eq!(
+                image.width, image.height,
+                "Only square heightmaps are supported"
+            );
+            let width = image.width;
+            (Some(image), width)
+        } else {
+            (None, texture_size.unwrap())
+        };
+        let pixels = if let Some(image) = image {
+            image.data
+        } else {
+            vec![0.0; texture_size * texture_size]
+        };
 
         let mut texture: GLuint = 0;
         unsafe {
@@ -47,6 +68,7 @@ impl Heightmap {
                 texture_size as i32,
                 texture_size as i32,
             );
+
             gl::TextureSubImage2D(
                 texture,
                 0,
@@ -56,7 +78,7 @@ impl Heightmap {
                 texture_size as i32,
                 gl::RED,
                 gl::FLOAT,
-                image.data.as_ptr() as *const _,
+                pixels.as_ptr() as *const _,
             );
         }
 
@@ -83,7 +105,7 @@ impl Heightmap {
             texture,
             texture_size,
 
-            pixels: image.data,
+            pixels,
 
             fbo,
             shader,
@@ -297,7 +319,7 @@ impl Terrain {
         };
 
         let cursor = vec2_infinity();
-        let heightmap = Heightmap::new("textures/heightmaps/valley.png")?;
+        let heightmap = Heightmap::new(2048)?;
         let brush = Brush::new("textures/brushes/mountain04.png", 100.0);
 
         let shader = Program::new()

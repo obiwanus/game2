@@ -194,12 +194,8 @@ impl Game {
             gl::Enable(gl::FRAMEBUFFER_SRGB);
             gl::Enable(gl::CULL_FACE);
 
-            #[cfg(not(target_os = "macos"))]
-            {
-                // MacOS deprecated OpenGL, which is stuck at 4.1 so no debug callbacks here :(
-                gl::Enable(gl::DEBUG_OUTPUT);
-                gl::DebugMessageCallback(Some(opengl::debug_callback), std::ptr::null());
-            }
+            gl::Enable(gl::DEBUG_OUTPUT);
+            gl::DebugMessageCallback(Some(opengl::debug_callback), std::ptr::null());
         }
 
         // // Directional light
