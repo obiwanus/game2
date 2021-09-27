@@ -30,6 +30,7 @@ DONE:
 
 27 Sep 2021, Mon
 - Change game name
+- Process the quit button
 
 2 Sep 2021, Thu
 + Disable sRGB for drawing on heightmap

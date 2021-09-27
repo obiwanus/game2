@@ -34,6 +34,7 @@ impl Input {
             left: self.left,
             right: self.right,
             modifiers: self.modifiers,
+            should_exit: self.should_exit,
             ..Default::default()
         };
         old_input

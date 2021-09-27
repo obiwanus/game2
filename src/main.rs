@@ -166,7 +166,7 @@ impl Game {
             .with_inner_size(glutin::dpi::LogicalSize::new(1920, 1080))
             .with_resizable(false);
 
-        let gl_request = GlRequest::Specific(Api::OpenGl, (3, 3));
+        let gl_request = GlRequest::Specific(Api::OpenGl, (4, 5));
         let gl_profile = GlProfile::Core;
         let windowed_context = glutin::ContextBuilder::new()
             .with_gl(gl_request)
@@ -482,7 +482,11 @@ impl Game {
         mut mode: EditorMode,
         mut state: EditorState,
     ) -> Result<GameMode> {
-        let (output, gui_shapes) = self.gui.layout_and_interact(self.gui_input.take());
+        let (should_exit, gui_shapes) = self.gui.layout_and_interact(self.gui_input.take());
+
+        if should_exit {
+            self.input.should_exit = true;
+        }
 
         if self.gui.wants_input() {
             // Pointer over UI or currently interacting with it

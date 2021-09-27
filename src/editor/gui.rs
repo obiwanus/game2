@@ -105,16 +105,17 @@ impl Gui {
         self.ctx.wants_pointer_input() || self.ctx.wants_keyboard_input()
     }
 
-    pub fn layout_and_interact(&mut self, input: RawInput) -> (Output, Vec<ClippedShape>) {
+    pub fn layout_and_interact(&mut self, input: RawInput) -> (bool, Vec<ClippedShape>) {
         self.ctx.begin_frame(input);
 
+        let mut should_quit = false;
         let mut name = self.name.clone();
 
         // ================== GUI starts ========================
         egui::SidePanel::left("my_side_panel").show(&self.ctx, |ui| {
             ui.heading("Водка водка!");
             if ui.button("Quit").clicked() {
-                println!("Quit clicked");
+                should_quit = true;
             }
 
             egui::ComboBox::from_label("Version")
@@ -137,9 +138,9 @@ impl Gui {
         self.name = name;
         // ================== GUI ends ===========================
 
-        let (output, shapes) = self.ctx.end_frame();
+        let (_output, shapes) = self.ctx.end_frame();
 
-        (output, shapes)
+        (should_quit, shapes)
     }
 
     pub fn draw(&mut self, shapes: Vec<ClippedShape>) {
