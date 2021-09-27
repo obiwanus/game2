@@ -523,6 +523,10 @@ impl Terrain {
         }
         None
     }
+
+    pub fn hide_cursor(&mut self) {
+        self.cursor = vec2_infinity();
+    }
 }
 
 impl Drop for Terrain {

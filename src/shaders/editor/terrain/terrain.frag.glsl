@@ -34,6 +34,8 @@ float calc_shadow(vec4 frag_pos) {
     return shadow / 9.0;
 }
 
+const float ENABLE_SHADOWS = 0.0;
+
 void main() {
     vec2 patch_uv = fs_in.tile_uv * 64.0;
     vec4 terrain_color = texture(terrain_texture, patch_uv);
@@ -44,7 +46,7 @@ void main() {
     vec3 base_color = mix(terrain_color, brush_color, brush_value * 1.5).rgb;
     float t = smoothstep(0.1, 0.11, brush_value) - smoothstep(0.11, 0.12, brush_value);
 
-    base_color = mix(base_color, brush_border_color, 0.5 * t);
+    base_color = mix(base_color, brush_border_color, t);
 
     vec3 ambient = 0.35 * base_color;
     vec3 normal = normalize(fs_in.normal);
@@ -55,7 +57,7 @@ void main() {
 
     float shadow = calc_shadow(fs_in.frag_pos_sun_space);
 
-    vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * base_color;
+    vec3 lighting = (ambient + (1.0 - shadow * ENABLE_SHADOWS) * diffuse) * base_color;
 
     Color = vec4(lighting, 1.0);
 }

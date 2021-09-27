@@ -33,7 +33,6 @@ use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, M
 use opengl_lib::types::GLuint;
 use skybox::Skybox;
 use terrain::Terrain;
-use utils::vec2_infinity;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -490,7 +489,7 @@ impl Game {
 
         if self.gui.wants_input() {
             // Pointer over UI or currently interacting with it
-            self.terrain.cursor = vec2_infinity(); // hide terrain cursor
+            self.terrain.hide_cursor();
             self.windowed_context.window().set_cursor_visible(true); // we always want cursor with UI
         } else {
             // Process input
@@ -548,7 +547,7 @@ impl Game {
                 if let Some(point) = self.terrain.intersect_with_ray(&ray) {
                     self.terrain.cursor = Vec2::new(point.x, point.z);
                 } else {
-                    self.terrain.cursor = vec2_infinity();
+                    self.terrain.hide_cursor();
                 }
             }
 
