@@ -63,28 +63,21 @@ struct DirectionalLight {
     direction: Vec3,
 }
 
-#[derive(Clone)]
 enum GameMode {
     Game,
-    Editor {
-        state: EditorState,
-        mode: EditorMode,
-    },
+    Editor,
     Menu,
 }
 
-#[derive(Clone)]
 enum EditorMode {
     General,
     Terrain { tool: TerrainTool },
 }
 
-#[derive(Clone)]
 struct EditorState {
     free_camera: bool,
 }
 
-#[derive(Clone)]
 enum TerrainTool {
     Sculpt,
     PaintTextures,
@@ -124,6 +117,9 @@ struct Game {
     skybox: Skybox,
 
     mode: GameMode,
+
+    editor_state: EditorState,
+    editor_mode: EditorMode,
 
     // tmp
     transforms_ubo: GLuint,
@@ -303,11 +299,10 @@ impl Game {
             terrain,
             skybox,
 
-            mode: GameMode::Editor {
-                state: EditorState { free_camera: false },
-                mode: EditorMode::Terrain {
-                    tool: TerrainTool::Sculpt,
-                },
+            mode: GameMode::Editor,
+            editor_state: EditorState { free_camera: false },
+            editor_mode: EditorMode::Terrain {
+                tool: TerrainTool::Sculpt,
             },
 
             transforms_ubo,
@@ -460,10 +455,10 @@ impl Game {
         self.gui_input.time = Some(time);
         self.input.time = time as f32;
 
-        let new_mode = match self.mode.clone() {
+        let new_mode = match self.mode {
             GameMode::Menu => unimplemented!("Menu is not implemented"),
             GameMode::Game => unimplemented!("Game mode is not implemented"),
-            GameMode::Editor { mode, state } => self.draw_editor(delta_time, mode, state)?,
+            GameMode::Editor => self.draw_editor(delta_time)?,
         };
 
         self.mode = new_mode;
@@ -471,13 +466,10 @@ impl Game {
         Ok(())
     }
 
-    fn draw_editor(
-        &mut self,
-        delta_time: f32,
-        mut mode: EditorMode,
-        mut state: EditorState,
-    ) -> Result<GameMode> {
+    fn draw_editor(&mut self, delta_time: f32) -> Result<GameMode> {
         let (should_exit, gui_shapes) = self.gui.layout_and_interact(self.gui_input.take());
+
+        let state = &mut self.editor_state;
 
         if should_exit {
             self.input.should_exit = true;
@@ -572,7 +564,7 @@ impl Game {
         // Clear old input
         self.old_input = self.input.renew();
 
-        Ok(GameMode::Editor { state, mode })
+        Ok(GameMode::Editor)
     }
 }
 

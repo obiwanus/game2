@@ -26,7 +26,8 @@ DONE:
 11 Oct 2021, Mon
 + Understand why terrain cursor disappears
 + Fix the cursor
-- Think why we have to clone game mode
++ Think why we have to clone game mode
++ Simplify mode selection
 
 27 Sep 2021, Mon
 + Change game name
