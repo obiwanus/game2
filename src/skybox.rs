@@ -156,7 +156,7 @@ impl Skybox {
         })
     }
 
-    pub fn draw(&self) -> Result<(), SkyboxError> {
+    pub fn draw(&self) {
         unsafe {
             gl::DepthFunc(gl::LEQUAL);
         }
@@ -168,8 +168,6 @@ impl Skybox {
             gl::DrawArrays(gl::TRIANGLES, 0, 36);
             gl::DepthFunc(gl::LESS);
         }
-
-        Ok(())
     }
 }
 

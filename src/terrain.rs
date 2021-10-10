@@ -496,6 +496,9 @@ impl Terrain {
     }
 
     pub fn is_point_above_surface(&self, point: &Vec3) -> bool {
+        if point.y <= self.aabb.min.y {
+            return false; // below aabb
+        }
         if !self.aabb.contains(point) {
             return true;
         }
@@ -518,7 +521,7 @@ impl Terrain {
             let step = 0.001f32.max((hit.t_max - hit.t_min) / 100.0);
             let mut t = hit.t_min;
 
-            while t < hit.t_max {
+            while t <= hit.t_max {
                 t += step;
                 let point = ray.get_point_at(t);
                 if !self.is_point_above_surface(&point) {
@@ -544,6 +547,16 @@ impl Terrain {
             }
         }
         None
+    }
+
+    pub fn move_cursor(&mut self, ray: &Ray) -> bool {
+        if let Some(point) = self.intersect_with_ray(ray) {
+            self.cursor = Vec2::new(point.x, point.z).clamp(self.aabb.min.xz(), self.aabb.max.xz());
+            true
+        } else {
+            self.hide_cursor();
+            false
+        }
     }
 
     pub fn hide_cursor(&mut self) {

@@ -540,11 +540,10 @@ impl Game {
 
             if self.input.pointer_moved || self.input.camera_moved {
                 let ray = self.camera.get_ray_through_pixel(self.input.pointer);
-                if let Some(point) = self.terrain.intersect_with_ray(&ray) {
-                    self.terrain.cursor = Vec2::new(point.x, point.z);
-                } else {
-                    self.terrain.hide_cursor();
-                }
+                let cursor_active = self.terrain.move_cursor(&ray);
+                self.windowed_context
+                    .window()
+                    .set_cursor_visible(!cursor_active);
             }
 
             if self.input.scrolled {
@@ -564,7 +563,7 @@ impl Game {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
         self.terrain.draw(self.input.time)?;
-        self.skybox.draw()?;
+        self.skybox.draw();
 
         self.gui.draw(gui_shapes);
 

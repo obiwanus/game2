@@ -3,9 +3,6 @@ TODO:
 - Diffuse lighting
     - Debug normals
         - Understand how normals should look like
-- Fix terrain picking
-    - Read pixels back, or
-    - Add a picking buffer and draw to it (and use a persistent map?)
 - Add fog
 - Terrain shaping
     - Rotate and scale brushes
@@ -26,10 +23,15 @@ TODO:
 
 DONE:
 
+11 Oct 2021, Mon
++ Understand why terrain cursor disappears
++ Fix the cursor
+- Think why we have to clone game mode
+
 27 Sep 2021, Mon
-- Change game name
-- Process the quit button
-- Start with a flat terrain
++ Change game name
++ Process the quit button
++ Start with a flat terrain
 
 2 Sep 2021, Thu
 + Disable sRGB for drawing on heightmap
