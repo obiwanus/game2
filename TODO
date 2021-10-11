@@ -22,11 +22,12 @@ TODO:
 - Remove hardcoded values:
     - terrain size in terrain.te.glsl (1024)
     - terrain max height in terrain.te.glsl (200)
+    - light direction in terrain.frag.glsl
 
 DONE:
-- Debug normals
++ Debug normals
     + Use a simple brush
-    - Understand what's wrong with normals
+    + Understand what's wrong with normals
 - Diffuse lighting
 
 11 Oct 2021, Mon

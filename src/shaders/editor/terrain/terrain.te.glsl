@@ -41,7 +41,7 @@ vec3 calc_normal(vec2 uv) {
     // WARNING: hardcoded 1000
     vec2 texel_size_world = 1000.0 / heightmap_size;
     vec3 horizontal = vec3(2.0 * texel_size_world.x, R - L, 0.0);
-    vec3 vertical = vec3(0.0, T - B, 2.0 * texel_size_world.y);
+    vec3 vertical = vec3(0.0, B - T, 2.0 * texel_size_world.y);
 
     vec3 normal = normalize(cross(vertical, horizontal));
     return normal;

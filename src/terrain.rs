@@ -320,7 +320,7 @@ impl Terrain {
 
         let cursor = vec2_infinity();
         let heightmap = Heightmap::new(2048)?;
-        let brush = Brush::new("textures/brushes/simple.tga", 100.0);
+        let brush = Brush::new("textures/brushes/mountain05.tga", 100.0);
 
         let shader = Program::new()
             .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
@@ -465,22 +465,22 @@ impl Terrain {
         }
 
         // Draw debug stuff
-        {
-            // Draw AABB
-            let debug = &mut self.debug;
-            debug.aabb_shader.set_used();
-            debug.aabb_shader.set_f32("time", time)?;
-            unsafe {
-                gl::DrawArrays(gl::LINE_STRIP, 0, 16);
-            }
+        // {
+        //     // Draw AABB
+        //     let debug = &mut self.debug;
+        //     debug.aabb_shader.set_used();
+        //     debug.aabb_shader.set_f32("time", time)?;
+        //     unsafe {
+        //         gl::DrawArrays(gl::LINE_STRIP, 0, 16);
+        //     }
 
-            // Draw normals
-            debug.normal_shader.set_used();
-            debug.normal_shader.set_f32("tess_level", self.tess_level)?;
-            unsafe {
-                gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
-            }
-        }
+        //     // Draw normals
+        //     debug.normal_shader.set_used();
+        //     debug.normal_shader.set_f32("tess_level", self.tess_level)?;
+        //     unsafe {
+        //         gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
+        //     }
+        // }
 
         Ok(())
     }
