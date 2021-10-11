@@ -19,18 +19,20 @@ TODO:
 - Add ambient occlusion?
 
 DONE:
+- Debug normals
+    + Use a simple brush
+    - Understand what's wrong with normals
+- Diffuse lighting
 
 11 Oct 2021, Mon
 + Understand why terrain cursor disappears
 + Fix the cursor
 + Think why we have to clone game mode
 + Simplify mode selection
-- Diffuse lighting
-    - Debug normals
-        + Understand what normals should look like
-        + Draw normals using geometry shader
-        + Draw normals in 2 colors
-        - Maybe use a simple brush
+- Debug normals
+    + Understand what normals should look like
+    + Draw normals using geometry shader
+    + Draw normals in 2 colors
 
 27 Sep 2021, Mon
 + Change game name
