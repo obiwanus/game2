@@ -38,8 +38,8 @@ vec3 calc_normal(vec2 uv) {
     float T = sample_height(uv - vec2(0, texel_size.y));
     float B = sample_height(uv + vec2(0, texel_size.y));
 
-    // WARNING: hardcoded 1024
-    vec2 texel_size_world = 1024.0 / heightmap_size;
+    // WARNING: hardcoded 1000
+    vec2 texel_size_world = 1000.0 / heightmap_size;
     vec3 horizontal = vec3(2.0 * texel_size_world.x, R - L, 0.0);
     vec3 vertical = vec3(0.0, T - B, 2.0 * texel_size_world.y);
 

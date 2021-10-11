@@ -15,8 +15,13 @@ TODO:
     - Non-uniform patches?
     - Tessellate based on LOD
 - Steal code from the egui integration
-- Understand why it stutters (if if stutters)
 - Add ambient occlusion?
+- Understand why mountains have flat rims
+- Optimisation:
+    - Build normal map when drawing on heightmap?
+- Remove hardcoded values:
+    - terrain size in terrain.te.glsl (1024)
+    - terrain max height in terrain.te.glsl (200)
 
 DONE:
 - Debug normals
