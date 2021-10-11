@@ -395,7 +395,7 @@ impl Terrain {
 
             vao,
             shader,
-            tess_level: 10.0,
+            tess_level: 11.0,
 
             texture,
             heightmap,
@@ -476,6 +476,7 @@ impl Terrain {
 
             // Draw normals
             debug.normal_shader.set_used();
+            debug.normal_shader.set_f32("tess_level", self.tess_level)?;
             unsafe {
                 gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
             }

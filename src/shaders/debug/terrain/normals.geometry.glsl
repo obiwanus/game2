@@ -10,7 +10,9 @@ in TES_OUT {
 }
 gs_in[];
 
-const float MAGNITUDE = 50.0;
+out vec3 fColor;
+
+const float MAGNITUDE = 2.0;
 
 layout(std140, binding = 1) uniform UTransforms {
     mat4 mvp;
@@ -23,10 +25,15 @@ uTransforms;
 
 void GenerateLine(int index) {
     vec4 vertex_pos = vec4(gs_in[index].frag_pos, 1.0);
+
     gl_Position = uTransforms.mvp * vertex_pos;
+    fColor = vec3(1.0, 0.0, 0.0);
     EmitVertex();
+
     gl_Position = uTransforms.mvp * (vertex_pos + vec4(gs_in[index].normal, 0.0) * MAGNITUDE);
+    fColor = vec3(1.0, 1.0, 0.0);
     EmitVertex();
+
     EndPrimitive();
 }
 

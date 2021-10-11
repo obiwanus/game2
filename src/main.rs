@@ -540,7 +540,7 @@ impl Game {
 
             if self.input.scrolled {
                 let y = self.input.scroll_delta.y;
-                self.terrain.brush.size = (self.terrain.brush.size - y * 1.5).clamp(0.1, 200.0);
+                self.terrain.brush.size = (self.terrain.brush.size - y * 5.5).clamp(0.1, 800.0);
                 // self.terrain.tess_level = (self.terrain.tess_level - y * 0.2).clamp(1.0, 16.0);
             }
 
