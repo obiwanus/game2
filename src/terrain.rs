@@ -201,7 +201,7 @@ impl Brush {
             gl::TextureParameteri(texture, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
             gl::TextureStorage2D(
                 texture,
-                1, //calculate_mip_levels(texture_size, texture_size),
+                calculate_mip_levels(texture_size, texture_size),
                 gl::R16,
                 texture_size as i32,
                 texture_size as i32,
@@ -319,8 +319,8 @@ impl Terrain {
         };
 
         let cursor = vec2_infinity();
-        let heightmap = Heightmap::new(2048)?;
-        let brush = Brush::new("textures/brushes/mountain05.tga", 100.0);
+        let heightmap = Heightmap::new(1024)?;
+        let brush = Brush::new("textures/brushes/simple.tga", 100.0);
 
         let shader = Program::new()
             .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
@@ -464,7 +464,7 @@ impl Terrain {
             // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
         }
 
-        // Draw debug stuff
+        // // Draw debug stuff
         // {
         //     // Draw AABB
         //     let debug = &mut self.debug;

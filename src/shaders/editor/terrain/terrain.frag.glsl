@@ -51,7 +51,7 @@ void main() {
     vec3 ambient = 0.35 * base_color;
     vec3 normal = normalize(fs_in.normal);
     vec3 light_color = vec3(1.0);
-    vec3 light_dir = normalize(vec3(0.0, -200.0, 500.0));  // @hardcoded
+    vec3 light_dir = normalize(vec3(0.0, 200.0, 500.0));  // @hardcoded
     float diff = max(dot(light_dir, normal), 0.0);
     vec3 diffuse = diff * light_color;
 

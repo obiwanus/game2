@@ -16,19 +16,23 @@ TODO:
     - Tessellate based on LOD
 - Steal code from the egui integration
 - Add ambient occlusion?
-- Understand why mountains have flat rims
+- Understand why mountains have flat rims (try normap map first)
 - Optimisation:
     - Build normal map when drawing on heightmap?
 - Remove hardcoded values:
     - terrain size in terrain.te.glsl (1024)
     - terrain max height in terrain.te.glsl (200)
     - light direction in terrain.frag.glsl
+- Asus laptop
+    - Terrain cursor vs mouse pointer mismatch
+    - Play with vsync etc
+    - Optimise
 
 DONE:
-+ Debug normals
-    + Use a simple brush
-    + Understand what's wrong with normals
-- Diffuse lighting
+
+21 Oct 2021, Thu
++ Understand why lighting is wrong (reduce to the simplest shading)
+- Generate normal map for terrain when drawing
 
 11 Oct 2021, Mon
 + Understand why terrain cursor disappears
