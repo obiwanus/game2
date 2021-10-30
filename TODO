@@ -22,17 +22,26 @@ TODO:
 - Remove hardcoded values:
     - terrain size in terrain.te.glsl (1024)
     - terrain max height in terrain.te.glsl (200)
+    - texel_size_world in terrain.te.glsl
     - light direction in terrain.frag.glsl
 - Asus laptop
     - Terrain cursor vs mouse pointer mismatch
     - Play with vsync etc
     - Optimise
+- Generate normal map for terrain when drawing
 
 DONE:
 
+31 Oct 2021, Sun
++ Why do we have levels when sculpting a hill
+
 21 Oct 2021, Thu
 + Understand why lighting is wrong (reduce to the simplest shading)
-- Generate normal map for terrain when drawing
+- Why do we have levels when sculpting a hill
+    + Read about heightmap precision
+    + Start with a flat terrain
+    + Try my brush in unity
+    + Try a heightmap from gimp
 
 11 Oct 2021, Mon
 + Understand why terrain cursor disappears

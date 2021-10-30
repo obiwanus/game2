@@ -320,7 +320,8 @@ impl Terrain {
 
         let cursor = vec2_infinity();
         let heightmap = Heightmap::new(1024)?;
-        let brush = Brush::new("textures/brushes/simple.tga", 100.0);
+        // let heightmap = Heightmap::from_image("textures/heightmaps/valley.png")?;
+        let brush = Brush::new("textures/brushes/mountain05.tga", 100.0);
 
         let shader = Program::new()
             .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
