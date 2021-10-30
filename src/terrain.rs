@@ -512,43 +512,17 @@ impl Terrain {
         height < point_height
     }
 
+    /// Currently only intersects with the bottom plane of the AABB
     pub fn intersect_with_ray(&self, ray: &Ray) -> Option<Vec3> {
-        if let Some(hit) = ray.hits_aabb(&self.aabb) {
-            let point = ray.get_point_at(hit.t_min);
-            if !self.is_point_above_surface(&point) {
-                // Definitely not intersecting, at least from above
-                return None;
-            }
-            // March the ray to get the intersection point
-            let step = 0.001f32.max((hit.t_max - hit.t_min) / 100.0);
-            let mut t = hit.t_min;
+        let hit = ray.hits_aabb(&self.aabb)?;
+        let point = ray.get_point_at(hit.t_max);
 
-            while t <= hit.t_max {
-                t += step;
-                let point = ray.get_point_at(t);
-                if !self.is_point_above_surface(&point) {
-                    // Use binary search to get a more precise intersection point
-                    let point = {
-                        const EPSILON: f32 = 0.001;
-                        let mut new_point = point;
-                        let mut low = t - step;
-                        let mut high = t;
-                        while (high - low) > EPSILON {
-                            let new_t = low + (high - low) / 2.0;
-                            new_point = ray.get_point_at(new_t);
-                            if self.is_point_above_surface(&new_point) {
-                                low = new_t;
-                            } else {
-                                high = new_t;
-                            }
-                        }
-                        new_point
-                    };
-                    return Some(point);
-                }
-            }
+        const EPSILON: f32 = 0.001;
+        if (point.y - self.aabb.min.y) > EPSILON {
+            None // not hitting the bottom plane
+        } else {
+            Some(point)
         }
-        None
     }
 
     pub fn move_cursor(&mut self, ray: &Ray) -> bool {

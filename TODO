@@ -34,6 +34,7 @@ DONE:
 
 31 Oct 2021, Sun
 + Why do we have levels when sculpting a hill
++ Always collide the ray with flat terrain for shaping
 
 21 Oct 2021, Thu
 + Understand why lighting is wrong (reduce to the simplest shading)
