@@ -4,6 +4,7 @@
 extern crate gl as opengl_lib;
 
 mod camera;
+mod config;
 mod editor;
 mod input;
 mod opengl;
@@ -28,6 +29,7 @@ use glutin::{Api, GlProfile, GlRequest};
 use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
+use config::Config;
 use editor::gui::Gui;
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
 use opengl_lib::types::GLuint;
@@ -96,6 +98,8 @@ pub struct TransformsUBO {
 }
 
 struct Game {
+    config: Config,
+
     windowed_context: WindowedContext<PossiblyCurrent>,
     in_focus: bool,
 
@@ -129,8 +133,9 @@ struct Game {
 impl Game {
     /// Creates a window and inits a new game
     fn new(event_loop: &EventLoop<()>) -> Result<Self> {
-        // Create window
+        let config = Config::load_or_default()?;
 
+        // Create window
         #[cfg(all(windows))]
         let window_builder = {
             let monitor = event_loop.primary_monitor().unwrap_or_else(|| {
@@ -244,7 +249,11 @@ impl Game {
             }
         };
 
-        let terrain = Terrain::new(Vec2::new(0.0, 0.0))?;
+        let terrain = Terrain::new(
+            Vec2::new(0.0, 0.0),
+            config.start_with_flat_terrain,
+            &config.heightmap_path,
+        )?;
 
         let skybox = Skybox::from([
             "textures/skybox/default/right.png",
@@ -279,6 +288,8 @@ impl Game {
         };
 
         Ok(Game {
+            config,
+
             windowed_context,
 
             game_start: now,

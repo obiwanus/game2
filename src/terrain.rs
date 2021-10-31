@@ -34,7 +34,7 @@ impl Heightmap {
         debug_assert!(!(path.is_none() && texture_size.is_none()));
 
         let (image, texture_size) = if let Some(path) = path {
-            let image = stb_image::load_f32(path, 1, false).unwrap();
+            let image = stb_image::load_f32(path, 1, false)?;
             assert_eq!(
                 image.width, image.height,
                 "Only square heightmaps are supported"
@@ -242,7 +242,7 @@ struct TerrainDebug {
 }
 
 impl Terrain {
-    pub fn new(center: Vec2) -> Result<Self> {
+    pub fn new(center: Vec2, start_flat: bool, heightmap_path: &str) -> Result<Self> {
         // TODO: support centers other than 0, 0
         // (currently hard-coded in terrain.vert.glsl)
         assert_eq!(center, Vec2::new(0.0, 0.0));
@@ -302,8 +302,11 @@ impl Terrain {
         };
 
         let cursor = vec2_infinity();
-        let heightmap = Heightmap::new(1024)?;
-        // let heightmap = Heightmap::from_image("textures/heightmaps/valley.png")?;
+        let heightmap = if start_flat {
+            Heightmap::new(1024)?
+        } else {
+            Heightmap::from_image(heightmap_path)?
+        };
         let brush = Brush::new("textures/brushes/mountain05.tga", 100.0);
 
         let shader = Program::new()

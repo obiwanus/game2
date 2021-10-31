@@ -28,15 +28,17 @@ TODO:
     - Play with vsync etc
     - Optimise
 - Generate normal map for terrain when drawing
+- Save/load terrain
+    - Add a save button
 
 DONE:
+
+1 Nov 2021, Mon
+- Create a config file
 
 31 Oct 2021, Sun
 + Why do we have levels when sculpting a hill
 + Always collide the ray with flat terrain for shaping
-- Save/load terrain
-    - Create a config file
-    - Add a save button
 
 21 Oct 2021, Thu
 + Understand why lighting is wrong (reduce to the simplest shading)
