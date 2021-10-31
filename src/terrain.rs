@@ -1,8 +1,7 @@
 use gl::types::*;
-use glam::{Mat4, Vec3Swizzles};
+use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
 
-use crate::opengl::get_framebuffer_status_str;
 use crate::texture::{calculate_mip_levels, get_max_anisotropy, unit_to_gl_const};
 use crate::{
     opengl::shader::Program,
@@ -15,8 +14,6 @@ use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
 struct Heightmap {
     texture: GLuint,
     texture_size: usize,
-
-    pixels: Vec<f32>, // @speed: store efficiently?
 
     // For drawing on heightmap
     fbo: GLuint,
@@ -105,23 +102,9 @@ impl Heightmap {
             texture,
             texture_size,
 
-            pixels,
-
             fbo,
             shader,
         })
-    }
-
-    fn sample_height(&self, point: Vec2) -> f32 {
-        let size = self.texture_size as f32;
-
-        // @speed/@correctness: 0.99999 is chosen arbitrarily and may not be very precise.
-        // Also, I'm not sure how fast the clamping is (and it's not precise at all for heightmaps).
-        // Still, it should be ok for picking (but probably not OK for anything else)
-        let x = (point.x.clamp(0.0, 0.99999) * size) as usize;
-        let y = (point.y.clamp(0.0, 0.99999) * size) as usize;
-
-        self.pixels[y * self.texture_size + x]
     }
 
     fn draw_on_heightmap(
@@ -495,21 +478,6 @@ impl Terrain {
         let cursor = (self.cursor - self.aabb.min.xz()) / terrain_size;
         self.heightmap
             .draw_on_heightmap(cursor, &self.brush, terrain_size, delta_time, raise);
-    }
-
-    pub fn is_point_above_surface(&self, point: &Vec3) -> bool {
-        if point.y <= self.aabb.min.y {
-            return false; // below aabb
-        }
-        if !self.aabb.contains(point) {
-            return true;
-        }
-        let point_height = point.y;
-        let terrain_size = self.aabb.max.x - self.aabb.min.x;
-        let sample_point = (point.xz() - self.aabb.min.xz()) / terrain_size;
-        let height = self.heightmap.sample_height(sample_point) * self.max_height;
-
-        height < point_height
     }
 
     /// Currently only intersects with the bottom plane of the AABB

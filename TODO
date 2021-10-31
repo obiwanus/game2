@@ -16,7 +16,6 @@ TODO:
     - Tessellate based on LOD
 - Steal code from the egui integration
 - Add ambient occlusion?
-- Understand why mountains have flat rims (try normap map first)
 - Optimisation:
     - Build normal map when drawing on heightmap?
 - Remove hardcoded values:
@@ -35,6 +34,9 @@ DONE:
 31 Oct 2021, Sun
 + Why do we have levels when sculpting a hill
 + Always collide the ray with flat terrain for shaping
+- Save/load terrain
+    - Create a config file
+    - Add a save button
 
 21 Oct 2021, Thu
 + Understand why lighting is wrong (reduce to the simplest shading)
