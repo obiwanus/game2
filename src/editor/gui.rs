@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use egui::{epaint::ClippedShape, ClippedMesh, CtxRef, Output, RawInput};
+use egui::{epaint::ClippedShape, Align2, ClippedMesh, CtxRef, Output, RawInput};
 use epaint::Color32;
 use gl::types::*;
 use glam::Vec2;
@@ -112,28 +112,22 @@ impl Gui {
         let mut name = self.name.clone();
 
         // ================== GUI starts ========================
-        egui::SidePanel::left("my_side_panel").show(&self.ctx, |ui| {
-            ui.heading("Водка водка!");
-            if ui.button("Quit").clicked() {
-                should_quit = true;
-            }
+        egui::Window::new("tools")
+            .anchor(Align2::RIGHT_TOP, egui::Vec2::new(-10.0, 10.0))
+            .collapsible(false)
+            .title_bar(false)
+            .min_width(200.0)
+            .show(&self.ctx, |ui| {
+                ui.heading("Terrain");
 
-            egui::ComboBox::from_label("Version")
-                .width(350.0)
-                .selected_text("foo")
-                .show_ui(ui, |ui| {
-                    egui::CollapsingHeader::new("Dev")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            ui.label("contents");
-                        });
-                });
+                if ui.button("Save terrain").clicked() {
+                    println!("Save terrain clicked");
+                }
 
-            ui.horizontal(|ui| {
-                ui.label("Your name: ");
-                ui.text_edit_singleline(&mut name);
+                if ui.button("Quit").clicked() {
+                    should_quit = true;
+                }
             });
-        });
 
         self.name = name;
         // ================== GUI ends ===========================

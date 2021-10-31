@@ -29,12 +29,15 @@ TODO:
     - Optimise
 - Generate normal map for terrain when drawing
 - Save/load terrain
-    - Add a save button
+    - Be able to save current heightmap
 
 DONE:
 
 1 Nov 2021, Mon
-- Create a config file
++ Create a config file
++ Add a save button
+- Increase font size
+- Make window larger
 
 31 Oct 2021, Sun
 + Why do we have levels when sculpting a hill
