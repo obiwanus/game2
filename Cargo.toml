@@ -15,7 +15,6 @@ thiserror = "1.0"
 memoffset = "0.6.4"
 egui = "0.15.0"
 epaint = "0.15.0"
-stb_image = { path = "lib/stb_image" }
 miniserde = "0.1"
 image = "0.23.14"
 

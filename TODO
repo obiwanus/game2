@@ -28,7 +28,6 @@ TODO:
     - Play with vsync etc
     - Optimise
 - Generate normal map for terrain when drawing
-- Get rid of stb_image
 
 DONE:
 
@@ -37,6 +36,8 @@ DONE:
 + Use the image crate
 + Save current heightmap on click
 + Save/load terrain
++ Get rid of stb_image
+- Get rid of miniserde
 
 1 Nov 2021, Mon
 + Create a config file

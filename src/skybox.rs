@@ -57,19 +57,22 @@ impl Skybox {
 
         // Load images
         for (i, path) in paths.iter().enumerate() {
-            let image = stb_image::load_u8(path, 3, false).unwrap();
+            let img = image::open(path)
+                .expect("Can't load skybox image")
+                .into_rgb8();
+            let (width, height) = img.dimensions();
             unsafe {
                 // Send to GPU
                 gl::TexImage2D(
                     gl::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
                     0,
                     gl::SRGB8 as GLint,
-                    image.width as GLint,
-                    image.height as GLint,
+                    width as GLint,
+                    height as GLint,
                     0,
                     gl::RGB,
                     gl::UNSIGNED_BYTE,
-                    image.data.as_ptr() as *const std::ffi::c_void,
+                    img.as_raw().as_ptr() as *const std::ffi::c_void,
                 );
             }
         }

@@ -160,18 +160,17 @@ impl Heightmap {
 pub struct Brush {
     texture: GLuint,
     texture_size: usize,
-    pixels: Vec<f32>, // @speed: swizzle?
     pub size: f32,
 }
 
 impl Brush {
     pub fn new(path: &str, size: f32) -> Self {
-        let image = stb_image::load_f32(path, 1, false).unwrap();
-        assert_eq!(
-            image.width, image.height,
-            "Only square brushes are supported"
-        );
-        let texture_size = image.width;
+        let img = image::open(path)
+            .expect("Can't load brush image")
+            .into_luma16();
+        let (width, height) = img.dimensions();
+        assert_eq!(width, height, "Only square brushes are supported");
+        let texture_size = width as usize;
 
         let mut texture: GLuint = 0;
         unsafe {
@@ -199,8 +198,8 @@ impl Brush {
                 texture_size as i32,
                 texture_size as i32,
                 gl::RED,
-                gl::FLOAT,
-                image.data.as_ptr() as *const _,
+                gl::UNSIGNED_SHORT,
+                img.as_raw().as_ptr() as *const _,
             );
             gl::GenerateTextureMipmap(texture);
         }
@@ -208,7 +207,6 @@ impl Brush {
         Brush {
             texture,
             size,
-            pixels: image.data,
             texture_size,
         }
     }
@@ -264,8 +262,13 @@ impl Terrain {
         }
 
         let texture = {
-            let image = stb_image::load_u8("textures/checkerboard.png", 3, true).unwrap();
-            assert_eq!(image.width, image.height);
+            let img = image::open("textures/checkerboard.png")
+                .unwrap()
+                .flipv()
+                .into_rgb8();
+            let (width, height) = img.dimensions();
+            assert_eq!(width, height);
+            let size = width as usize;
 
             let mut texture: GLuint = 0;
             unsafe {
@@ -281,21 +284,21 @@ impl Terrain {
                 gl::TextureParameterf(texture, gl::TEXTURE_MAX_ANISOTROPY, get_max_anisotropy());
                 gl::TextureStorage2D(
                     texture,
-                    calculate_mip_levels(image.width, image.height),
+                    calculate_mip_levels(size, size),
                     gl::SRGB8,
-                    image.width as i32,
-                    image.height as i32,
+                    size as i32,
+                    size as i32,
                 );
                 gl::TextureSubImage2D(
                     texture,
                     0,
                     0,
                     0,
-                    image.width as i32,
-                    image.height as i32,
+                    size as i32,
+                    size as i32,
                     gl::RGB,
                     gl::UNSIGNED_BYTE,
-                    image.data.as_ptr() as *const _,
+                    img.as_raw().as_ptr() as *const _,
                 );
                 gl::GenerateTextureMipmap(texture);
             }
@@ -309,7 +312,7 @@ impl Terrain {
         } else {
             Heightmap::from_image(heightmap_path)?
         };
-        let brush = Brush::new("textures/brushes/simple.tga", 100.0);
+        let brush = Brush::new("textures/brushes/mountain05.tga", 100.0);
 
         let shader = Program::new()
             .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
