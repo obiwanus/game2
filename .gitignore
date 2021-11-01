@@ -12,4 +12,4 @@ Cargo.lock
 .DS_Store
 
 textures/heightmaps/heightmap.png
-config.json
+/config.json
