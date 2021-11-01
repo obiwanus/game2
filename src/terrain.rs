@@ -3,6 +3,7 @@ use std::ffi::c_void;
 use gl::types::*;
 use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
+use image::GenericImageView;
 
 use crate::texture::{calculate_mip_levels, get_max_anisotropy, unit_to_gl_const};
 use crate::{
@@ -23,33 +24,32 @@ struct Heightmap {
 }
 
 impl Heightmap {
-    pub fn new(texture_size: usize) -> Result<Self> {
-        Heightmap::create_heightmap(None, Some(texture_size))
+    pub fn flat(texture_size: usize) -> Result<Self> {
+        Heightmap::new(None, Some(texture_size))
     }
 
     pub fn from_image(path: &str) -> Result<Self> {
-        Heightmap::create_heightmap(Some(path), None)
+        Heightmap::new(Some(path), None)
     }
 
-    fn create_heightmap(path: Option<&str>, texture_size: Option<usize>) -> Result<Self> {
+    fn new(path: Option<&str>, texture_size: Option<usize>) -> Result<Self> {
         debug_assert!(!(path.is_some() && texture_size.is_some()));
         debug_assert!(!(path.is_none() && texture_size.is_none()));
 
-        let (image, texture_size) = if let Some(path) = path {
-            let image = stb_image::load_f32(path, 1, false)?;
-            assert_eq!(
-                image.width, image.height,
-                "Only square heightmaps are supported"
+        let (pixels, texture_size) = if let Some(path) = path {
+            let img = image::open(path)?;
+            let (width, height) = img.dimensions();
+            assert_eq!(width, height, "Only square heightmaps are supported");
+            assert!(
+                width == 1024 || width == 2048 || width == 4096,
+                "Only heightmaps with sizes 1024, 2048 and 4096 are supported"
             );
-            let width = image.width;
-            (Some(image), width)
+
+            (img.into_luma16().into_raw(), width as usize)
         } else {
-            (None, texture_size.unwrap())
-        };
-        let pixels = if let Some(image) = image {
-            image.data
-        } else {
-            vec![0.0; texture_size * texture_size]
+            let size = texture_size.unwrap();
+
+            (vec![0u16; size * size], size)
         };
 
         let mut texture: GLuint = 0;
@@ -76,7 +76,7 @@ impl Heightmap {
                 texture_size as i32,
                 texture_size as i32,
                 gl::RED,
-                gl::FLOAT,
+                gl::UNSIGNED_SHORT,
                 pixels.as_ptr() as *const _,
             );
         }
@@ -305,11 +305,11 @@ impl Terrain {
 
         let cursor = vec2_infinity();
         let heightmap = if start_flat {
-            Heightmap::new(1024)?
+            Heightmap::flat(1024)?
         } else {
             Heightmap::from_image(heightmap_path)?
         };
-        let brush = Brush::new("textures/brushes/mountain05.tga", 100.0);
+        let brush = Brush::new("textures/brushes/simple.tga", 100.0);
 
         let shader = Program::new()
             .vertex_shader(include_str!("shaders/editor/terrain/terrain.vert.glsl"))?
@@ -474,7 +474,7 @@ impl Terrain {
         Ok(())
     }
 
-    pub fn get_heightmap_pixels(&self) -> Vec<u8> {
+    pub fn get_heightmap_pixels(&self) -> (Vec<u8>, usize) {
         let buffer_size = self.heightmap.texture_size * self.heightmap.texture_size * 2;
         let mut pixels = Vec::<u8>::with_capacity(buffer_size);
         unsafe {
@@ -488,7 +488,7 @@ impl Terrain {
                 pixels.as_mut_ptr() as *mut c_void,
             );
         }
-        pixels
+        (pixels, self.heightmap.texture_size)
     }
 
     pub fn size(&self) -> f32 {

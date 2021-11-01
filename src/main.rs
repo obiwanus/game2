@@ -483,8 +483,16 @@ impl Game {
         for action in actions {
             match action {
                 Action::SaveTerrain => {
-                    let pixels = self.terrain.get_heightmap_pixels();
-                    println!("{}", pixels.len());
+                    let (pixels, size) = self.terrain.get_heightmap_pixels();
+                    image::save_buffer(
+                        self.config.heightmap_path.clone(),
+                        &pixels,
+                        size as u32,
+                        size as u32,
+                        image::ColorType::L16,
+                    )?;
+                    self.config.start_with_flat_terrain = false;
+                    self.config.save();
                 }
                 Action::Quit => {
                     self.input.should_exit = true;
