@@ -15,8 +15,9 @@ thiserror = "1.0"
 memoffset = "0.6.4"
 egui = "0.15.0"
 epaint = "0.15.0"
-miniserde = "0.1"
 image = "0.23.14"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [profile.dev.package."*"]
 opt-level = 3

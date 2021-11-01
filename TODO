@@ -37,7 +37,7 @@ DONE:
 + Save current heightmap on click
 + Save/load terrain
 + Get rid of stb_image
-- Get rid of miniserde
++ Get rid of miniserde
 
 1 Nov 2021, Mon
 + Create a config file

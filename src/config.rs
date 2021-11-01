@@ -1,6 +1,6 @@
 use std::fs;
 
-use miniserde::{json, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::Result;
 
@@ -13,7 +13,7 @@ pub struct Config {
 impl Config {
     pub fn load_or_default() -> Result<Self> {
         let config = if let Ok(config) = fs::read_to_string("config.json") {
-            json::from_str(&config)?
+            serde_json::from_str(&config)?
         } else {
             Config {
                 heightmap_path: "textures/heightmaps/heightmap.png".to_owned(),
@@ -24,7 +24,8 @@ impl Config {
     }
 
     pub fn save(&self) {
-        let string = json::to_string(self);
+        let string = serde_json::to_string(self).unwrap();
+
         fs::write("config.json", string).unwrap();
     }
 }
