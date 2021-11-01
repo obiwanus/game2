@@ -30,7 +30,7 @@ use glutin::{PossiblyCurrent, WindowedContext};
 
 use camera::Camera;
 use config::Config;
-use editor::gui::Gui;
+use editor::gui::{Action, Gui};
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
 use opengl_lib::types::GLuint;
 use skybox::Skybox;
@@ -478,13 +478,21 @@ impl Game {
     }
 
     fn draw_editor(&mut self, delta_time: f32) -> Result<GameMode> {
-        let (should_exit, gui_shapes) = self.gui.layout_and_interact(self.gui_input.take());
+        let (gui_shapes, actions) = self.gui.layout_and_interact(self.gui_input.take());
+
+        for action in actions {
+            match action {
+                Action::SaveTerrain => {
+                    let pixels = self.terrain.get_heightmap_pixels();
+                    println!("{}", pixels.len());
+                }
+                Action::Quit => {
+                    self.input.should_exit = true;
+                }
+            }
+        }
 
         let state = &mut self.editor_state;
-
-        if should_exit {
-            self.input.should_exit = true;
-        }
 
         if self.gui.wants_input() {
             // Pointer over UI or currently interacting with it

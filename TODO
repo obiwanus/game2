@@ -29,15 +29,17 @@ TODO:
     - Optimise
 - Generate normal map for terrain when drawing
 - Save/load terrain
-    - Be able to save current heightmap
+- Save current heightmap on click
 
 DONE:
+
+2 Nov 2021, Tue
++ Get current heightmap pixels
+- Use the image crate
 
 1 Nov 2021, Mon
 + Create a config file
 + Add a save button
-- Increase font size
-- Make window larger
 
 31 Oct 2021, Sun
 + Why do we have levels when sculpting a hill

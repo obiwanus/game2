@@ -8,6 +8,12 @@ use memoffset::offset_of;
 
 use crate::{opengl::shader::Program, texture::unit_to_gl_const, utils::size_of_slice, Result};
 
+/// An action to take as a result of interacting with the GUI
+pub enum Action {
+    SaveTerrain,
+    Quit,
+}
+
 pub struct Gui {
     screen_size: Vec2,
 
@@ -21,8 +27,6 @@ pub struct Gui {
     vao: GLuint,
     vbo: GLuint,
     ebo: GLuint,
-
-    name: String,
 }
 
 impl Gui {
@@ -93,7 +97,6 @@ impl Gui {
             egui_texture_version: None,
 
             shader,
-            name: String::new(),
 
             vao,
             vbo,
@@ -105,36 +108,28 @@ impl Gui {
         self.ctx.wants_pointer_input() || self.ctx.wants_keyboard_input()
     }
 
-    pub fn layout_and_interact(&mut self, input: RawInput) -> (bool, Vec<ClippedShape>) {
+    pub fn layout_and_interact(&mut self, input: RawInput) -> (Vec<ClippedShape>, Vec<Action>) {
         self.ctx.begin_frame(input);
-
-        let mut should_quit = false;
-        let mut name = self.name.clone();
+        let mut actions = vec![];
 
         // ================== GUI starts ========================
-        egui::Window::new("tools")
+        egui::Window::new("Terrain tools")
             .anchor(Align2::RIGHT_TOP, egui::Vec2::new(-10.0, 10.0))
-            .collapsible(false)
-            .title_bar(false)
-            .min_width(200.0)
+            .resizable(false)
             .show(&self.ctx, |ui| {
-                ui.heading("Terrain");
-
                 if ui.button("Save terrain").clicked() {
-                    println!("Save terrain clicked");
+                    actions.push(Action::SaveTerrain);
                 }
 
                 if ui.button("Quit").clicked() {
-                    should_quit = true;
+                    actions.push(Action::Quit);
                 }
             });
-
-        self.name = name;
         // ================== GUI ends ===========================
 
         let (_output, shapes) = self.ctx.end_frame();
 
-        (should_quit, shapes)
+        (shapes, actions)
     }
 
     pub fn draw(&mut self, shapes: Vec<ClippedShape>) {

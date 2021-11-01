@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 use gl::types::*;
 use glam::Vec3Swizzles;
 use glam::{Vec2, Vec3};
@@ -470,6 +472,23 @@ impl Terrain {
         // }
 
         Ok(())
+    }
+
+    pub fn get_heightmap_pixels(&self) -> Vec<u8> {
+        let buffer_size = self.heightmap.texture_size * self.heightmap.texture_size * 2;
+        let mut pixels = Vec::<u8>::with_capacity(buffer_size);
+        unsafe {
+            pixels.set_len(buffer_size);
+            gl::GetTextureImage(
+                self.heightmap.texture,
+                0,
+                gl::RED,
+                gl::UNSIGNED_SHORT,
+                buffer_size as i32,
+                pixels.as_mut_ptr() as *mut c_void,
+            );
+        }
+        pixels
     }
 
     pub fn size(&self) -> f32 {
