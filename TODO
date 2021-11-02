@@ -23,13 +23,15 @@ TODO:
     - Play with vsync etc
     - Optimise
 - Generate normal map for terrain when drawing
+- Use a uniform buffer object for terrain uniforms?
+    - Find a way to easily include things in GLSL
 
 DONE:
 
 3 Nov 2021, Wed
 + Why are there no shadows
 + Use only square shadow maps
-- Replace light direction in terrain.frag.glsl
++ Make a terrain that resembles a part of the map
 
 2 Nov 2021, Tue
 + Get current heightmap pixels
