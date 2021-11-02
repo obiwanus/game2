@@ -18,11 +18,6 @@ TODO:
 - Add ambient occlusion?
 - Optimisation:
     - Build normal map when drawing on heightmap?
-- Remove hardcoded values:
-    - terrain size in terrain.te.glsl (1024)
-    - terrain max height in terrain.te.glsl (200)
-    - texel_size_world in terrain.te.glsl
-    - light direction in terrain.frag.glsl
 - Asus laptop
     - Terrain cursor vs mouse pointer mismatch
     - Play with vsync etc
@@ -31,6 +26,10 @@ TODO:
 
 DONE:
 
+3 Nov 2021, Wed
++ Why are there no shadows
+- Replace light direction in terrain.frag.glsl
+
 2 Nov 2021, Tue
 + Get current heightmap pixels
 + Use the image crate
@@ -38,6 +37,12 @@ DONE:
 + Save/load terrain
 + Get rid of stb_image
 + Get rid of miniserde
+- Remove hardcoded values:
+    + terrain size in terrain.te.glsl (1024)
+    + terrain max height in terrain.te.glsl (200)
+    + texel_size_world in terrain.te.glsl
++ Pass terrain parameters in uniforms
+    + Support different numbers of patches
 
 1 Nov 2021, Mon
 + Create a config file

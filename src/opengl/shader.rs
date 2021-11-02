@@ -130,7 +130,6 @@ impl Program {
         Ok(())
     }
 
-    /// Sets a vec2 uniform
     pub fn set_vec2(&self, name: &str, vec: &Vec2) -> Result<()> {
         let location = self.get_uniform_location(name)?;
         unsafe {
@@ -139,7 +138,6 @@ impl Program {
         Ok(())
     }
 
-    /// Sets a vec3 uniform
     pub fn set_vec3(&self, name: &str, vec: &Vec3) -> Result<()> {
         let location = self.get_uniform_location(name)?;
         unsafe {
@@ -148,7 +146,6 @@ impl Program {
         Ok(())
     }
 
-    /// Sets a [f32; 3] uniform
     pub fn set_float3(&self, name: &str, vec: &[f32]) -> Result<()> {
         let location = self.get_uniform_location(name)?;
         unsafe {
@@ -157,7 +154,6 @@ impl Program {
         Ok(())
     }
 
-    /// Sets a mat4 uniform
     pub fn set_mat4(&self, name: &str, mat: &Mat4) -> Result<()> {
         let location = self.get_uniform_location(name)?;
         unsafe {
@@ -166,11 +162,26 @@ impl Program {
         Ok(())
     }
 
-    /// Sets a float uniform
     pub fn set_f32(&self, name: &str, value: f32) -> Result<()> {
         let location = self.get_uniform_location(name)?;
         unsafe {
-            gl::Uniform1fv(location, 1, &value as *const f32);
+            gl::Uniform1f(location, value);
+        }
+        Ok(())
+    }
+
+    pub fn set_u32(&self, name: &str, value: u32) -> Result<()> {
+        let location = self.get_uniform_location(name)?;
+        unsafe {
+            gl::Uniform1ui(location, value);
+        }
+        Ok(())
+    }
+
+    pub fn set_i32(&self, name: &str, value: i32) -> Result<()> {
+        let location = self.get_uniform_location(name)?;
+        unsafe {
+            gl::Uniform1i(location, value);
         }
         Ok(())
     }

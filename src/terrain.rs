@@ -213,8 +213,6 @@ impl Brush {
 }
 
 pub struct Terrain {
-    center: Vec2,
-    max_height: f32,
     pub aabb: AABB,
 
     vao: GLuint,
@@ -234,6 +232,12 @@ pub struct Terrain {
     shadow_map_shader: Program,
 
     debug: TerrainDebug,
+
+    // Main parameters
+    center: Vec2,
+    max_height: f32,
+    num_patches: i32,
+    patch_size: f32,
 }
 
 struct TerrainDebug {
@@ -246,13 +250,16 @@ impl Terrain {
         // TODO: support centers other than 0, 0
         // (currently hard-coded in terrain.vert.glsl)
         assert_eq!(center, Vec2::new(0.0, 0.0));
-        const NUM_PATCHES: f32 = 64.0;
-        const PATCH_SIZE: f32 = 16.0;
+
         let max_height = 200.0;
+        let num_patches = 64;
+        let patch_size = 16.0;
+
+        let terrain_size = patch_size * num_patches as f32;
         let aabb = {
-            let size = PATCH_SIZE * NUM_PATCHES / 2.0;
-            let min = Vec3::new(-size, 0.0, -size);
-            let max = Vec3::new(size, max_height, size);
+            let half_size = terrain_size / 2.0;
+            let min = Vec3::new(-half_size, 0.0, -half_size);
+            let max = Vec3::new(half_size, max_height, half_size);
             AABB::new(min, max)
         };
 
@@ -320,6 +327,12 @@ impl Terrain {
             .tess_evaluation_shader(include_str!("shaders/editor/terrain/terrain.te.glsl"))?
             .fragment_shader(include_str!("shaders/editor/terrain/terrain.frag.glsl"))?
             .link()?;
+        shader.set_used();
+        shader.set_vec2("terrain_center", &center)?;
+        shader.set_f32("terrain_max_height", max_height)?;
+        shader.set_f32("terrain_size", terrain_size)?;
+        shader.set_i32("num_patches", num_patches)?;
+        shader.set_f32("patch_size", patch_size)?;
 
         // Shadow map
         let mut shadow_map_fbo: GLuint = 0;
@@ -355,6 +368,11 @@ impl Terrain {
             .tess_evaluation_shader(include_str!("shaders/editor/terrain/shadow.te.glsl"))?
             .fragment_shader(include_str!("shaders/editor/terrain/shadow.frag.glsl"))?
             .link()?;
+        shadow_map_shader.set_used();
+        shadow_map_shader.set_vec2("terrain_center", &center)?;
+        shadow_map_shader.set_f32("terrain_max_height", max_height)?;
+        shadow_map_shader.set_i32("num_patches", num_patches)?;
+        shadow_map_shader.set_f32("patch_size", patch_size)?;
 
         let debug = {
             let aabb_shader = Program::new()
@@ -381,8 +399,6 @@ impl Terrain {
         };
 
         Ok(Terrain {
-            center,
-            max_height,
             aabb,
 
             vao,
@@ -402,6 +418,11 @@ impl Terrain {
             shadow_map_shader,
 
             debug,
+
+            center,
+            max_height,
+            num_patches,
+            patch_size,
         })
     }
 

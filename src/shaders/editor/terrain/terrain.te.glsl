@@ -13,7 +13,8 @@ uTransforms;
 
 layout(binding = 1) uniform sampler2D heightmap;
 
-uniform float terrain_max_height = 200.0;
+uniform float terrain_max_height;
+uniform float terrain_size;
 
 in TCS_OUT { vec2 tile_uv; }
 tes_in[];
@@ -38,8 +39,7 @@ vec3 calc_normal(vec2 uv) {
     float T = sample_height(uv - vec2(0, texel_size.y));
     float B = sample_height(uv + vec2(0, texel_size.y));
 
-    // WARNING: @hardcoded 1024
-    vec2 texel_size_world = 1024.0 / heightmap_size;
+    vec2 texel_size_world = terrain_size / heightmap_size;
     vec3 horizontal = vec3(2.0 * texel_size_world.x, R - L, 0.0);
     vec3 vertical = vec3(0.0, B - T, 2.0 * texel_size_world.y);
 

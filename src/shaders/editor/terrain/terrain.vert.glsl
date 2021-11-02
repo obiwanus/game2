@@ -1,9 +1,10 @@
 #version 450 core
 
-const vec2 terrain_center = vec2(0.0);
-const float PATCH_SIZE = 16.0;  // so that one terrain tile is 1024x1024 meters
-
 const vec2 VERTICES[] = vec2[](vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0));
+
+uniform vec2 terrain_center;
+uniform int num_patches;
+uniform float patch_size;
 
 out VS_OUT { vec2 tile_uv; }
 vs_out;
@@ -11,16 +12,16 @@ vs_out;
 void main() {
     vec2 vertex = VERTICES[gl_VertexID];
 
-    // One terrain tile will always have 64x64 patches
-    int x = gl_InstanceID & 63;
-    int y = gl_InstanceID >> 6;
+    int x = gl_InstanceID % num_patches;
+    int y = gl_InstanceID / num_patches;
     vec2 offset = vec2(x, y);
 
     // Texture coords
-    vs_out.tile_uv = (vertex + offset) / 64.0;
+    vs_out.tile_uv = (vertex + offset) / float(num_patches);
 
     // Position
-    vec2 position = (vertex + vec2(offset.x - 32.0, offset.y - 32.0)) * PATCH_SIZE + terrain_center;
+    float half_num = float(num_patches) / 2.0;
+    vec2 position = (vertex + vec2(offset.x - half_num, offset.y - half_num)) * patch_size + terrain_center;
 
     // TODO: displace height here?
     float height = 0.0;
