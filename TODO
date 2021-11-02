@@ -28,6 +28,7 @@ DONE:
 
 3 Nov 2021, Wed
 + Why are there no shadows
++ Use only square shadow maps
 - Replace light direction in terrain.frag.glsl
 
 2 Nov 2021, Tue

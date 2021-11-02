@@ -227,8 +227,7 @@ pub struct Terrain {
 
     shadow_map_fbo: GLuint,
     shadow_map: GLuint,
-    shadow_map_width: i32,
-    shadow_map_height: i32,
+    shadow_map_size: i32,
     shadow_map_shader: Program,
 
     debug: TerrainDebug,
@@ -337,7 +336,7 @@ impl Terrain {
         // Shadow map
         let mut shadow_map_fbo: GLuint = 0;
         let mut shadow_map: GLuint = 0;
-        let (shadow_map_width, shadow_map_height) = (2048, 2048);
+        let shadow_map_size = 2048;
         unsafe {
             gl::CreateFramebuffers(1, &mut shadow_map_fbo);
             gl::CreateTextures(gl::TEXTURE_2D, 1, &mut shadow_map);
@@ -349,8 +348,8 @@ impl Terrain {
                 shadow_map,
                 1,
                 gl::DEPTH_COMPONENT16,
-                shadow_map_width,
-                shadow_map_height,
+                shadow_map_size,
+                shadow_map_size,
             );
             gl::NamedFramebufferTexture(shadow_map_fbo, gl::DEPTH_ATTACHMENT, shadow_map, 0);
             gl::NamedFramebufferDrawBuffer(shadow_map_fbo, gl::NONE);
@@ -413,8 +412,7 @@ impl Terrain {
 
             shadow_map_fbo,
             shadow_map,
-            shadow_map_width,
-            shadow_map_height,
+            shadow_map_size,
             shadow_map_shader,
 
             debug,
@@ -456,7 +454,7 @@ impl Terrain {
             .set_f32("tess_level", self.tess_level)?;
         unsafe {
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.shadow_map_fbo);
-            gl::Viewport(0, 0, self.shadow_map_width, self.shadow_map_height);
+            gl::Viewport(0, 0, self.shadow_map_size, self.shadow_map_size);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
 
             gl::DrawArraysInstanced(gl::PATCHES, 0, 4, 64 * 64);
