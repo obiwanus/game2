@@ -7,6 +7,7 @@ mod camera;
 mod config;
 mod editor;
 mod input;
+mod model;
 mod opengl;
 mod ray;
 mod skybox;
@@ -18,7 +19,7 @@ use std::error::Error;
 use std::time::Instant;
 
 use egui::{Event as GuiEvent, Pos2, RawInput as EguiInput, Rect};
-use glam::{Mat4, Vec2, Vec3};
+use glam::{Mat4, Quat, Vec2, Vec3};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
     WindowEvent,
@@ -32,9 +33,13 @@ use camera::Camera;
 use config::Config;
 use editor::gui::{Action, Gui};
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
+use model::Model;
 use opengl_lib::types::GLuint;
 use skybox::Skybox;
 use terrain::Terrain;
+
+use crate::opengl::shader::Program;
+use crate::texture::unit_to_gl_const;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -97,6 +102,13 @@ pub struct TransformsUBO {
     sun_vp: Mat4,
 }
 
+// Intentionally dumb
+struct GameObject {
+    pos: Vec3,
+    orientation: Quat,
+    model: Model,
+}
+
 struct Game {
     config: Config,
 
@@ -128,6 +140,9 @@ struct Game {
     // tmp
     transforms_ubo: GLuint,
     transforms_data: TransformsUBO,
+
+    model_shader: Program,
+    game_objects: Vec<GameObject>,
 }
 
 impl Game {
@@ -264,6 +279,29 @@ impl Game {
             "textures/skybox/default/back.png",
         ])?;
 
+        let game_objects = vec![
+            GameObject {
+                pos: Vec3::new(0.0, 100.0, 0.0),
+                orientation: Quat::default(),
+                model: Model::load("models/viking_room/scene.gltf")?,
+            },
+            // GameObject {
+            //     pos: Vec3::new(100.0, 200.0, 0.0),
+            //     orientation: Quat::default(),
+            //     model: Model::load("models/box.glb")?,
+            // },
+            // GameObject {
+            //     pos: Vec3::new(-100.0, 0.0, 0.0),
+            //     orientation: Quat::default(),
+            //     model: Model::load("models/box.glb")?,
+            // },
+        ];
+
+        let model_shader = Program::new()
+            .vertex_shader(include_str!("shaders/simple/simple.vert"))?
+            .fragment_shader(include_str!("shaders/simple/simple.frag"))?
+            .link()?;
+
         let scale_factor = window.scale_factor() as f32;
         let screen_size_physical = Vec2::new(window_size.width as f32, window_size.height as f32);
         let screen_size_logical = screen_size_physical / scale_factor;
@@ -318,6 +356,9 @@ impl Game {
 
             transforms_ubo,
             transforms_data,
+
+            game_objects,
+            model_shader,
         })
     }
 
@@ -582,6 +623,34 @@ impl Game {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
         self.terrain.draw(self.input.time)?;
+
+        // Draw objects
+        self.model_shader.set_used();
+        for obj in &self.game_objects {
+            let transform = Mat4::from_rotation_translation(obj.orientation, obj.pos);
+            unsafe {
+                gl::BindVertexArray(obj.model.vao);
+            }
+            for node in &obj.model.drawable_nodes {
+                let transform = transform * node.transform;
+                self.model_shader.set_mat4("model", &transform)?;
+
+                for primitive in &node.primitives {
+                    let material = &obj.model.materials[primitive.material_index];
+                    unsafe {
+                        gl::ActiveTexture(unit_to_gl_const(0));
+                        gl::BindTexture(gl::TEXTURE_2D, material.base_color_texture);
+
+                        gl::DrawArrays(
+                            gl::TRIANGLES,
+                            primitive.first_index as i32,
+                            primitive.index_count as i32,
+                        );
+                    }
+                }
+            }
+        }
+
         self.skybox.draw();
 
         self.gui.draw(gui_shapes);

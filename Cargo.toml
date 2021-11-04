@@ -10,7 +10,7 @@ edition = "2018"
 glutin = "^0.27.0"
 gl = { path = "lib/gl" }
 glam = "0.20.0"
-gltf = { version = "0.16.0", features = ["names"], default-features = false }
+gltf = { version = "0.16.0", features = ["names", "import"], default-features = false }
 thiserror = "1.0"
 memoffset = "0.6.4"
 egui = "0.15.0"

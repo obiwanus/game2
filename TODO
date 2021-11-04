@@ -28,10 +28,19 @@ TODO:
 
 DONE:
 
+5 Nov 2021, Fri
+- Fix model loading
+
+4 Nov 2021, Thu
+- Add a box
+    + Write the usage code first
+
 3 Nov 2021, Wed
 + Why are there no shadows
 + Use only square shadow maps
 + Make a terrain that resembles a part of the map
+- Add a human-sized box to the scene
+    + Create a box in Blender
 
 2 Nov 2021, Tue
 + Get current heightmap pixels
