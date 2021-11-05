@@ -2,6 +2,7 @@ use std::mem::size_of;
 
 use gl::types::*;
 use glam::{Mat4, Vec2, Vec3, Vec4};
+use gltf::accessor::DataType;
 use gltf::image::Format;
 use gltf::Document;
 use memoffset::offset_of;
@@ -48,7 +49,17 @@ impl Model {
                     for (attr, accessor) in primitive.attributes() {
                         let buffer_view = accessor.view().unwrap();
                         let offset = buffer_view.offset() + accessor.offset();
-                        let stride = buffer_view.stride().unwrap_or(size_of::<Vertex>());
+                        let stride =
+                            buffer_view
+                                .stride()
+                                .unwrap_or_else(|| match accessor.data_type() {
+                                    DataType::I8 => 1,
+                                    DataType::U8 => 1,
+                                    DataType::I16 => 2,
+                                    DataType::U16 => 2,
+                                    DataType::U32 => 4,
+                                    DataType::F32 => 4,
+                                });
                         let count = accessor.count();
 
                         let src_buffer = &buffers[buffer_view.buffer().index()];
@@ -111,7 +122,6 @@ impl Model {
 
                     let src_buffer = &buffers[buffer_view.buffer().index()];
 
-                    use gltf::accessor::DataType;
                     match accessor.data_type() {
                         // NOTE: some duplication
                         DataType::U32 => unsafe {
