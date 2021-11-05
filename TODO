@@ -30,6 +30,9 @@ DONE:
 
 5 Nov 2021, Fri
 - Fix model loading
+    + Make blender export textures
+    + Change camera position
+    - Check how indices are set
 
 4 Nov 2021, Thu
 - Add a box

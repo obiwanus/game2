@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 glutin = "^0.27.0"
 gl = { path = "lib/gl" }
-glam = "0.20.0"
+glam = { version = "0.20.0", features = ["serde"] }
 gltf = { version = "0.16.0", features = ["names", "import"], default-features = false }
 thiserror = "1.0"
 memoffset = "0.6.4"

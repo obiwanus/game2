@@ -25,8 +25,8 @@ pub enum Movement {
 
 #[derive(Debug, Default)]
 pub struct Camera {
-    position: Vec3,
-    direction: Vec3,
+    pub position: Vec3,
+    pub direction: Vec3,
     up: Vec3,
     right: Vec3,
 

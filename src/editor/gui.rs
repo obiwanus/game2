@@ -11,6 +11,7 @@ use crate::{opengl::shader::Program, texture::unit_to_gl_const, utils::size_of_s
 /// An action to take as a result of interacting with the GUI
 pub enum Action {
     SaveTerrain,
+    SaveCamera,
     Quit,
 }
 
@@ -113,7 +114,7 @@ impl Gui {
         let mut actions = vec![];
 
         // ================== GUI starts ========================
-        egui::Window::new("Terrain tools")
+        egui::Window::new("Tools")
             .anchor(Align2::RIGHT_TOP, egui::Vec2::new(-10.0, 10.0))
             .resizable(false)
             .show(&self.ctx, |ui| {
@@ -121,8 +122,8 @@ impl Gui {
                     actions.push(Action::SaveTerrain);
                 }
 
-                if ui.button("Quit").clicked() {
-                    actions.push(Action::Quit);
+                if ui.button("Save camera position").clicked() {
+                    actions.push(Action::SaveCamera);
                 }
             });
         // ================== GUI ends ===========================

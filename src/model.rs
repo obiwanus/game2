@@ -104,27 +104,39 @@ impl Model {
                 // Add indices to our buffer
                 let accessor = primitive.indices().unwrap();
                 {
-                    use gltf::accessor::DataType;
-                    if accessor.data_type() != DataType::U32 {
-                        unimplemented!("We only support indices of type UNSIGNED_INT");
-                    }
-
                     let buffer_view = accessor.view().unwrap();
                     let offset = buffer_view.offset() + accessor.offset();
                     let stride = buffer_view.stride().unwrap_or(0);
                     assert_eq!(stride, 0); // support only tightly packed indices
 
                     let src_buffer = &buffers[buffer_view.buffer().index()];
-                    unsafe {
-                        let src_buffer = src_buffer.as_ptr().add(offset) as *const u32;
-                        for i in 0..accessor.count() {
-                            let index = {
-                                let index_ptr = src_buffer.add(i);
 
-                                *index_ptr
-                            };
-                            indices.push(vertex_start as u32 + index);
-                        }
+                    use gltf::accessor::DataType;
+                    match accessor.data_type() {
+                        // NOTE: some duplication
+                        DataType::U32 => unsafe {
+                            let src_buffer = src_buffer.as_ptr().add(offset) as *const u32;
+                            for i in 0..accessor.count() {
+                                let index = {
+                                    let index_ptr = src_buffer.add(i);
+
+                                    *index_ptr
+                                };
+                                indices.push(vertex_start as u32 + index);
+                            }
+                        },
+                        DataType::U16 => unsafe {
+                            let src_buffer = src_buffer.as_ptr().add(offset) as *const u16;
+                            for i in 0..accessor.count() {
+                                let index = {
+                                    let index_ptr = src_buffer.add(i);
+
+                                    *index_ptr
+                                };
+                                indices.push(vertex_start as u32 + index as u32);
+                            }
+                        },
+                        _ => unimplemented!("We only support indices of types U16 and U32"),
                     }
                 }
                 assert_eq!(indices.len(), first_index + accessor.count());
@@ -150,8 +162,6 @@ impl Model {
             gl::CreateVertexArrays(1, &mut vao);
             gl::CreateBuffers(1, &mut vbo);
             gl::CreateBuffers(1, &mut ebo);
-
-            dbg!(vao);
 
             // Attach buffers to vao
             gl::VertexArrayVertexBuffer(vao, 0, vbo, 0, size_of::<Vertex>() as i32);
@@ -245,24 +255,30 @@ impl Model {
                     image.height as i32,
                 );
                 let format = match image.format {
-                    Format::B8G8R8 => gl::BGR,
                     Format::B8G8R8A8 => gl::BGRA,
-                    Format::R8G8B8 => gl::RGB,
                     Format::R8G8B8A8 => gl::RGBA,
+                    Format::R8G8B8 => gl::RGB,
+                    Format::B8G8R8 => gl::BGR,
                     _ => panic!("Unsupported texture format"),
                 };
+                if format == gl::RGB || format == gl::BGR {
+                    gl::PixelStorei(gl::UNPACK_ALIGNMENT, 1);
+                }
                 gl::TextureSubImage2D(
                     texture,
                     0,
                     0,
                     0,
                     image.width as i32,
-                    image.width as i32,
+                    image.height as i32,
                     format,
                     gl::UNSIGNED_BYTE,
                     image.pixels.as_ptr() as *const _,
                 );
                 gl::GenerateTextureMipmap(texture);
+                if format == gl::RGB || format == gl::BGR {
+                    gl::PixelStorei(gl::UNPACK_ALIGNMENT, 4);
+                }
             }
         }
 

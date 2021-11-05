@@ -225,12 +225,11 @@ impl Game {
         // shader.set_float("material.shininess", 10.0)?;
 
         // Set up camera
-        let camera = Camera::new(
-            Vec3::new(520.0, 250.0, 100.0),
-            Vec3::new(0.0, 130.0, 0.0),
-            window_size.width,
-            window_size.height,
-        );
+        let position = config
+            .camera_position
+            .unwrap_or_else(|| Vec3::new(520.0, 250.0, 100.0));
+        let target = position + config.camera_direction.unwrap_or(-position);
+        let camera = Camera::new(position, target, window_size.width, window_size.height);
 
         // Set up camera transforms uniform buffer
         let mut transforms_ubo: GLuint = 0;
@@ -283,7 +282,8 @@ impl Game {
             GameObject {
                 pos: Vec3::new(0.0, 100.0, 0.0),
                 orientation: Quat::default(),
-                model: Model::load("models/viking_room/scene.gltf")?,
+                model: Model::load("models/box/box.gltf")?,
+                // model: Model::load("models/viking_room/scene.gltf")?,
             },
             // GameObject {
             //     pos: Vec3::new(100.0, 200.0, 0.0),
@@ -535,6 +535,11 @@ impl Game {
                     self.config.start_with_flat_terrain = false;
                     self.config.save();
                 }
+                Action::SaveCamera => {
+                    self.config.camera_position = Some(self.camera.position.clone());
+                    self.config.camera_direction = Some(self.camera.direction.clone());
+                    self.config.save();
+                }
                 Action::Quit => {
                     self.input.should_exit = true;
                 }
@@ -641,10 +646,11 @@ impl Game {
                         gl::ActiveTexture(unit_to_gl_const(0));
                         gl::BindTexture(gl::TEXTURE_2D, material.base_color_texture);
 
-                        gl::DrawArrays(
+                        gl::DrawElements(
                             gl::TRIANGLES,
-                            primitive.first_index as i32,
                             primitive.index_count as i32,
+                            gl::UNSIGNED_INT,
+                            primitive.first_index as *const _,
                         );
                     }
                 }

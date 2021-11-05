@@ -1,5 +1,6 @@
 use std::fs;
 
+use glam::Vec3;
 use serde::{Deserialize, Serialize};
 
 use crate::Result;
@@ -8,6 +9,8 @@ use crate::Result;
 pub struct Config {
     pub heightmap_path: String,
     pub start_with_flat_terrain: bool,
+    pub camera_position: Option<Vec3>,
+    pub camera_direction: Option<Vec3>,
 }
 
 impl Config {
@@ -18,6 +21,8 @@ impl Config {
             Config {
                 heightmap_path: "textures/heightmaps/heightmap.png".to_owned(),
                 start_with_flat_terrain: true,
+                camera_position: None,
+                camera_direction: None,
             }
         };
         Ok(config)
