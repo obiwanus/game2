@@ -31,11 +31,11 @@ DONE:
 8 Nov 2021, Mon
 + Update the stack overflow post
 + Allocate some buffer in advance for the GUI
-- Fix model loading
++ Fix model loading
     + Check how indices are set
     + Draw the vertices on paper
     + Draw the vertices correctly
-    - Understand why UVs are all 0
+    + Understand why UVs are all 0
 
 7 Nov 2021, Sun
 + Verify that the call to glVertexArrayVertexBuffer is indeed done

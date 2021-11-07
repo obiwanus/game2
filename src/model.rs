@@ -195,7 +195,7 @@ impl Model {
                 vao,
                 2,
                 2,
-                gl::UNSIGNED_BYTE,
+                gl::FLOAT,
                 gl::FALSE,
                 offset_of!(Vertex, uv) as u32,
             );
