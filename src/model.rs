@@ -1,4 +1,5 @@
 use std::mem::size_of;
+use std::ptr::slice_from_raw_parts;
 
 use gl::types::*;
 use glam::{Mat4, Vec2, Vec3, Vec4};
@@ -121,30 +122,22 @@ impl Model {
                     assert_eq!(stride, 0); // support only tightly packed indices
 
                     let src_buffer = &buffers[buffer_view.buffer().index()];
+                    let vertex_start = vertex_start as u32;
 
                     match accessor.data_type() {
-                        // NOTE: some duplication
                         DataType::U32 => unsafe {
                             let src_buffer = src_buffer.as_ptr().add(offset) as *const u32;
-                            for i in 0..accessor.count() {
-                                let index = {
-                                    let index_ptr = src_buffer.add(i);
-
-                                    *index_ptr
-                                };
-                                indices.push(vertex_start as u32 + index);
-                            }
+                            let index_slice =
+                                std::slice::from_raw_parts(src_buffer, accessor.count());
+                            indices.extend(index_slice.iter().map(|&index| vertex_start + index));
                         },
                         DataType::U16 => unsafe {
                             let src_buffer = src_buffer.as_ptr().add(offset) as *const u16;
-                            for i in 0..accessor.count() {
-                                let index = {
-                                    let index_ptr = src_buffer.add(i);
-
-                                    *index_ptr
-                                };
-                                indices.push(vertex_start as u32 + index as u32);
-                            }
+                            let index_slice =
+                                std::slice::from_raw_parts(src_buffer, accessor.count());
+                            indices.extend(
+                                index_slice.iter().map(|&index| vertex_start + index as u32),
+                            );
                         },
                         _ => unimplemented!("We only support indices of types U16 and U32"),
                     }
