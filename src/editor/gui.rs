@@ -39,6 +39,11 @@ impl Gui {
         let mut vao: GLuint = 0;
         let mut vbo: GLuint = 0;
         let mut ebo: GLuint = 0;
+
+        // Initial size
+        let vertex_buffer_size = 1024 * 1024;
+        let index_buffer_size = 1024 * 1024;
+
         unsafe {
             // Create objects
             gl::CreateVertexArrays(1, &mut vao);
@@ -48,6 +53,21 @@ impl Gui {
             // Attach buffers to vao
             gl::VertexArrayVertexBuffer(vao, 0, vbo, 0, size_of::<Vertex>() as i32);
             gl::VertexArrayElementBuffer(vao, ebo);
+
+            // Allocate some initial storage for the buffers with the hope that
+            // it won't have to reallocate often
+            gl::NamedBufferStorage(
+                vbo,
+                vertex_buffer_size as isize,
+                std::ptr::null(),
+                gl::DYNAMIC_STORAGE_BIT,
+            );
+            gl::NamedBufferStorage(
+                ebo,
+                index_buffer_size as isize,
+                std::ptr::null(),
+                gl::DYNAMIC_STORAGE_BIT,
+            );
 
             // Position
             gl::VertexArrayAttribFormat(
@@ -105,8 +125,8 @@ impl Gui {
             vao,
             vbo,
             ebo,
-            vertex_buffer_size: 0,
-            index_buffer_size: 0,
+            vertex_buffer_size,
+            index_buffer_size,
             index_count: 0,
         })
     }
