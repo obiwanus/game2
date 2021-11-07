@@ -20,3 +20,6 @@
 - Mocking in Rust is usually done via generics
 - It may be useful to do fuzz-testing of the program. cargo-fuzz is a tool to look at
 - Tools like Miri and Loom can help debug issues with UB and data races
+- For performance testing it's important not to measure stuff you don't want to measure, e.g. I/O overhead
+- If necessary, you can disable some optimisations using the black_box function
+- Given that performance very often varies for reasons not related to the code itself, it's important to run benchmarks several times and maybe print a distribution histogram
