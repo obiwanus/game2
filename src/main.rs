@@ -190,7 +190,7 @@ impl Game {
             .with_double_buffer(Some(true))
             .with_depth_buffer(16)
             .with_vsync(true)
-            .build_windowed(window_builder, &event_loop)?;
+            .build_windowed(window_builder, event_loop)?;
 
         // Set up OpenGL
         let windowed_context = unsafe { windowed_context.make_current().unwrap() };
@@ -519,7 +519,7 @@ impl Game {
     }
 
     fn draw_editor(&mut self, delta_time: f32) -> Result<GameMode> {
-        let (gui_shapes, actions) = self.gui.layout_and_interact(self.gui_input.take());
+        let actions = self.gui.layout_and_interact(self.gui_input.take());
 
         for action in actions {
             match action {
@@ -659,7 +659,7 @@ impl Game {
 
         self.skybox.draw();
 
-        self.gui.draw(gui_shapes);
+        self.gui.draw();
 
         self.windowed_context.swap_buffers()?;
 

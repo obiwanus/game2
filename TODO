@@ -28,6 +28,13 @@ TODO:
 
 DONE:
 
+8 Nov 2021, Mon
+- Allocate some buffer in advance for the GUI
+
+7 Nov 2021, Sun
++ Verify that the call to glVertexArrayVertexBuffer is indeed done
++ Try to combine all GUI meshes into a single buffer and possibly draw with 1 draw call
+
 5 Nov 2021, Fri
 - Fix model loading
     + Make blender export textures

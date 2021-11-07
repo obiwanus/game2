@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use egui::{epaint::ClippedShape, Align2, ClippedMesh, CtxRef, Output, RawInput};
+use egui::{Align2, ClippedMesh, CtxRef, RawInput};
 use epaint::Color32;
 use gl::types::*;
 use glam::Vec2;
@@ -24,10 +24,13 @@ pub struct Gui {
 
     shader: Program,
 
-    // Trying without any abstractions
+    // OpenGL buffers
     vao: GLuint,
     vbo: GLuint,
     ebo: GLuint,
+    vertex_buffer_size: usize,
+    index_buffer_size: usize,
+    index_count: i32,
 }
 
 impl Gui {
@@ -102,6 +105,9 @@ impl Gui {
             vao,
             vbo,
             ebo,
+            vertex_buffer_size: 0,
+            index_buffer_size: 0,
+            index_count: 0,
         })
     }
 
@@ -109,7 +115,7 @@ impl Gui {
         self.ctx.wants_pointer_input() || self.ctx.wants_keyboard_input()
     }
 
-    pub fn layout_and_interact(&mut self, input: RawInput) -> (Vec<ClippedShape>, Vec<Action>) {
+    pub fn layout_and_interact(&mut self, input: RawInput) -> Vec<Action> {
         self.ctx.begin_frame(input);
         let mut actions = vec![];
 
@@ -128,18 +134,89 @@ impl Gui {
             });
         // ================== GUI ends ===========================
 
+        // TODO: handle output
         let (_output, shapes) = self.ctx.end_frame();
 
-        (shapes, actions)
-    }
-
-    pub fn draw(&mut self, shapes: Vec<ClippedShape>) {
-        let pixels_per_point = self.ctx.pixels_per_point();
-        let screen_size_in_points = self.screen_size / pixels_per_point;
-
+        // Send meshes and texture to GPU
         self.upload_egui_texture();
 
         let clipped_meshes = self.ctx.tessellate(shapes);
+
+        let mut vertices: Vec<Vertex> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
+        let mut vertex_count = 0;
+
+        for ClippedMesh(_clip_rect, mesh) in clipped_meshes {
+            vertices.extend(mesh.vertices.iter().map(|v| Vertex {
+                pos: [v.pos.x, v.pos.y],
+                uv: [v.uv.x, v.uv.y],
+                srgba: v.color.to_array(),
+            }));
+            indices.extend(mesh.indices.iter().map(|&i| i + vertex_count));
+            vertex_count = vertices.len() as u32;
+        }
+        self.index_count = indices.len() as i32;
+
+        // Fill vertex buffer with data, reallocating if necessary
+        let required_size = size_of_slice(&vertices);
+        if self.vertex_buffer_size < required_size {
+            unsafe {
+                gl::DeleteBuffers(1, &self.vbo);
+                gl::CreateBuffers(1, &mut self.vbo);
+                gl::VertexArrayVertexBuffer(self.vao, 0, self.vbo, 0, size_of::<Vertex>() as i32);
+                gl::NamedBufferStorage(
+                    self.vbo,
+                    required_size as isize,
+                    vertices.as_ptr() as *const _,
+                    gl::DYNAMIC_STORAGE_BIT,
+                );
+            }
+            self.vertex_buffer_size = required_size;
+            println!("Reallocating vertex buffer to {}", required_size);
+        } else {
+            unsafe {
+                gl::NamedBufferSubData(
+                    self.vbo,
+                    0,
+                    required_size as isize,
+                    vertices.as_ptr() as *const _,
+                )
+            }
+        }
+
+        // Fill index buffer with data, reallocating if necessary
+        let required_size = size_of_slice(&indices);
+        if self.index_buffer_size < required_size {
+            unsafe {
+                gl::DeleteBuffers(1, &self.ebo);
+                gl::CreateBuffers(1, &mut self.ebo);
+                gl::VertexArrayElementBuffer(self.vao, self.ebo);
+                gl::NamedBufferStorage(
+                    self.ebo,
+                    required_size as isize,
+                    indices.as_ptr() as *const _,
+                    gl::DYNAMIC_STORAGE_BIT,
+                );
+            }
+            self.index_buffer_size = required_size;
+            println!("Reallocating index buffer to {}", required_size);
+        } else {
+            unsafe {
+                gl::NamedBufferSubData(
+                    self.ebo,
+                    0,
+                    required_size as isize,
+                    indices.as_ptr() as *const _,
+                )
+            }
+        }
+
+        actions
+    }
+
+    pub fn draw(&mut self) {
+        let pixels_per_point = self.ctx.pixels_per_point();
+        let screen_size_in_points = self.screen_size / pixels_per_point;
 
         self.shader.set_used();
         self.shader
@@ -148,59 +225,28 @@ impl Gui {
         unsafe {
             gl::ActiveTexture(unit_to_gl_const(0));
             gl::BindTexture(gl::TEXTURE_2D, self.egui_texture);
-        }
 
-        for ClippedMesh(clip_rect, mesh) in clipped_meshes {
-            let vertices = mesh
-                .vertices
-                .iter()
-                .map(|v| Vertex {
-                    pos: [v.pos.x, v.pos.y],
-                    uv: [v.uv.x, v.uv.y],
-                    srgba: v.color.to_array(),
-                })
-                .collect::<Vec<Vertex>>();
+            gl::BindVertexArray(self.vao);
+            gl::Disable(gl::DEPTH_TEST);
+            gl::Disable(gl::CULL_FACE);
+            gl::Enable(gl::BLEND);
+            gl::BlendFuncSeparate(
+                gl::ONE,
+                gl::ONE_MINUS_SRC_ALPHA,
+                gl::ONE_MINUS_DST_ALPHA,
+                gl::ONE,
+            );
 
-            // Upload vertex and index data
-            unsafe {
-                gl::NamedBufferData(
-                    self.vbo,
-                    size_of_slice(&vertices) as isize,
-                    vertices.as_ptr() as *const _,
-                    gl::STREAM_DRAW,
-                );
-                gl::NamedBufferData(
-                    self.ebo,
-                    size_of_slice(&mesh.indices) as isize,
-                    mesh.indices.as_ptr() as *const _,
-                    gl::STREAM_DRAW,
-                );
-            }
+            gl::DrawElements(
+                gl::TRIANGLES,
+                self.index_count,
+                gl::UNSIGNED_INT,
+                std::ptr::null(),
+            );
 
-            // Draw
-            unsafe {
-                gl::BindVertexArray(self.vao);
-                gl::Disable(gl::DEPTH_TEST);
-                gl::Disable(gl::CULL_FACE);
-                gl::Enable(gl::BLEND);
-                gl::BlendFuncSeparate(
-                    gl::ONE,
-                    gl::ONE_MINUS_SRC_ALPHA,
-                    gl::ONE_MINUS_DST_ALPHA,
-                    gl::ONE,
-                );
-
-                gl::DrawElements(
-                    gl::TRIANGLES,
-                    mesh.indices.len() as i32,
-                    gl::UNSIGNED_INT,
-                    std::ptr::null(),
-                );
-
-                gl::Disable(gl::BLEND);
-                gl::Enable(gl::DEPTH_TEST);
-                gl::Enable(gl::CULL_FACE);
-            }
+            gl::Disable(gl::BLEND);
+            gl::Enable(gl::DEPTH_TEST);
+            gl::Enable(gl::CULL_FACE);
         }
     }
 
