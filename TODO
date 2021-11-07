@@ -33,6 +33,8 @@ DONE:
 + Allocate some buffer in advance for the GUI
 - Fix model loading
     + Check how indices are set
+    + Draw the vertices on paper
+    + Draw the vertices correctly
     - Understand why UVs are all 0
 
 7 Nov 2021, Sun

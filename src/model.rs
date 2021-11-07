@@ -50,17 +50,17 @@ impl Model {
                     for (attr, accessor) in primitive.attributes() {
                         let buffer_view = accessor.view().unwrap();
                         let offset = buffer_view.offset() + accessor.offset();
-                        let stride =
-                            buffer_view
-                                .stride()
-                                .unwrap_or_else(|| match accessor.data_type() {
+                        let stride = buffer_view.stride().unwrap_or_else(|| {
+                            accessor.dimensions().multiplicity()
+                                * match accessor.data_type() {
                                     DataType::I8 => 1,
                                     DataType::U8 => 1,
                                     DataType::I16 => 2,
                                     DataType::U16 => 2,
                                     DataType::U32 => 4,
                                     DataType::F32 => 4,
-                                });
+                                }
+                        });
                         let count = accessor.count();
 
                         let src_buffer = &buffers[buffer_view.buffer().index()];
