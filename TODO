@@ -28,6 +28,13 @@ TODO:
 
 DONE:
 
+13 Nov 2021, Sat
+- Add gizmos
+    - Read the code of egui-gizmo
+
+9 Nov 2021, Tue
+- Load vertices in a more straightforward way
+
 8 Nov 2021, Mon
 + Update the stack overflow post
 + Allocate some buffer in advance for the GUI

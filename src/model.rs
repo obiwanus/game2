@@ -1,9 +1,9 @@
 use std::mem::size_of;
-use std::ptr::slice_from_raw_parts;
 
 use gl::types::*;
 use glam::{Mat4, Vec2, Vec3, Vec4};
 use gltf::accessor::DataType;
+use gltf::accessor::Dimensions;
 use gltf::image::Format;
 use gltf::Document;
 use memoffset::offset_of;
@@ -69,11 +69,10 @@ impl Model {
                             // Get a pointer to the first element of attribute
                             let mut cursor = src_buffer.as_ptr().add(offset);
 
-                            use gltf::accessor::Dimensions;
                             use gltf::Semantic::*;
                             match attr {
                                 Positions => {
-                                    assert_eq!(accessor.dimensions(), Dimensions::Vec3);
+                                    debug_assert_eq!(accessor.dimensions(), Dimensions::Vec3);
                                     for _ in 0..count {
                                         let position = cursor as *const Vec3;
                                         positions.push(*position);
@@ -81,7 +80,7 @@ impl Model {
                                     }
                                 }
                                 Normals => {
-                                    assert_eq!(accessor.dimensions(), Dimensions::Vec3);
+                                    debug_assert_eq!(accessor.dimensions(), Dimensions::Vec3);
                                     for _ in 0..count {
                                         let normal = cursor as *const Vec3;
                                         normals.push(*normal);
@@ -89,7 +88,7 @@ impl Model {
                                     }
                                 }
                                 TexCoords(0) => {
-                                    assert_eq!(accessor.dimensions(), Dimensions::Vec2);
+                                    debug_assert_eq!(accessor.dimensions(), Dimensions::Vec2);
                                     for _ in 0..count {
                                         let uv = cursor as *const Vec2;
                                         uvs.push(*uv);
