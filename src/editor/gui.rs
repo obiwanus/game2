@@ -1,9 +1,10 @@
 use std::mem::size_of;
 
 use egui::{Align2, ClippedMesh, CtxRef, RawInput};
+use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
 use epaint::Color32;
 use gl::types::*;
-use glam::Vec2;
+use glam::{Mat4, Vec2};
 use memoffset::offset_of;
 
 use crate::{opengl::shader::Program, texture::unit_to_gl_const, utils::size_of_slice, Result};
@@ -135,11 +136,18 @@ impl Gui {
         self.ctx.wants_pointer_input() || self.ctx.wants_keyboard_input()
     }
 
-    pub fn layout_and_interact(&mut self, input: RawInput) -> Vec<Action> {
+    pub fn layout_and_interact(
+        &mut self,
+        input: RawInput,
+        view_matrix: &Mat4,
+        projection_matrix: &Mat4,
+        model_matrix: &mut Mat4,
+    ) -> Vec<Action> {
         self.ctx.begin_frame(input);
         let mut actions = vec![];
 
         // ================== GUI starts ========================
+
         egui::Window::new("Tools")
             .anchor(Align2::RIGHT_TOP, egui::Vec2::new(-10.0, 10.0))
             .resizable(false)
@@ -152,6 +160,22 @@ impl Gui {
                     actions.push(Action::SaveCamera);
                 }
             });
+
+        egui::Area::new("Viewport")
+            .fixed_pos((0.0, 0.0))
+            .show(&self.ctx, |ui| {
+                let gizmo = Gizmo::new("gizmo")
+                    .view_matrix(view_matrix.to_cols_array_2d())
+                    .projection_matrix(projection_matrix.to_cols_array_2d())
+                    .model_matrix(model_matrix.to_cols_array_2d())
+                    .mode(GizmoMode::Translate)
+                    .orientation(GizmoOrientation::Global);
+
+                if let Some(gizmo_result) = gizmo.interact(ui) {
+                    *model_matrix = Mat4::from_cols_array_2d(&gizmo_result.transform);
+                }
+            });
+
         // ================== GUI ends ===========================
 
         // TODO: handle output

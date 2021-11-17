@@ -28,9 +28,14 @@ TODO:
 
 DONE:
 
+18 Nov 2021, Sun
+- Figure out how to structure code so that we can use gizmos
+    - Add gizmos somewhere, don't worry about design
+    - Worry about design
+
 13 Nov 2021, Sat
 - Add gizmos
-    - Read the code of egui-gizmo
+    + Read the code of egui-gizmo
 
 9 Nov 2021, Tue
 - Load vertices in a more straightforward way

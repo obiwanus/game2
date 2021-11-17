@@ -94,7 +94,7 @@ enum TerrainTool {
 
 // NOTE: no need to worry about std140 because Mat4's are aligned properly and with no gaps
 #[repr(C)]
-pub struct TransformsUBO {
+pub struct CameraTransforms {
     mvp: Mat4,
     proj: Mat4,
     view: Mat4,
@@ -107,6 +107,18 @@ struct GameObject {
     pos: Vec3,
     orientation: Quat,
     model: Model,
+}
+
+impl GameObject {
+    pub fn get_model_matrix(&self) -> Mat4 {
+        Mat4::from_rotation_translation(self.orientation, self.pos)
+    }
+
+    pub fn set_model_matrix(&mut self, model_matrix: &Mat4) {
+        let (_scale, orientation, pos) = model_matrix.to_scale_rotation_translation();
+        self.pos = pos;
+        self.orientation = orientation;
+    }
 }
 
 struct Game {
@@ -138,8 +150,8 @@ struct Game {
     editor_mode: EditorMode,
 
     // tmp
-    transforms_ubo: GLuint,
-    transforms_data: TransformsUBO,
+    camera_transforms_ubo: GLuint,
+    camera_transforms: CameraTransforms,
 
     model_shader: Program,
     game_objects: Vec<GameObject>,
@@ -237,7 +249,7 @@ impl Game {
             gl::CreateBuffers(1, &mut transforms_ubo);
             gl::NamedBufferStorage(
                 transforms_ubo,
-                std::mem::size_of::<TransformsUBO>() as isize,
+                std::mem::size_of::<CameraTransforms>() as isize,
                 std::ptr::null(),
                 gl::DYNAMIC_STORAGE_BIT,
             );
@@ -254,7 +266,7 @@ impl Game {
                 Vec3::new(0.0, 1.0, 0.0),
             );
 
-            TransformsUBO {
+            CameraTransforms {
                 mvp: proj * view * model,
                 proj,
                 view,
@@ -353,8 +365,8 @@ impl Game {
                 tool: TerrainTool::Sculpt,
             },
 
-            transforms_ubo,
-            transforms_data,
+            camera_transforms_ubo: transforms_ubo,
+            camera_transforms: transforms_data,
 
             game_objects,
             model_shader,
@@ -518,7 +530,15 @@ impl Game {
     }
 
     fn draw_editor(&mut self, delta_time: f32) -> Result<GameMode> {
-        let actions = self.gui.layout_and_interact(self.gui_input.take());
+        let active_game_object = 0;
+        let mut model_matrix = self.game_objects[active_game_object].get_model_matrix();
+        let actions = self.gui.layout_and_interact(
+            self.gui_input.take(),
+            &self.camera_transforms.view,
+            &self.camera_transforms.proj,
+            &mut model_matrix,
+        );
+        self.game_objects[active_game_object].set_model_matrix(&model_matrix);
 
         for action in actions {
             match action {
@@ -535,8 +555,8 @@ impl Game {
                     self.config.save();
                 }
                 Action::SaveCamera => {
-                    self.config.camera_position = Some(self.camera.position.clone());
-                    self.config.camera_direction = Some(self.camera.direction.clone());
+                    self.config.camera_position = Some(self.camera.position);
+                    self.config.camera_direction = Some(self.camera.direction);
                     self.config.save();
                 }
                 Action::Quit => {
@@ -586,17 +606,17 @@ impl Game {
 
             if self.input.camera_moved {
                 // Update camera tranforms uniform buffer
-                self.transforms_data.view = self.camera.get_view_matrix();
-                self.transforms_data.proj = self.camera.get_projection_matrix();
-                self.transforms_data.mvp = self.transforms_data.proj
-                    * self.transforms_data.view
-                    * self.transforms_data.model;
-                let data = &self.transforms_data as *const TransformsUBO;
+                self.camera_transforms.view = self.camera.get_view_matrix();
+                self.camera_transforms.proj = self.camera.get_projection_matrix();
+                self.camera_transforms.mvp = self.camera_transforms.proj
+                    * self.camera_transforms.view
+                    * self.camera_transforms.model;
+                let data = &self.camera_transforms as *const CameraTransforms;
                 unsafe {
                     gl::NamedBufferSubData(
-                        self.transforms_ubo,
+                        self.camera_transforms_ubo,
                         0,
-                        std::mem::size_of::<TransformsUBO>() as isize,
+                        std::mem::size_of::<CameraTransforms>() as isize,
                         data as *const _,
                     )
                 }
@@ -631,7 +651,7 @@ impl Game {
         // Draw objects
         self.model_shader.set_used();
         for obj in &self.game_objects {
-            let transform = Mat4::from_rotation_translation(obj.orientation, obj.pos);
+            let transform = obj.get_model_matrix();
             unsafe {
                 gl::BindVertexArray(obj.model.vao);
             }
