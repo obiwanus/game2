@@ -292,20 +292,20 @@ impl Game {
 
         let game_objects = vec![
             GameObject {
-                pos: Vec3::new(0.0, 100.0, 0.0),
+                pos: Vec3::new(0.0, 0.0, 0.0),
                 orientation: Quat::default(),
                 model: Model::load("models/viking_room/scene.gltf")?,
             },
-            GameObject {
-                pos: Vec3::new(100.0, 100.0, 0.0),
-                orientation: Quat::default(),
-                model: Model::load("models/box/box.gltf")?,
-            },
-            GameObject {
-                pos: Vec3::new(-100.0, 100.0, 0.0),
-                orientation: Quat::default(),
-                model: Model::load("models/box/box.gltf")?,
-            },
+            // GameObject {
+            //     pos: Vec3::new(100.0, 100.0, 0.0),
+            //     orientation: Quat::default(),
+            //     model: Model::load("models/box/box.gltf")?,
+            // },
+            // GameObject {
+            //     pos: Vec3::new(-100.0, 100.0, 0.0),
+            //     orientation: Quat::default(),
+            //     model: Model::load("models/box/box.gltf")?,
+            // },
         ];
 
         let model_shader = Program::new()

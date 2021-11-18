@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use egui::{Align2, ClippedMesh, CtxRef, RawInput};
-use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation};
+use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation, GizmoVisuals};
 use epaint::Color32;
 use gl::types::*;
 use glam::{Mat4, Vec2};
@@ -164,12 +164,17 @@ impl Gui {
         egui::Area::new("Viewport")
             .fixed_pos((0.0, 0.0))
             .show(&self.ctx, |ui| {
+                let visuals = GizmoVisuals {
+                    gizmo_size: 100.0,
+                    ..Default::default()
+                };
                 let gizmo = Gizmo::new("gizmo")
                     .view_matrix(view_matrix.to_cols_array_2d())
                     .projection_matrix(projection_matrix.to_cols_array_2d())
                     .model_matrix(model_matrix.to_cols_array_2d())
                     .mode(GizmoMode::Translate)
-                    .orientation(GizmoOrientation::Global);
+                    .orientation(GizmoOrientation::Global)
+                    .visuals(visuals);
 
                 if let Some(gizmo_result) = gizmo.interact(ui) {
                     *model_matrix = Mat4::from_cols_array_2d(&gizmo_result.transform);

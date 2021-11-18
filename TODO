@@ -29,9 +29,12 @@ TODO:
 DONE:
 
 18 Nov 2021, Sun
-- Figure out how to structure code so that we can use gizmos
-    - Add gizmos somewhere, don't worry about design
-    - Worry about design
++ Figure out how to structure code so that we can use gizmos
+    + Add gizmos somewhere, don't worry about design
+    + Worry about design
+- Find a way to interact with gizmo
+    + Check how mouse pointer is processed
+    - Understand why drag is not registered
 
 13 Nov 2021, Sat
 - Add gizmos

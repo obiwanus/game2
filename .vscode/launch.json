@@ -16,6 +16,7 @@
                 }
             },
             "args": [],
+            "console": "internalConsole",
             "cwd": "${workspaceFolder}"
         }
     ]

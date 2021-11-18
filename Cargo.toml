@@ -22,3 +22,6 @@ serde_json = "1"
 
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.dev.package."egui-gizmo"]
+opt-level = 0
