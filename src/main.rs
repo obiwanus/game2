@@ -296,16 +296,16 @@ impl Game {
                 orientation: Quat::default(),
                 model: Model::load("models/viking_room/scene.gltf")?,
             },
-            // GameObject {
-            //     pos: Vec3::new(100.0, 100.0, 0.0),
-            //     orientation: Quat::default(),
-            //     model: Model::load("models/box/box.gltf")?,
-            // },
-            // GameObject {
-            //     pos: Vec3::new(-100.0, 100.0, 0.0),
-            //     orientation: Quat::default(),
-            //     model: Model::load("models/box/box.gltf")?,
-            // },
+            GameObject {
+                pos: Vec3::new(100.0, 100.0, 0.0),
+                orientation: Quat::default(),
+                model: Model::load("models/box/box.gltf")?,
+            },
+            GameObject {
+                pos: Vec3::new(-100.0, 100.0, 0.0),
+                orientation: Quat::default(),
+                model: Model::load("models/box/box.gltf")?,
+            },
         ];
 
         let model_shader = Program::new()
@@ -539,31 +539,7 @@ impl Game {
             &mut model_matrix,
         );
         self.game_objects[active_game_object].set_model_matrix(&model_matrix);
-
-        for action in actions {
-            match action {
-                Action::SaveTerrain => {
-                    let (pixels, size) = self.terrain.get_heightmap_pixels();
-                    image::save_buffer(
-                        self.config.heightmap_path.clone(),
-                        &pixels,
-                        size as u32,
-                        size as u32,
-                        image::ColorType::L16,
-                    )?;
-                    self.config.start_with_flat_terrain = false;
-                    self.config.save();
-                }
-                Action::SaveCamera => {
-                    self.config.camera_position = Some(self.camera.position);
-                    self.config.camera_direction = Some(self.camera.direction);
-                    self.config.save();
-                }
-                Action::Quit => {
-                    self.input.should_exit = true;
-                }
-            }
-        }
+        self.process_gui_actions(actions)?;
 
         let state = &mut self.editor_state;
 
@@ -686,6 +662,34 @@ impl Game {
         self.old_input = self.input.renew();
 
         Ok(GameMode::Editor)
+    }
+
+    fn process_gui_actions(&mut self, actions: Vec<Action>) -> Result<()> {
+        for action in actions {
+            match action {
+                Action::SaveTerrain => {
+                    let (pixels, size) = self.terrain.get_heightmap_pixels();
+                    image::save_buffer(
+                        self.config.heightmap_path.clone(),
+                        &pixels,
+                        size as u32,
+                        size as u32,
+                        image::ColorType::L16,
+                    )?;
+                    self.config.start_with_flat_terrain = false;
+                    self.config.save();
+                }
+                Action::SaveCamera => {
+                    self.config.camera_position = Some(self.camera.position);
+                    self.config.camera_direction = Some(self.camera.direction);
+                    self.config.save();
+                }
+                Action::Quit => {
+                    self.input.should_exit = true;
+                }
+            }
+        }
+        Ok(())
     }
 }
 
