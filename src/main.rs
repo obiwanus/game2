@@ -81,9 +81,7 @@ enum EditorMode {
     Terrain { tool: TerrainTool },
 }
 
-struct EditorState {
-    free_camera: bool,
-}
+struct EditorState {}
 
 enum TerrainTool {
     Sculpt,
@@ -360,7 +358,7 @@ impl Game {
             skybox,
 
             mode: GameMode::Editor,
-            editor_state: EditorState { free_camera: false },
+            editor_state: EditorState {},
             editor_mode: EditorMode::Terrain {
                 tool: TerrainTool::Sculpt,
             },
@@ -412,6 +410,9 @@ impl Game {
                     self.gui_input
                         .events
                         .push(GuiEvent::PointerMoved(vec2_to_egui_pos2(pointer)));
+                }
+                WindowEvent::CursorLeft { .. } => {
+                    self.gui_input.events.push(GuiEvent::PointerGone);
                 }
                 WindowEvent::MouseInput { button, state, .. } => {
                     let pressed = state == ElementState::Pressed;
@@ -541,19 +542,16 @@ impl Game {
         self.game_objects[active_game_object].set_model_matrix(&model_matrix);
         self.process_gui_actions(actions)?;
 
-        let state = &mut self.editor_state;
-
         if self.gui.wants_input() {
             // Pointer over UI or currently interacting with it
             self.terrain.hide_cursor();
             self.windowed_context.window().set_cursor_visible(true); // we always want cursor with UI
         } else {
             // Process input
-            state.free_camera = self.input.mouse_buttons.secondary;
             self.camera.speed_boost = self.input.modifiers.shift;
 
             // Move camera
-            if state.free_camera {
+            if self.input.mouse_buttons.secondary {
                 use camera::Movement::*;
                 if self.input.forward {
                     self.camera.go(Forward, delta_time);
