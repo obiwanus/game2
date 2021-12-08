@@ -360,7 +360,11 @@ impl Game {
         match event {
             Event::WindowEvent { event, .. } => {
                 // Let egui know about the event
-                self.gui_state.on_event(self.gui.ctx(), &event);
+                let captured = self.gui_state.on_event(self.gui.ctx(), &event);
+                if captured {
+                    // Egui wants this event exclusively
+                    return Ok(());
+                }
 
                 // Process window event
                 match event {
@@ -468,7 +472,7 @@ impl Game {
     }
 
     fn draw_editor(&mut self, delta_time: f32) -> Result<GameMode> {
-        let active_game_object = 0;
+        let active_game_object = 1;
         let mut model_matrix = self.game_objects[active_game_object].get_model_matrix();
 
         let actions = self.gui.layout_and_interact(
