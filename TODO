@@ -14,7 +14,6 @@ TODO:
 - Optimise the terrain tessellation
     - Non-uniform patches?
     - Tessellate based on LOD
-- Steal code from the egui integration
 - Add ambient occlusion?
 - Optimisation:
     - Build normal map when drawing on heightmap?
@@ -28,8 +27,12 @@ TODO:
 
 DONE:
 
+9 Dec 2021, Thu
+- Implement native egui-winit integration
+
 4 Dec 2021, Sat
 - Understand why drag is not registered
+    - Try using the native egui-winit integration
 
 18 Nov 2021, Thu
 + Figure out how to structure code so that we can use gizmos

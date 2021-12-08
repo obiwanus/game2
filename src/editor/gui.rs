@@ -132,6 +132,10 @@ impl Gui {
         })
     }
 
+    pub fn ctx(&self) -> &CtxRef {
+        &self.ctx
+    }
+
     pub fn wants_input(&self) -> bool {
         self.ctx.wants_pointer_input() || self.ctx.wants_keyboard_input()
     }
@@ -139,6 +143,7 @@ impl Gui {
     pub fn layout_and_interact(
         &mut self,
         input: RawInput,
+        drag: bool,
         view_matrix: &Mat4,
         projection_matrix: &Mat4,
         model_matrix: &mut Mat4,
@@ -175,6 +180,10 @@ impl Gui {
                     .mode(GizmoMode::Translate)
                     .orientation(GizmoOrientation::Global)
                     .visuals(visuals);
+
+                if drag {
+                    let a = 1;
+                }
 
                 if let Some(gizmo_result) = gizmo.interact(ui) {
                     *model_matrix = Mat4::from_cols_array_2d(&gizmo_result.transform);

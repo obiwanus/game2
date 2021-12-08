@@ -1,8 +1,6 @@
 // #![allow(dead_code)]
 // #![allow(unused)]
 
-extern crate gl as opengl_lib;
-
 mod camera;
 mod config;
 mod editor;
@@ -19,6 +17,8 @@ use std::error::Error;
 use std::time::Instant;
 
 use egui::{Event as GuiEvent, Pos2, RawInput as EguiInput, Rect};
+use egui_winit::State as EguiState;
+use gl::types::GLuint;
 use glam::{Mat4, Quat, Vec2, Vec3};
 use glutin::event::{
     DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode,
@@ -34,7 +34,6 @@ use config::Config;
 use editor::gui::{Action, Gui};
 use input::{vec2_to_egui_pos2, vec2_to_egui_vec2, vkeycode_to_egui_key, Input, Modifiers};
 use model::Model;
-use opengl_lib::types::GLuint;
 use skybox::Skybox;
 use terrain::Terrain;
 
@@ -128,14 +127,13 @@ struct Game {
     game_start: Instant,
     frame_start: Instant,
 
-    screen_size: Vec2, // in logical pixels
     scale_factor: f32,
 
     old_input: Input,
     input: Input,
 
-    gui_input: EguiInput,
     gui: Gui,
+    gui_state: EguiState,
 
     camera: Camera,
 
@@ -311,22 +309,11 @@ impl Game {
             .fragment_shader(include_str!("shaders/simple/simple.frag"))?
             .link()?;
 
-        let scale_factor = window.scale_factor() as f32;
         let screen_size_physical = Vec2::new(window_size.width as f32, window_size.height as f32);
-        let screen_size_logical = screen_size_physical / scale_factor;
 
         // Gui and its initial input
         let gui = Gui::new(screen_size_physical)?;
-        let gui_input = EguiInput {
-            screen_rect: Some(Rect::from_min_max(
-                Pos2::new(0.0, 0.0),
-                Pos2::new(screen_size_logical.x, screen_size_logical.y),
-            )),
-            pixels_per_point: Some(scale_factor),
-            time: Some(0.0),
-
-            ..Default::default()
-        };
+        let gui_state = EguiState::new(window);
 
         let now = Instant::now();
         let input = Input {
@@ -337,19 +324,17 @@ impl Game {
         Ok(Game {
             config,
 
+            scale_factor: window.scale_factor() as f32,
             windowed_context,
 
             game_start: now,
             frame_start: now,
 
-            screen_size: screen_size_logical,
-            scale_factor,
-
             old_input: Input::default(),
             input,
 
-            gui_input,
             gui,
+            gui_state,
 
             camera,
             in_focus: true,
@@ -373,115 +358,69 @@ impl Game {
 
     fn process_event(&mut self, event: Event<()>, control_flow: &mut ControlFlow) -> Result<()> {
         match event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CloseRequested => self.input.should_exit = true,
-                WindowEvent::ScaleFactorChanged {
-                    scale_factor,
-                    new_inner_size: _,
-                } => {
-                    self.scale_factor = scale_factor as f32;
-                    self.gui_input.pixels_per_point = Some(scale_factor as f32);
-                }
-                WindowEvent::ModifiersChanged(state) => {
-                    self.input.modifiers = Modifiers {
-                        alt: state.alt(),
-                        ctrl: state.ctrl(),
-                        shift: state.shift(),
-                        logo: state.logo(),
-                    };
-                    self.gui_input.modifiers = egui::Modifiers {
-                        alt: state.alt(),
-                        ctrl: state.ctrl(),
-                        shift: state.shift(),
-                        mac_cmd: false,
-                        command: state.ctrl(),
-                    };
-                    #[cfg(target_os = "macos")]
-                    {
-                        self.gui_input.modifiers.mac_cmd = state.logo();
-                        self.gui_input.modifiers.command = state.logo();
-                    }
-                }
-                WindowEvent::CursorMoved { position, .. } => {
-                    let pointer =
-                        Vec2::new(position.x as f32, position.y as f32) / self.scale_factor;
-                    self.input.pointer = pointer;
-                    self.input.pointer_moved = true;
-                    self.gui_input
-                        .events
-                        .push(GuiEvent::PointerMoved(vec2_to_egui_pos2(pointer)));
-                }
-                WindowEvent::CursorLeft { .. } => {
-                    self.gui_input.events.push(GuiEvent::PointerGone);
-                }
-                WindowEvent::MouseInput { button, state, .. } => {
-                    let pressed = state == ElementState::Pressed;
+            Event::WindowEvent { event, .. } => {
+                // Let egui know about the event
+                self.gui_state.on_event(self.gui.ctx(), &event);
 
-                    match button {
-                        MouseButton::Left => self.input.mouse_buttons.primary = pressed,
-                        MouseButton::Right => self.input.mouse_buttons.secondary = pressed,
-                        MouseButton::Middle => self.input.mouse_buttons.middle = pressed,
-                        _ => {}
+                // Process window event
+                match event {
+                    WindowEvent::CloseRequested => self.input.should_exit = true,
+                    WindowEvent::ScaleFactorChanged {
+                        scale_factor,
+                        new_inner_size: _,
+                    } => {
+                        self.scale_factor = scale_factor as f32;
                     }
+                    WindowEvent::ModifiersChanged(state) => {
+                        self.input.modifiers = Modifiers {
+                            alt: state.alt(),
+                            ctrl: state.ctrl(),
+                            shift: state.shift(),
+                            logo: state.logo(),
+                        };
+                    }
+                    WindowEvent::CursorMoved { position, .. } => {
+                        let pointer =
+                            Vec2::new(position.x as f32, position.y as f32) / self.scale_factor;
+                        self.input.pointer = pointer;
+                        self.input.pointer_moved = true;
+                    }
+                    WindowEvent::MouseInput { button, state, .. } => {
+                        let pressed = state == ElementState::Pressed;
 
-                    let button = match button {
-                        MouseButton::Left => Some(egui::PointerButton::Primary),
-                        MouseButton::Right => Some(egui::PointerButton::Secondary),
-                        MouseButton::Middle => Some(egui::PointerButton::Middle),
-                        _ => None,
-                    };
-                    if let Some(button) = button {
-                        self.gui_input.events.push(GuiEvent::PointerButton {
-                            pos: vec2_to_egui_pos2(self.input.pointer),
-                            button,
-                            pressed,
-                            modifiers: self.gui_input.modifiers,
-                        });
+                        match button {
+                            MouseButton::Left => self.input.mouse_buttons.primary = pressed,
+                            MouseButton::Right => self.input.mouse_buttons.secondary = pressed,
+                            MouseButton::Middle => self.input.mouse_buttons.middle = pressed,
+                            _ => {}
+                        }
                     }
-                }
-                WindowEvent::Focused(focused) => {
-                    self.in_focus = focused;
-                    self.input.modifiers = Modifiers::default();
-                    self.gui_input.modifiers = egui::Modifiers::default();
-                    // @idea: Try using Wait here?
-                }
-                WindowEvent::ReceivedCharacter(ch) => {
-                    if is_printable_char(ch)
-                        && !self.gui_input.modifiers.ctrl
-                        && !self.gui_input.modifiers.mac_cmd
-                    {
-                        self.gui_input.events.push(GuiEvent::Text(ch.to_string()));
+                    WindowEvent::Focused(focused) => {
+                        self.in_focus = focused;
+                        self.input.modifiers = Modifiers::default();
                     }
-                }
-                WindowEvent::KeyboardInput {
-                    input:
-                        KeyboardInput {
-                            state,
-                            virtual_keycode: Some(virtual_key_code),
-                            ..
-                        },
-                    ..
-                } => {
-                    let pressed = state == ElementState::Pressed;
+                    WindowEvent::KeyboardInput {
+                        input:
+                            KeyboardInput {
+                                state,
+                                virtual_keycode: Some(virtual_key_code),
+                                ..
+                            },
+                        ..
+                    } => {
+                        let pressed = state == ElementState::Pressed;
 
-                    match virtual_key_code {
-                        VirtualKeyCode::W => self.input.forward = pressed,
-                        VirtualKeyCode::A => self.input.left = pressed,
-                        VirtualKeyCode::S => self.input.back = pressed,
-                        VirtualKeyCode::D => self.input.right = pressed,
-                        _ => {}
+                        match virtual_key_code {
+                            VirtualKeyCode::W => self.input.forward = pressed,
+                            VirtualKeyCode::A => self.input.left = pressed,
+                            VirtualKeyCode::S => self.input.back = pressed,
+                            VirtualKeyCode::D => self.input.right = pressed,
+                            _ => {}
+                        }
                     }
-
-                    if let Some(key) = vkeycode_to_egui_key(virtual_key_code) {
-                        self.gui_input.events.push(GuiEvent::Key {
-                            key,
-                            pressed,
-                            modifiers: self.gui_input.modifiers,
-                        });
-                    }
+                    _ => {}
                 }
-                _ => {}
-            },
+            }
             Event::DeviceEvent { event, .. } => match event {
                 DeviceEvent::MouseMotion { delta } if self.in_focus => {
                     let (x, y) = delta;
@@ -495,7 +434,6 @@ impl Game {
                     let scroll_delta = Vec2::new(x, y) / self.scale_factor;
                     self.input.scroll_delta += scroll_delta;
                     self.input.scrolled = true;
-                    self.gui_input.scroll_delta = vec2_to_egui_vec2(scroll_delta)
                 }
                 _ => {}
             },
@@ -516,7 +454,6 @@ impl Game {
         let delta_time = now.duration_since(self.frame_start).as_secs_f32();
         self.frame_start = now;
         let time = now.duration_since(self.game_start).as_secs_f64();
-        self.gui_input.time = Some(time);
         self.input.time = time as f32;
 
         let new_mode = match self.mode {
@@ -533,8 +470,11 @@ impl Game {
     fn draw_editor(&mut self, delta_time: f32) -> Result<GameMode> {
         let active_game_object = 0;
         let mut model_matrix = self.game_objects[active_game_object].get_model_matrix();
+
         let actions = self.gui.layout_and_interact(
-            self.gui_input.take(),
+            self.gui_state
+                .take_egui_input(self.windowed_context.window()),
+            self.input.mouse_buttons.primary && self.input.pointer_moved,
             &self.camera_transforms.view,
             &self.camera_transforms.proj,
             &mut model_matrix,
