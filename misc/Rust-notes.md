@@ -23,3 +23,10 @@
 - For performance testing it's important not to measure stuff you don't want to measure, e.g. I/O overhead
 - If necessary, you can disable some optimisations using the black_box function
 - Given that performance very often varies for reasons not related to the code itself, it's important to run benchmarks several times and maybe print a distribution histogram
+
+# Declarative macros
+
+- Macros are hygienic in the sense that they do not affect variables unless they are passed into them
+- However, types and functions are affected
+- You can't make assumptions about the types surrounding you macro call, so you need to use fully specified types such as ::core::option::Option to make sure there are no clashes
+- Unlike everything else in Rust, macros can only be used after they are defined. This is why a macro may not be available if module declaration order is wrong (#[macro_export] can be used to avoid this)
