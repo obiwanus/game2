@@ -1,10 +1,12 @@
 use std::mem::size_of;
 
-use egui::{Align2, ClippedMesh, CtxRef, RawInput};
+use egui::{Align2, ClippedMesh, CtxRef, LayerId, Output};
 use egui_gizmo::{Gizmo, GizmoMode, GizmoOrientation, GizmoVisuals};
+use egui_winit::State;
 use epaint::Color32;
 use gl::types::*;
 use glam::{Mat4, Vec2};
+use glutin::window::Window;
 use memoffset::offset_of;
 
 use crate::{opengl::shader::Program, texture::unit_to_gl_const, utils::size_of_slice, Result};
@@ -142,12 +144,13 @@ impl Gui {
 
     pub fn layout_and_interact(
         &mut self,
-        input: RawInput,
-        drag: bool,
+        state: &mut State,
+        window: &Window,
         view_matrix: &Mat4,
         projection_matrix: &Mat4,
         model_matrix: &mut Mat4,
     ) -> Vec<Action> {
+        let input = state.take_egui_input(window);
         self.ctx.begin_frame(input);
         let mut actions = vec![];
 
@@ -169,31 +172,30 @@ impl Gui {
         egui::Area::new("Viewport")
             .fixed_pos((0.0, 0.0))
             .show(&self.ctx, |ui| {
-                let visuals = GizmoVisuals {
-                    gizmo_size: 100.0,
-                    ..Default::default()
-                };
-                let gizmo = Gizmo::new("gizmo")
-                    .view_matrix(view_matrix.to_cols_array_2d())
-                    .projection_matrix(projection_matrix.to_cols_array_2d())
-                    .model_matrix(model_matrix.to_cols_array_2d())
-                    .mode(GizmoMode::Translate)
-                    .orientation(GizmoOrientation::Global)
-                    .visuals(visuals);
+                ui.with_layer_id(LayerId::background(), |ui| {
+                    let visuals = GizmoVisuals {
+                        gizmo_size: 100.0,
+                        ..Default::default()
+                    };
+                    let gizmo = Gizmo::new("gizmo")
+                        .view_matrix(view_matrix.to_cols_array_2d())
+                        .projection_matrix(projection_matrix.to_cols_array_2d())
+                        .model_matrix(model_matrix.to_cols_array_2d())
+                        .mode(GizmoMode::Translate)
+                        .orientation(GizmoOrientation::Global)
+                        .visuals(visuals);
 
-                if drag {
-                    let a = 1;
-                }
-
-                if let Some(gizmo_result) = gizmo.interact(ui) {
-                    *model_matrix = Mat4::from_cols_array_2d(&gizmo_result.transform);
-                }
+                    if let Some(gizmo_result) = gizmo.interact(ui) {
+                        *model_matrix = Mat4::from_cols_array_2d(&gizmo_result.transform);
+                    }
+                });
             });
 
         // ================== GUI ends ===========================
 
-        // TODO: handle output
-        let (_output, shapes) = self.ctx.end_frame();
+        let (output, shapes) = self.ctx.end_frame();
+
+        state.handle_output(window, &self.ctx, output);
 
         // Send meshes and texture to GPU
         self.upload_egui_texture();

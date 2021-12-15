@@ -27,8 +27,16 @@ TODO:
 
 DONE:
 
+16 Dec 2021, Thu
++ Handle egui output
+- Understand what happens to input when a transparent area is added
+
+10 Dec 2021, Fri
++ Understand why the widget is not hovered
+    + Read the code of egui
+
 9 Dec 2021, Thu
-- Implement native egui-winit integration
++ Implement native egui-winit integration
 
 4 Dec 2021, Sat
 - Understand why drag is not registered

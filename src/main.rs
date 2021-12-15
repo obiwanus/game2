@@ -476,9 +476,8 @@ impl Game {
         let mut model_matrix = self.game_objects[active_game_object].get_model_matrix();
 
         let actions = self.gui.layout_and_interact(
-            self.gui_state
-                .take_egui_input(self.windowed_context.window()),
-            self.input.mouse_buttons.primary && self.input.pointer_moved,
+            &mut self.gui_state,
+            self.windowed_context.window(),
             &self.camera_transforms.view,
             &self.camera_transforms.proj,
             &mut model_matrix,
